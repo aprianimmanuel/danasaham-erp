@@ -38,6 +38,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
+    'rest_framework',
+    'django_otp',
+    'django_otp.plugins.otp_static',
+    'django_otp.plugins.otp_totp',
+    'django_otp.plugins.otp_email',
+    'two_factor',
+    'two_factor.plugins.phonenumber',
+    'drf_spectacular',
+    'user',
 ]
 
 MIDDLEWARE = [
@@ -48,6 +57,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django_otp.middleware.OTPMiddleware',
 ]
 
 ROOT_URLCONF = 'app.urls'
@@ -129,3 +140,9 @@ STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'core.User'
+
+REST_FRAMEWORK = {
+  'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+LOGIN_URL = 'two_factor:login'

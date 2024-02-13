@@ -12,12 +12,12 @@ from django.utils.translation import gettext_lazy as _
 
 
 class UserManager(BaseUserManager):
-    """Manager for users."""
+    """Create, save and return a new user."""
     def create_user(self, email, username, password=None, **extra_fields):
         if not email:
             raise ValueError(_('The Email field must be set'))
-        email = self.normalize_email(email)
-        user = self.model(email=email, username=username, **extra_fields)
+
+        user = self.model(email=self.normalize_email(email), username=username, **extra_fields)  # noqa
         user.set_password(password)
         user.save(using=self._db)
 
