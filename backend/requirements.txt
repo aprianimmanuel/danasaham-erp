@@ -4,3 +4,11 @@ psycopg2>=2.8.6,<2.9
 drf-spectacular>=0.15.1,<0.16
 django-two-factor-auth>=1.12
 django-two-factor-auth[phonenumbers]>=1.12
+django-two-factor-auth[webauthn]>=1.12
+django-cors-headers>=3.8.0,<4.0
+djangorestframework-simplejwt>=5.0.0,<6.0
+qrcode>=7.3,<8.0
+django-formtools>=2.3
+django-allauth>=0.48
+webauthn>=1.10.0,<2.0.0
+django-otp==0.8.0

@@ -32,9 +32,14 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'django.contrib.admin',
+    'django.contrib.admindocs',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
@@ -43,10 +48,11 @@ INSTALLED_APPS = [
     'django_otp.plugins.otp_static',
     'django_otp.plugins.otp_totp',
     'django_otp.plugins.otp_email',
+    'user',
     'two_factor',
     'two_factor.plugins.phonenumber',
     'drf_spectacular',
-    'user',
+    'formtools',
 ]
 
 MIDDLEWARE = [
@@ -55,10 +61,10 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django_otp.middleware.OTPMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django_otp.middleware.OTPMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'app.urls'
@@ -95,6 +101,9 @@ DATABASES = {
     }
 }
 
+AUTHENTICATION_BACKENDS = [
+  'allauth.account.auth_backends.AuthenticationBackend',
+]
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -143,6 +152,23 @@ AUTH_USER_MODEL = 'core.User'
 
 REST_FRAMEWORK = {
   'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+  'DEFAULT_RENDERER_CLASSES': [
+    'rest_framework.renderers.JSONRenderer',
+  ],
 }
 
 LOGIN_URL = 'two_factor:login'
+
+TWO_FACTOR_PATCH_ADMIN = True
+
+TWO_FACTOR_CALL_GATEWAY = 'two_factor.gateways.fake.Fake'
+TWO_FACTOR_SMS_GATEWAY = 'two_factor.gateways.fake.Fake'
+TWO_FACTOR_TOTP_GATEWAY = 'two_factor.gateways.fake.Fake'
+TWO_FACTOR_EMAIL_GATEWAY = 'two_factor.gateways.fake.FakeEmail'
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+SITE_ID = 1
+
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'

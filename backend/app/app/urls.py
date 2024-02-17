@@ -21,12 +21,22 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
+
+    # Admin URL
     path('admin/', admin.site.urls),
+
+    # django-allauth URLs for authentication
+    path('accounts/', include('allauth.urls')),
+
+    # DRF spectacular for API schema and documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='api-schema'),
     path(
         'api/docs/',
         SpectacularSwaggerView.as_view(url_name='api-schema'),
         name='api-docs',
     ),
+
+    # User API
     path('api/user/', include('user.urls')),
+
 ]
