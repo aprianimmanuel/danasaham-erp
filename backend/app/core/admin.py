@@ -10,7 +10,7 @@ from django.utils import timezone
 
 
 class UserAdmin(BaseUserAdmin):
-    ordering = ['id']
+    ordering = ['user_id']
     list_display = ['email', 'username', 'is_active', 'is_staff', 'is_superuser']  # noqa
     list_filter = ['is_active', 'is_staff', 'is_superuser']
     search_fields = ['email', 'username']
@@ -20,7 +20,7 @@ class UserAdmin(BaseUserAdmin):
         (_('Permissions'), {
             'fields': ('is_active', 'is_staff', 'is_superuser'),
         }),
-        (_('Important dates'), {'fields': ('custom_last_login',)}),
+        (_('Important dates'), {'fields': ('last_login',)}),
     )
     add_fieldsets = (
         (None, {
@@ -28,7 +28,7 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('email', 'password1', 'password2'),
         }),
     )
-    readonly_fields = ['custom_last_login']
+    readonly_fields = ['last_login']
 
     def custom_last_login(self, obj):
         """
@@ -39,7 +39,7 @@ class UserAdmin(BaseUserAdmin):
             last_login_gmt7 = obj.last_login + timezone.timedelta(hours=7)
             return last_login_gmt7.strftime('%Y-%m-%d %H:%M:%S')
         else:
-            return None
+            return _('Never logged in')
 
     custom_last_login.short_description = _('Last Login (GMT+7)')
 

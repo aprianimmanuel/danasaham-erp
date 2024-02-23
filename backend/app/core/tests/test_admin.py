@@ -51,7 +51,7 @@ class AdminSiteTests(TestCase):
 
     def test_user_change_page(self):
         """Test that user change page loads properly."""
-        response = self.client.get(reverse('admin:core_user_change', args=[self.user.id]))  # noqa
+        response = self.client.get(reverse('admin:core_user_change', args=[self.user.user_id]))  # noqa
         self.assertEqual(response.status_code, 200)
 
     def test_create_user_page(self):

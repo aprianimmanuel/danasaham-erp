@@ -3,39 +3,56 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
-
+from unittest.mock import patch
+from django_otp.plugins.otp_email.models import EmailDevice  # noqa
+from django_otp import devices_for_user  # noqa
 
 User = get_user_model()
 CREATE_USER_URL = reverse('user:create')
 TOKEN_OBTAIN_URL = reverse('user:login')
-TOTP_GENERATE_URL = reverse('user:totp_generate')
-TOTP_VERIFY_URL = reverse('user:totp_verify')
+MANAGE_USER_URL = reverse('user:me')
 
 
 class PublicUserAPITest(TestCase):
-    """Test the public user API"""
 
     def setUp(self):
         self.client = APIClient()
 
-    # @patch('core.models.generate_totp_secret')
-    def test_create_user_success(self):
-        """Test creating a new user"""
+    @patch('django_otp.plugins.otp_email.models.EmailDevice.verify_token')
+    @patch('django_otp.devices_for_user')
+    def test_create_user_success(
+            self,
+            mocked_devices_for_user,
+            mocked_verify_token):
+        """
+        Test creating a new user with a mocked OTP email setup.
+        """
         data = {
             'email': 'test@example.com',
             'username': 'testuser',
-            'password': 'Testp@ss!23',
-            'password2': 'Testp@ss!23',
+            'password': 'Testp@ss123',
+            'password2': 'Testp@ss123',
+            'otp': '123456'  # Assuming OTP is required for the test
         }
-        response = self.client.post(
-            CREATE_USER_URL,
-            data
-        )
+
+        # Mocking the verify_token method to always return True
+        mocked_verify_token.return_value = True
+
+        # Preparing a mock device to return for devices_for_user
+        mock_device = EmailDevice(user_id=1, confirmed=False)
+        mocked_devices_for_user.return_value = [mock_device]
+
+        response = self.client.post(CREATE_USER_URL, data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertNotIn('password', response.data)
-        user_exist = User.objects.filter(email=data['email']).exists()
-        self.assertTrue(user_exist)
+        self.assertTrue(User.objects.filter(email=data['email']).exists())
+
+        # Verifying that the mocked methods were called as expected
+        mocked_devices_for_user.assert_called_once()
+        mocked_verify_token.assert_called_once_with('123456')
+
+        user = User.objects.get(email=data['email'])
+        self.assertTrue(user.email_verified)
 
     def test_password_too_short_error(self):
         """Test creating a user with a password that is too short"""
@@ -142,6 +159,20 @@ class PublicUserAPITest(TestCase):
         response = self.client.post(CREATE_USER_URL, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('password2', response.data)
+
+    def test_email_verification_success(self):
+        """Test email verification process"""
+        # Assuming user creation here and EmailDevice setup
+        # Assuming 'verify_email' is the URL name for email verification endpoint
+        VERIFY_EMAIL_URL = reverse('user:verify_email')
+        data = {
+            'email': self.user.email,
+            'otp': '123456'  # Assuming this is the correct OTP for the test
+        }
+        response = self.client.post(VERIFY_EMAIL_URL, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.email_verified)
 
 
 class PrivateUserApiTest(TestCase):

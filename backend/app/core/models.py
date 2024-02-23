@@ -9,59 +9,62 @@ from django.contrib.auth.models import (
   PermissionsMixin
 )
 from django.utils.translation import gettext_lazy as _
-from django_otp.util import random_hex
-from django_otp.oath import totp
-import secrets
-import string
+from cryptography.fernet import Fernet
+import uuid
+import os
+from dotenv import load_dotenv
+
+
+# Load environment variables
+load_dotenv()
+
+# Retrieve the FERNET_KEY from your environment variables
+FERNET_KEY = os.getenv('FERNET_KEY')
+if not FERNET_KEY:
+    raise ValueError(
+        "No FERNET_KEY found in environment variables. Make sure to set it in your .env file")  # noqa
+
+fernet = Fernet(FERNET_KEY.encode())
 
 
 class UserManager(BaseUserManager):
-    """Create, save and return a new user."""
-    def create_user(self,
-                    email,
-                    username,
-                    password=None,
-                    **extra_fields):
+    """Manager for user profiles."""
+    def create_user(self, email, username, password=None, **extra_fields):
+        """Create and return a new user."""
         if not email:
             raise ValueError(_('The Email field must be set'))
-
-        user = self.model(email=self.normalize_email(email), username=username, **extra_fields)  # noqa
+        email = self.normalize_email(email)
+        user = self.model(email=email, username=username, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
-
         return user
 
-    def create_superuser(self,
-                         email,
-                         username, password=None,
-                         **extra_fields):
+    def create_superuser(self, email, username, password=None, **extra_fields):
+        """Create and return a new superuser."""
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
-
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError(_('Superuser must have is_staff=True.'))
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError(_('Superuser must have is_superuser=True.'))
-
         return self.create_user(email, username, password, **extra_fields)
-
-    @staticmethod
-    def create_verification_code():
-        """Generate a random verification code."""
-        return ''.join(secrets.choice(string.digits) for _ in range(6))
 
 
 class User(AbstractBaseUser, PermissionsMixin):
     """User in the system."""
+    user_id = models.CharField(
+        default=uuid.uuid4,
+        editable=False,
+        primary_key=True,
+        max_length=36)
     email = models.EmailField(_('email_address'), unique=True)
     username = models.CharField(_('username'), max_length=150, unique=True)
     is_active = models.BooleanField(_('active'), default=True)
     is_staff = models.BooleanField(_('staff status'), default=False)
-    totp_secret_key = models.CharField(
-        max_length=40,
-        blank=True,
+    otp_attempts = models.IntegerField(default=0)
+    last_otp_time = models.DateTimeField(null=True, blank=True)
+    totp_secret_key = models.TextField(
         null=True,
-        help_text=_('A hex-encoded 20-byte secret key'))
+        blank=True,
+        editable=False
+    )
+    email_verified = models.BooleanField(default=False)
 
     objects = UserManager()
 
@@ -75,15 +78,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
 
-    def generate_totp_secret(self):
-        """Generate a TOTP secret key for the user."""
-        self.totp_secret_key = random_hex(20)
-        self.save()
+    # Encrypt the totp_secret_key before saving
+    def save(self, *args, **kwargs):
+        if self.totp_secret_key:
+            self.totp_secret_key = fernet.encrypt(
+                self.totp_secret_key.encode()).decode()
+        super(User, self).save(*args, **kwargs)
 
-    def verify_totp_token(self, token, tolerance=1):
-        """Verify a TOTP token provided by the user."""
-        if not self.totp_secret_key:
-            return False
-        key = bytes.fromhex(self.totp_secret_key)
-        verified = totp(key) == int(token)
-        return verified
+    # Method to decrypt totp_secret_key when accessed
+    def get_totp_secret_key(self):
+        if self.totp_secret_key:
+            return fernet.decrypt(self.totp_secret_key.encode()).decode()
+        return None
