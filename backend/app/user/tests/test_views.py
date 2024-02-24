@@ -46,7 +46,6 @@ class PublicUserAPITests(TestCase):
         self.assertNotIn('password', res.data)
 
     
-
 class PrivateUserApiTest(TestCase):
     """Test API requests that require authentication"""
 

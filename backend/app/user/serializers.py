@@ -105,7 +105,8 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
     def setup_email_otp(self, user, otp):
-        for device in devices_for_user(user, confirmed=False):
+        devices = list(devices_for_user(user, confirmed=False))
+        for device in devices:
             if isinstance(device, EmailDevice) and device.verify_token(otp):
                 device.confirmed = True
                 device.save()
@@ -123,8 +124,8 @@ class UserSerializer(serializers.ModelSerializer):
             user.save()
 
     def verify_user_otp(self, user, otp):
-        """Verify the OTP against any of the user's EmailDevices."""
-        for device in devices_for_user(user, confirmed=False):
+        devices = list(devices_for_user(user, confirmed=False))
+        for device in devices:
             if isinstance(device, EmailDevice) and device.verify_token(otp):
                 device.confirmed = True
                 device.save()
