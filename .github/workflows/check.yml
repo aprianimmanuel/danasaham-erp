@@ -24,19 +24,26 @@ jobs:
       # docker-compose and docker commands
       - name: Set up Docker Compose
         run: |
+          cd backend
           docker-compose down -v --rmi all --remove-orphans
           docker volume rm $(docker volume ls -q -f dangling=true) || true
 
       # Rebuild and start the services with Docker Compose
       - name: Rebuild the Docker Container with Docker Compose
-        run: docker-compose up -d --build
+        run: |
+          cd backend
+          docker-compose up -d --build
       
       - name: Run Migrations
-        run: docker-compose run --rm app sh -c "python manage.py migrate"
+        run: |
+          cd backend 
+          docker-compose run --rm app sh -c "python manage.py migrate"
       
       # Run tests
       - name: Test
-        run: docker-compose run --rm app sh -c "python manage.py test"
+        run: |
+          cd backend 
+          docker-compose run --rm app sh -c "python manage.py test"
 
       - name: Lint
         run: |
