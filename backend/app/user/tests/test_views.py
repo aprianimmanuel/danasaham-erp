@@ -20,8 +20,6 @@ CREATE_USER_URL = reverse('user:create')
 USER_DETAIL_URL = reverse(
     'user:detail',
     kwargs={'user_id': 'mock_user_id'})
-TOKEN_OBTAIN_URL = reverse('user:token_obtain')
-VERIFY_TOTP_URL = reverse('user:totp_verify')
 
 
 class PublicUserAPITests(TestCase):

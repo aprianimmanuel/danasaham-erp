@@ -6,6 +6,7 @@ from rest_framework.test import APIClient
 from unittest.mock import patch, MagicMock
 from django_otp.plugins.otp_email.models import EmailDevice  # noqa
 from django_otp import devices_for_user  # noqa
+from django_otp.oath import totp
 import uuid
 
 
@@ -13,13 +14,16 @@ User = get_user_model()
 CREATE_USER_URL = reverse('user:create')
 TOKEN_OBTAIN_URL = reverse('user:login')
 MANAGE_USER_URL = reverse('user:me')
+VERIFY_EMAIL_URL = reverse('user:verify_email')
 
 class MockQuerySet:
     def __init__(self, *args):
         self._items = list(args)
 
     def filter(self, **kwargs):
-        filtered_items = [item for item in self._items if all(getattr(item, k) == v for k, v in kwargs.items())]
+        filtered_items = [
+            item for item in self._items if all(getattr(item, k) == v for k, v in kwargs.items())   # noqa
+        ]
         return MockQuerySet(*filtered_items)
 
     def all(self):
@@ -51,7 +55,13 @@ class PublicUserAPITest(TestCase):
 
     def setUp(self):
         self.client = APIClient()
-
+        self.user_data = {
+            'email': 'test@example.com',
+            'username': 'testuser',
+            'password': 'Testp@ss!23',
+            'password2': 'Testp@ss!23',
+        }
+    
     @patch('django_otp.devices_for_user')
     def test_create_user_success(self, mocked_devices_for_user):
         """
@@ -62,7 +72,6 @@ class PublicUserAPITest(TestCase):
             'username': 'testuser',
             'password': 'Testp@ss!23',
             'password2': 'Testp@ss!23',
-            'otp': '123456'
         }
 
         # Set up MagicMock to simulate QuerySet behavior
@@ -71,18 +80,12 @@ class PublicUserAPITest(TestCase):
         mock_queryset = MagicMock()
         mock_queryset.filter.return_value = [mock_device]  # Simulate filter returning a list
         
-        mocked_devices_for_user.return_value = mock_queryset  # Return the mock queryset
+        # Use MockQuerySet to simulate queryset behavior
+        mocked_devices_for_user.return_value = MockQuerySet(mock_device)
 
         response = self.client.post(CREATE_USER_URL, data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        user = User.objects.get(email=data['email'])
-        self.assertTrue(user.email_verified)
-
-        # Ensure the mocks were called as expected
-        mocked_devices_for_user.assert_called_once_with(user, confirmed=False)
-        mock_queryset.filter.assert_called_with(emaildevice_isnull=False)
-        mock_device.verify_token.assert_called_once_with('123456')
 
     def test_password_too_short_error(self):
         """Test creating a user with a password that is too short"""
@@ -91,7 +94,6 @@ class PublicUserAPITest(TestCase):
             'username': 'testuser',
             'password1': 'pw',
             'password2': 'pw',
-            'otp': '123456'
         }
         response = self.client.post(CREATE_USER_URL, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -103,28 +105,23 @@ class PublicUserAPITest(TestCase):
             {'email': '',
              'username': 'testuser',
              'password': 'Testp@ss!23',
-             'password2': 'Testp@ss!23',
-             'otp': '123456'},
+             'password2': 'Testp@ss!23'},
             {'email': 'invalidemail',
              'username': 'testuser',
              'password': 'Testp@ss!23',
-             'password2': 'Testp@ss!23',
-             'otp': '123456'},
+             'password2': 'Testp@ss!23'},
             {'email': 'test@example.com',
              'username': '',
              'password': 'Testp@ss!23',
-             'password2': 'Testp@ss!23',
-             'otp': '123456'},
+             'password2': 'Testp@ss!23'},
             {'email': 'test@example.com',
              'username': 'testuser',
              'password': '',
-             'password2': '',
-             'otp': '123456'},
+             'password2': ''},
             {'email': 'test@example.com',
              'username': 'test_user#1',
              'password': 'Testp@ss!23',
-             'password2': 'Testp@ss!23',
-             'otp': '123456'},
+             'password2': 'Testp@ss!23'},
         ]
 
         for data in invalid_data:
@@ -145,7 +142,6 @@ class PublicUserAPITest(TestCase):
             'username': 'testuser',
             'password': 'Testp@ss!23',
             'password2': 'Testp@ss!23',
-            'otp': '123456'
         }
         create_user_response = self.client.post(CREATE_USER_URL, data)
         self.assertEqual(create_user_response.status_code, status.HTTP_201_CREATED)  # noqa
@@ -155,7 +151,6 @@ class PublicUserAPITest(TestCase):
             'username': 'testuser2',
             'password': 'Testp@ss!23',
             'password2': 'Testp@ss!23',
-            'otp': '123456'
         }
         duplicate_email_response = self.client.post(CREATE_USER_URL,
                                                     duplicate_email_data)
@@ -168,7 +163,6 @@ class PublicUserAPITest(TestCase):
             'username': 'testuser',
             'password': 'Testp@ss!23',
             'password2': 'Testp@ss!23',
-            'otp': '123456'
         }
         duplicate_username_response = self.client.post(CREATE_USER_URL,
                                                        duplicate_username_data)
@@ -194,30 +188,51 @@ class PublicUserAPITest(TestCase):
             'username': 'testuser',
             'password': 'Testp@ss!23',
             'password2': 'Testp@ss!24',
-            'otp': '123456'
         }
         response = self.client.post(CREATE_USER_URL, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('password2', response.data)
 
+    def create_user_and_device(self):
+        # Create a user
+        response = self.client.post(CREATE_USER_URL, self.user_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # Retrieve the created user
+        user = User.objects.get(email=self.user_data['email'])
+        # Create an EmailDevice for OTP
+        device = EmailDevice.objects.create(user=user, confirmed=False)
+        return user, device
+
     def test_email_verification_success(self):
-        """Test email verification process"""
-        # Assuming user creation here and EmailDevice setup
-        # Assuming 'verify_email' is the URL name for email verification endpoint
-        VERIFY_EMAIL_URL = reverse('user:verify_email')
+        user, device = self.create_user_and_device()
+        # Generate a valid OTP token
+        valid_token = totp(device.bin_key, step=30)
+        verification_data = {
+            'email': user.email,
+            'token': valid_token,
+        }
+        response = self.client.post(VERIFY_EMAIL_URL, verification_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user.refresh_from_db()
+        self.assertTrue(user.email_verified)
+    
+    def test_verify_email_user_not_found(self):
+        user, device = self.create_user_and_device()
+        # Generate a valid OTP token
+        valid_token = totp(device.bin_key, step=30)
         data = {
-            'email': self.User.email,
-            'otp': '123456'  # Assuming this is the correct OTP for the test
+            'email': 'nonexistence@example.com',
+            'token': '123456'
         }
         response = self.client.post(VERIFY_EMAIL_URL, data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.User.refresh_from_db()
-        self.assertTrue(self.User.email_verified)
-
+        self.assertEqual(
+            response.status_code, 
+            status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
 
 class PrivateUserApiTest(TestCase):
     def setUp(self):
-        self.client = APIClient()  # Instantiate the Django REST Framework's APIClient  # noqa
+        self.client = APIClient()
         self.user = User.objects.create_user(
             email='test@example.com',
             username='testuser',
