@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 from django_otp.plugins.otp_email.models import EmailDevice  # noqa
 from django_otp import devices_for_user  # noqa
 from django_otp.oath import totp
-import uuid
+import uuid  # noqa
 
 
 User = get_user_model()
@@ -15,6 +15,7 @@ CREATE_USER_URL = reverse('user:create')
 TOKEN_OBTAIN_URL = reverse('user:login')
 MANAGE_USER_URL = reverse('user:me')
 VERIFY_EMAIL_URL = reverse('user:verify_email')
+
 
 class MockQuerySet:
     def __init__(self, *args):
@@ -78,7 +79,7 @@ class PublicUserAPITest(TestCase):
         mock_device = MagicMock(spec=EmailDevice)
         mock_device.verify_token.return_value = True
         mock_queryset = MagicMock()
-        mock_queryset.filter.return_value = [mock_device]  # Simulate filter returning a list
+        mock_queryset.filter.return_value = [mock_device]
 
         # Use MockQuerySet to simulate queryset behavior
         mocked_devices_for_user.return_value = MockQuerySet(mock_device)
@@ -217,9 +218,6 @@ class PublicUserAPITest(TestCase):
         self.assertTrue(user.email_verified)
 
     def test_verify_email_user_not_found(self):
-        user, device = self.create_user_and_device()
-        # Generate a valid OTP token
-        valid_token = totp(device.bin_key, step=30)
         data = {
             'email': 'nonexistence@example.com',
             'token': '123456'
@@ -229,6 +227,7 @@ class PublicUserAPITest(TestCase):
             response.status_code,
             status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
+
 
 class PrivateUserApiTest(TestCase):
     def setUp(self):

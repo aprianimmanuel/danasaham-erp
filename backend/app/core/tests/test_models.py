@@ -2,9 +2,7 @@
 
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from django.utils.translation import gettext as _
-from cryptography.fernet import Fernet
-import os
+
 
 User = get_user_model()
 

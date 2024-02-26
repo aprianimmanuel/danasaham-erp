@@ -1,12 +1,11 @@
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.contrib.auth import get_user_model, authenticate
-from rest_framework import serializers, status
+from rest_framework import serializers
 from django.utils.translation import gettext as _
 from django_otp import devices_for_user
 from django.db import transaction
-from django_otp.plugins.otp_email.models import EmailDevice
-import datetime
+from django_otp.plugins.otp_email.models import EmailDevice  # noqa
 
 User = get_user_model()
 
@@ -86,7 +85,6 @@ class UserSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        otp = validated_data.pop('otp', None)
         user = User.objects.create_user(**validated_data)
         user.set_password(validated_data['password'])
         user.save()
@@ -130,8 +128,14 @@ class AuthTokenSerializer(serializers.Serializer):
 
 
 class VerifyEmailOTPSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True, help_text="User's email address.")
-    token = serializers.CharField(required=True, max_length=6, min_length=6, help_text="The OTP token to verify.")
+    email = serializers.EmailField(
+        required=True,
+        help_text="User's email address.")
+    token = serializers.CharField(
+        required=True,
+        max_length=6,
+        min_length=6,
+        help_text="The OTP token to verify.")
 
     def validate(self, data):
         """
@@ -149,7 +153,11 @@ class VerifyEmailOTPSerializer(serializers.Serializer):
         devices = list(devices_for_user(user, confirmed=False))
 
         if not devices:
-            raise serializers.ValidationError({"error": "No OTP device found for the user."})
+            raise serializers.ValidationError(
+                {
+                    "error": "No OTP device found for the user."
+                    }
+                )
 
         # Assuming check the first device only as an example
         device = devices[0]
@@ -158,8 +166,14 @@ class VerifyEmailOTPSerializer(serializers.Serializer):
             device.confirmed = True
             device.save()
             user.email_verified = True
+            user.totp_secret_key = token
             user.save()
+            return data
         else:
-            raise serializers.ValidationError({"error": "Invalid OTP or OTP expired."})
+            raise serializers.ValidationError(
+                {
+                    "error": "Invalid OTP or OTP expired."
+                    }
+                )
 
         return data

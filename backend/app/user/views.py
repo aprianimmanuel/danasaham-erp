@@ -1,9 +1,8 @@
-from django.db import transaction
 from django.contrib.auth import get_user_model
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
-from django_otp import devices_for_user
+from django_otp import devices_for_user  # noqa
 from user.serializers import (UserSerializer,
                               AuthTokenSerializer,
                               VerifyEmailOTPSerializer)
@@ -11,7 +10,7 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from django.shortcuts import get_object_or_404
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
-from django_otp.plugins.otp_email.models import EmailDevice
+from django_otp.plugins.otp_email.models import EmailDevice  # noqa
 
 
 User = get_user_model()
@@ -47,10 +46,16 @@ class VerifyEmailView(APIView):
         serializer = VerifyEmailOTPSerializer(data=request.data)
         if serializer.is_valid():
             # If serializer is valid, OTP verification was successful
-            return Response({"message": "Email verified successfully."}, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "message": "Email verified successfully."},
+                status=status.HTTP_200_OK
+            )
         else:
             # If serializer is not valid, return the errors
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserDetailView(generics.RetrieveAPIView):
@@ -69,14 +74,16 @@ class LoginView(ObtainAuthToken):
     serializer_class = AuthTokenSerializer
 
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer = self.serializer_class(
+            data=request.data,
+            context={'request': request})
         if serializer.is_valid():
             user = serializer.validated_data['user']
 
             # Email verification check
             if not user.email_verified:
                 return Response(
-                    {"error": "Email not verified. Please verify your email first."},
+                    {"error": "Email not verified. Please verify your email first."},  # noqa
                     status=status.HTTP_401_UNAUTHORIZED
                 )
 
@@ -90,7 +97,8 @@ class LoginView(ObtainAuthToken):
             })
 
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # User Management View
