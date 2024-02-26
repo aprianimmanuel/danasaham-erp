@@ -159,7 +159,6 @@ class VerifyEmailOTPSerializer(serializers.Serializer):
             device.save()
             user.email_verified = True
             user.save()
-            return data
         else:
             raise serializers.ValidationError({"error": "Invalid OTP or OTP expired."})
 

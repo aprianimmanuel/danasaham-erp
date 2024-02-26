@@ -61,7 +61,7 @@ class PublicUserAPITest(TestCase):
             'password': 'Testp@ss!23',
             'password2': 'Testp@ss!23',
         }
-    
+
     @patch('django_otp.devices_for_user')
     def test_create_user_success(self, mocked_devices_for_user):
         """
@@ -79,7 +79,7 @@ class PublicUserAPITest(TestCase):
         mock_device.verify_token.return_value = True
         mock_queryset = MagicMock()
         mock_queryset.filter.return_value = [mock_device]  # Simulate filter returning a list
-        
+
         # Use MockQuerySet to simulate queryset behavior
         mocked_devices_for_user.return_value = MockQuerySet(mock_device)
 
@@ -215,7 +215,7 @@ class PublicUserAPITest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         user.refresh_from_db()
         self.assertTrue(user.email_verified)
-    
+
     def test_verify_email_user_not_found(self):
         user, device = self.create_user_and_device()
         # Generate a valid OTP token
@@ -226,7 +226,7 @@ class PublicUserAPITest(TestCase):
         }
         response = self.client.post(VERIFY_EMAIL_URL, data)
         self.assertEqual(
-            response.status_code, 
+            response.status_code,
             status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
 
@@ -236,6 +236,7 @@ class PrivateUserApiTest(TestCase):
         self.user = User.objects.create_user(
             email='test@example.com',
             username='testuser',
-            password='Testp@ss!23'
+            password='Testp@ss!23',
+            password2='Testp@ss!23'
         )
         self.client.force_authenticate(user=self.user)  # Force authenticate the user for subsequent requests  # noqa
