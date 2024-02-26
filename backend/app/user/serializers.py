@@ -16,11 +16,6 @@ class UserSerializer(serializers.ModelSerializer):
         style={'input_type': 'password'},
         write_only=True,
         min_length=8)
-    otp = serializers.CharField(
-        write_only=True,
-        required=False,
-        help_text="OTP for email_verification"
-    )
 
     class Meta:
         model = User
@@ -29,7 +24,7 @@ class UserSerializer(serializers.ModelSerializer):
                   'username',
                   'password',
                   'password2',
-                  'otp']
+                  ]
         extra_kwargs = {
             'password': {'write_only': True, 'min_length': 8},
             'user_id': {'read_only': True}
@@ -159,7 +154,7 @@ class VerifyEmailOTPSerializer(serializers.Serializer):
                     }
                 )
 
-        # Assuming check the first device only as an example
+        # Check the first device
         device = devices[0]
         if device.verify_token(token):
             # If OTP is valid, confirm the device and mark email as verified
