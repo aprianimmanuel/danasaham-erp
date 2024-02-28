@@ -15,7 +15,7 @@ RUN python -m venv /py && \
   /py/bin/pip install --upgrade pip && \
   apk add --update --no-cache postgresql-client && \
   apk add --update --no-cache --virtual .tmp-build-deps \
-    build-base postgresql-dev musl-dev && \
+    build-base postgresql-dev musl-dev libffi-dev libressl-dev libxslt-dev libxml2-dev xmlsec-dev python3-dev && \
   /py/bin/pip install -r /tmp/requirements.txt && \
   if [ $DEV = "true" ]; \
     then /py/bin/pip install -r /tmp/requirements.dev.txt ; \

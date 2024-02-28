@@ -8,12 +8,11 @@ from django_otp.plugins.otp_email.models import EmailDevice  # noqa
 from django_otp import devices_for_user  # noqa
 from django_otp.oath import totp
 import uuid  # noqa
-
+from rest_framework.authtoken.models import Token
 
 User = get_user_model()
 CREATE_USER_URL = reverse('user:create')
 TOKEN_OBTAIN_URL = reverse('user:login')
-MANAGE_USER_URL = reverse('user:me')
 VERIFY_EMAIL_URL = reverse('user:verify_email')
 
 
@@ -57,6 +56,7 @@ class PublicUserAPITest(TestCase):
     def setUp(self):
         self.client = APIClient()
         self.user_data = {
+            'user_id': str(uuid.uuid4()),
             'email': 'test@example.com',
             'username': 'testuser',
             'password': 'Testp@ss!23',
@@ -69,6 +69,7 @@ class PublicUserAPITest(TestCase):
         Test creating a new user with a mocked OTP email setup.
         """
         data = {
+            'user_id': str(uuid.uuid4()),
             'email': 'test@example.com',
             'username': 'testuser',
             'password': 'Testp@ss!23',
@@ -91,9 +92,10 @@ class PublicUserAPITest(TestCase):
     def test_password_too_short_error(self):
         """Test creating a user with a password that is too short"""
         data = {
+            'user_id': str(uuid.uuid4()),
             'email': 'test@example.com',
             'username': 'testuser',
-            'password1': 'pw',
+            'password': 'pw',
             'password2': 'pw',
         }
         response = self.client.post(CREATE_USER_URL, data)
@@ -103,26 +105,36 @@ class PublicUserAPITest(TestCase):
     def test_create_user_invalid_data(self):
         """Test creating a new user with invalid data"""
         invalid_data = [
-            {'email': '',
-             'username': 'testuser',
-             'password': 'Testp@ss!23',
-             'password2': 'Testp@ss!23'},
-            {'email': 'invalidemail',
-             'username': 'testuser',
-             'password': 'Testp@ss!23',
-             'password2': 'Testp@ss!23'},
-            {'email': 'test@example.com',
-             'username': '',
-             'password': 'Testp@ss!23',
-             'password2': 'Testp@ss!23'},
-            {'email': 'test@example.com',
-             'username': 'testuser',
-             'password': '',
-             'password2': ''},
-            {'email': 'test@example.com',
-             'username': 'test_user#1',
-             'password': 'Testp@ss!23',
-             'password2': 'Testp@ss!23'},
+            {
+                'user_id': str(uuid.uuid4()),
+                'email': '',
+                'username': 'testuser',
+                'password': 'Testp@ss!23',
+                'password2': 'Testp@ss!23'},
+            {
+                'user_id': str(uuid.uuid4()),
+                'email': 'invalidemail',
+                'username': 'testuser',
+                'password': 'Testp@ss!23',
+                'password2': 'Testp@ss!23'},
+            {
+                'user_id': str(uuid.uuid4()),
+                'email': 'test@example.com',
+                'username': '',
+                'password': 'Testp@ss!23',
+                'password2': 'Testp@ss!23'},
+            {
+                'user_id': str(uuid.uuid4()),
+                'email': 'test@example.com',
+                'username': 'testuser',
+                'password': '',
+                'password2': ''},
+            {
+                'user_id': str(uuid.uuid4()),
+                'email': 'test@example.com',
+                'username': 'test_user#1',
+                'password': 'Testp@ss!23',
+                'password2': 'Testp@ss!23'},
         ]
 
         for data in invalid_data:
@@ -139,6 +151,7 @@ class PublicUserAPITest(TestCase):
     def test_create_user_duplicate_fields(self):
         """Test creating a new user with duplicate email or username"""
         data = {
+            'user_id': str(uuid.uuid4()),
             'email': 'test@example.com',
             'username': 'testuser',
             'password': 'Testp@ss!23',
@@ -148,6 +161,7 @@ class PublicUserAPITest(TestCase):
         self.assertEqual(create_user_response.status_code, status.HTTP_201_CREATED)  # noqa
 
         duplicate_email_data = {
+            'user_id': str(uuid.uuid4()),
             'email': 'test@example.com',
             'username': 'testuser2',
             'password': 'Testp@ss!23',
@@ -160,6 +174,7 @@ class PublicUserAPITest(TestCase):
         self.assertIn('email', duplicate_email_response.data)
 
         duplicate_username_data = {
+            'user_id': str(uuid.uuid4()),
             'email': 'test1@example.com',
             'username': 'testuser',
             'password': 'Testp@ss!23',
@@ -174,6 +189,7 @@ class PublicUserAPITest(TestCase):
     def test_create_user_missing_required_fields(self):
         """Test creating a new user with missing required fields"""
         data = {
+            'user_id': str(uuid.uuid4()),
             'email': '',
             'username': '',
             'password': '',
@@ -185,6 +201,7 @@ class PublicUserAPITest(TestCase):
     def test_create_user_password_mismatch(self):
         """Test creating a new user with password confirmation mismatch"""
         data = {
+            'user_id': str(uuid.uuid4()),
             'email': 'test@example.com',
             'username': 'testuser',
             'password': 'Testp@ss!23',
@@ -236,6 +253,58 @@ class PrivateUserApiTest(TestCase):
             email='test@example.com',
             username='testuser',
             password='Testp@ss!23',
-            password2='Testp@ss!23'
+            email_verified=True
         )
-        self.client.force_authenticate(user=self.user)  # Force authenticate the user for subsequent requests  # noqa
+        self.token, _ = Token.objects.get_or_create(user=self.user)
+        self.update_user_url = reverse(
+            'user:account_update', kwargs={'user_id': self.user.user_id})
+        self.manage_user_url = reverse(
+            'user:detail', kwargs={'user_id': self.user.user_id}
+        )
+
+    def test_login_success(self):
+        data = {
+            'email': 'test@example.com',
+            'password': 'Testp@ss!23',
+        }
+        response = self.client.post(TOKEN_OBTAIN_URL, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['token'], self.token.key)
+
+    def test_login_unsuccesful(self):
+        data = {
+            'email': 'test@example.com',
+            'password': 'wrongpassword',
+        }
+        response = self.client.post(TOKEN_OBTAIN_URL, data)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_user_profile_access(self):
+        data = {
+            'email': 'test@example.com',
+            'password': 'Testp@ss!23',
+        }
+        self.client.post(TOKEN_OBTAIN_URL, data)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+        response = self.client.get(self.manage_user_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['email'], self.user.email)
+
+    def test_user_profile_update(self):
+        data = {
+            'email': 'test@example.com',
+            'password': 'Testp@ss!23'
+        }
+        self.client.post(TOKEN_OBTAIN_URL, data)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+        update_data = {
+            'username': 'newusername'
+        }
+        response = self.client.patch(self.update_user_url, update_data)
+        self.user.refresh_from_db()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.user.username, 'newusername')
+
+    def test_unauthorized_user_profile_access(self):
+        response = self.client.get(self.manage_user_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

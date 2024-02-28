@@ -6,6 +6,9 @@ from django.utils.translation import gettext as _
 from django_otp import devices_for_user
 from django.db import transaction
 from django_otp.plugins.otp_email.models import EmailDevice  # noqa
+from django.utils.encoding import force_text
+from django.utils.http import urlsafe_base64_decode
+from django.contrib.auth.tokens import default_token_generator
 
 User = get_user_model()
 
@@ -26,8 +29,12 @@ class UserSerializer(serializers.ModelSerializer):
                   'password2',
                   ]
         extra_kwargs = {
-            'password': {'write_only': True, 'min_length': 8},
-            'user_id': {'read_only': True}
+            'password': {
+                'write_only': True,
+                'min_length': 8,
+                'required': False},
+            'user_id': {'read_only': True},
+            'username': {'required': True}
             }
 
     def validate_email(self, value):
@@ -69,22 +76,46 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, data):
-        """Ensure passwords match."""
-        if data['password'] != data.pop('password2'):
+        """Ensure passwords match if they are included in the request."""
+        password = data.get('password')
+        password2 = data.pop('password2', None)
+        if password and password2 and password != password2:
             raise serializers.ValidationError(
                 {
                     "password2": _("Passwords must match.")
-                }
-            )
+                    }
+                )
         return data
 
     @transaction.atomic
     def create(self, validated_data):
-        user = User.objects.create_user(**validated_data)
+        import uuid
+        user_id = str(uuid.uuid4())
+        username = validated_data.get('username')
+        email = validated_data.get('email')
+        password = validated_data.get('password')
+
+        user = User.objects.create_user(
+            user_id=user_id,
+            username=username,
+            email=email,
+            password=password
+        )
         user.set_password(validated_data['password'])
         user.save()
 
         return user
+
+    def update(self, instance, validated_data):
+        """Update a user, setting the password correctly and return it"""
+        password = validated_data.pop('password', None)
+        instance.email = validated_data.get('email', instance.email)
+        instance.username = validated_data.get('username', instance.username)
+
+        if password is not None:
+            instance.set_password(password)
+        instance.save()
+        return instance
 
 
 class AuthTokenSerializer(serializers.Serializer):
@@ -124,13 +155,17 @@ class AuthTokenSerializer(serializers.Serializer):
 
 class VerifyEmailOTPSerializer(serializers.Serializer):
     email = serializers.EmailField(
-        required=True,
+        required=False,
         help_text="User's email address.")
     token = serializers.CharField(
         required=True,
         max_length=6,
         min_length=6,
         help_text="The OTP token to verify.")
+    uidb64 = serializers.CharField(
+        required=False,
+        help_text="User ID encoded in base64."
+    )
 
     def validate(self, data):
         """
@@ -138,37 +173,67 @@ class VerifyEmailOTPSerializer(serializers.Serializer):
         """
         email = data.get('email')
         token = data.get('token')
+        uidb64 = data.get('uidb64')
 
-        # Check if the user exists
-        user = User.objects.filter(email=email).first()
-        if not user:
-            raise serializers.ValidationError({"error": "User not found."})
-
-        # Convert generator to list to handle it properly
-        devices = list(devices_for_user(user, confirmed=False))
-
-        if not devices:
-            raise serializers.ValidationError(
-                {
-                    "error": "No OTP device found for the user."
+        if email:
+            # OTP verification path
+            user = User.objects.filter(email=email).first()
+            if not user:
+                raise serializers.ValidationError(
+                    {
+                        'error': 'User not found.'
                     }
                 )
 
-        # Check the first device
-        device = devices[0]
-        if device.verify_token(token):
-            # If OTP is valid, confirm the device and mark email as verified
-            device.confirmed = True
-            device.save()
-            user.email_verified = True
-            user.totp_secret_key = token
-            user.save()
-            return data
+            # Check if the user exists
+            user = User.objects.filter(email=email).first()
+            if not user:
+                raise serializers.ValidationError({"error": "User not found."})
+
+            # Convert generator to list to handle it properly
+            devices = list(devices_for_user(user, confirmed=False))
+
+            if not devices:
+                raise serializers.ValidationError(
+                    {
+                        "error": "No OTP device found for the user."
+                        }
+                    )
+
+            # Check the first device
+            device = devices[0]
+            if device.verify_token(token):
+                device.confirmed = True
+                device.save()
+                user.email_verified = True
+                user.totp_secret_key = token
+                user.save()
+                return data
+            else:
+                raise serializers.ValidationError(
+                    {
+                        "error": "Invalid OTP or OTP expired."
+                        }
+                    )
+        elif uidb64:
+            # Email link verification path
+            try:
+                uid = force_text(urlsafe_base64_decode(uidb64))
+                user = User.objects.get(pk=uid)
+            except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+                user = None
+
+            if user and default_token_generator.check_token(user, token):
+                user.email_verified = True
+                user.save()
+                return data
+            else:
+                raise serializers.ValidationError(
+                    {
+                        "error": "Invalid token or user does not exist."
+                    }
+                )
         else:
-            raise serializers.ValidationError(
-                {
-                    "error": "Invalid OTP or OTP expired."
-                    }
-                )
+            raise serializers.ValidationError({"error": "Invalid request."})
 
         return data

@@ -40,10 +40,12 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
     'rest_framework',
+    'rest_framework.authtoken',
     'django_otp',
     'django_otp.plugins.otp_static',
     'django_otp.plugins.otp_totp',
@@ -102,7 +104,8 @@ DATABASES = {
 }
 
 AUTHENTICATION_BACKENDS = [
-  'allauth.account.auth_backends.AuthenticationBackend',
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 # Password validation
@@ -155,6 +158,9 @@ REST_FRAMEWORK = {
   'DEFAULT_RENDERER_CLASSES': [
     'rest_framework.renderers.JSONRenderer',
   ],
+  'DEFAULT_AUTHENTICATION_CLASSES': (
+    'rest_framework.authentication.TokenAuthentication',
+  ),
 }
 
 LOGIN_URL = 'two_factor:login'

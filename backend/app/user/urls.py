@@ -17,5 +17,8 @@ urlpatterns = [
         name='detail'),
     path('login/', LoginView.as_view(), name='login'),
     path('verify-email/', VerifyEmailView.as_view(), name='verify_email'),
-    path('me/', ManageUserView.as_view(), name='me'),
+    re_path(
+        r'^account/update/(?P<user_id>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/$',  # noqa
+        ManageUserView.as_view(),
+        name='account_update'),
 ]

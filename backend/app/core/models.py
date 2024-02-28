@@ -54,7 +54,11 @@ class User(AbstractBaseUser, PermissionsMixin):
         primary_key=True,
         max_length=36)
     email = models.EmailField(_('email_address'), unique=True)
-    username = models.CharField(_('username'), max_length=150, unique=True)
+    username = models.CharField(
+        _('username'),
+        max_length=150,
+        unique=True,
+        null=True)
     is_active = models.BooleanField(_('active'), default=True)
     is_staff = models.BooleanField(_('staff status'), default=False)
     otp_attempts = models.IntegerField(default=0)

@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
-from rest_framework.authentication import TokenAuthentication
 from django_otp import devices_for_user  # noqa
 from user.serializers import (UserSerializer,
                               AuthTokenSerializer,
@@ -61,11 +60,10 @@ class VerifyEmailView(APIView):
 class UserDetailView(generics.RetrieveAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserSerializer
-    lookup_field = 'user_id'
 
     def get_object(self):
-        pk = self.kwargs.get('pk')
-        user = get_object_or_404(User, pk=pk)
+        user_id = self.kwargs.get('user_id')
+        user = get_object_or_404(User, user_id=user_id)
         self.check_object_permissions(self.request, user)
         return user
 
@@ -98,14 +96,24 @@ class LoginView(ObtainAuthToken):
 
         else:
             return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
 
 
 # User Management View
-class ManageUserView(generics.RetrieveUpdateAPIView):
+class ManageUserView(generics.GenericAPIView):
     serializer_class = UserSerializer
-    authentication_classes = [TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
-        return self.request.user
+        user_id = self.kwargs.get('user_id')
+        user = get_object_or_404(User, user_id=user_id)
+        self.check_object_permissions(self.request, user)
+        return user
+
+    def patch(self, request, *args, **kwargs):
+        user = self.get_object()
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
