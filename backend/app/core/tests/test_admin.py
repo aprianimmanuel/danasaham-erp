@@ -5,6 +5,7 @@ Test for the Django admin modifications
 from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from core.models import UserProfile
 
 
 class AdminSiteTests(TestCase):
@@ -24,6 +25,13 @@ class AdminSiteTests(TestCase):
             username='adminuser',
             password='adminpass123',
         )
+        cls.user_profile = UserProfile.objects.create(
+            user=cls.user,
+            first_name='Test',
+            last_name='User',
+            phone_number='1234567890',
+            bio='Test Bio'
+        )
 
     def setUp(self):
         """Set up client"""
@@ -35,12 +43,32 @@ class AdminSiteTests(TestCase):
         response = self.client.get(reverse('admin:core_user_changelist'))
         self.assertContains(response, self.user.email)
         self.assertContains(response, self.user.username)
+        self.assertContains(response, 'Test')
+        self.assertContains(response, 'User')
 
     def test_user_search_fields(self):
-        """Test that search fields are properly set for user admin."""
-        response = self.client.get(reverse('admin:core_user_changelist'))
-        self.assertContains(response, 'email')
-        self.assertContains(response, 'username')
+        """Test that search fields are properly set for user admin,
+        including UserProfile fields.
+        """
+        # Searching by email
+        search_response_email = self.client.get(
+            f"{reverse('admin:core_user_changelist')}?q={self.user.email}")
+        self.assertContains(search_response_email, self.user.email)
+
+        # Searching by username
+        search_response_username = self.client.get(
+            f"{reverse('admin:core_user_changelist')}?q={self.user.username}")
+        self.assertContains(search_response_username, self.user.username)
+
+        # Searching by first name
+        search_response_first_name = self.client.get(
+            f"{reverse('admin:core_user_changelist')}?q={self.user_profile.first_name}")  # noqa
+        self.assertContains(search_response_first_name, self.user.email)
+
+        # Searching by last name
+        search_response_last_name = self.client.get(
+            f"{reverse('admin:core_user_changelist')}?q={self.user_profile.last_name}")  # noqa
+        self.assertContains(search_response_last_name, self.user.email)
 
     def test_user_filters(self):
         """Test that filters are properly set for user admin."""
@@ -51,8 +79,12 @@ class AdminSiteTests(TestCase):
 
     def test_user_change_page(self):
         """Test that user change page loads properly."""
-        response = self.client.get(reverse('admin:core_user_change', args=[self.user.user_id]))  # noqa
-        self.assertEqual(response.status_code, 200)
+        url = reverse('admin:core_user_change', args=[self.user.user_id])
+        response = self.client.get(url)
+        self.assertContains(response, 'Test')
+        self.assertContains(response, 'User')
+        self.assertContains(response, '1234567890')
+        self.assertContains(response, 'Test Bio')
 
     def test_create_user_page(self):
         """Test the create user page works."""
