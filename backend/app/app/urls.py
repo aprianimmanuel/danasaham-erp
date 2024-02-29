@@ -27,7 +27,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # django-allauth URLs for authentication
-    path('accounts/', include('allauth.urls')),
+    path('auth0/', include('allauth.urls')),
 
     # DRF spectacular for API schema and documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='api-schema'),

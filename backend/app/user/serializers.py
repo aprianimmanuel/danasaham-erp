@@ -128,7 +128,13 @@ class UserListSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ['user', 'bio', 'phone_number', 'birth_date']
+        fields = [
+            'user',
+            'bio',
+            'phone_number',
+            'birth_date',
+            'first_name',
+            'last_name']
         extra_kwargs = {
             'user': {'read_only': True}
         }

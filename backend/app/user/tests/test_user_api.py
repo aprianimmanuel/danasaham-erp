@@ -256,11 +256,28 @@ class PrivateUserApiTest(TestCase):
             email_verified=True
         )
         self.token, _ = Token.objects.get_or_create(user=self.user)
-        self.update_user_url = reverse(
-            'user:account_update', kwargs={'user_id': self.user.user_id})
-        self.manage_user_url = reverse(
-            'user:detail', kwargs={'user_id': self.user.user_id}
-        )
+
+        # Authenticate the user for all test methods
+        self.client.force_authenticate(user=self.user)
+
+        # Generate URL attributes
+        self.user_detail_url = reverse(
+            'user:detail', kwargs={'user_id': self.user.user_id})
+        self.user_update_url = reverse(
+            'user:update', kwargs={'user_id': self.user.user_id})
+        self.profile_url = reverse(
+            'user:profile', kwargs={'user_id': self.user.user_id})
+        self.TOKEN_OBTAIN_URL = reverse('user:login')
+
+    # Define methods to generate URLs dynamically
+    def user_detail_url(self, user_id):
+        return reverse('user:detail', kwargs={'user_id': user_id})
+
+    def user_update_url(self, user_id):
+        return reverse('user:update', kwargs={'user_id': user_id})
+
+    def profile_url(self, user_id):
+        return reverse('user:profile', kwargs={'user_id': user_id})
 
     def test_login_success(self):
         data = {
@@ -286,25 +303,21 @@ class PrivateUserApiTest(TestCase):
         }
         self.client.post(TOKEN_OBTAIN_URL, data)
         self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
-        response = self.client.get(self.manage_user_url)
+        response = self.client.get(self.user_detail_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['email'], self.user.email)
 
     def test_user_profile_update(self):
-        data = {
-            'email': 'test@example.com',
-            'password': 'Testp@ss!23'
-        }
-        self.client.post(TOKEN_OBTAIN_URL, data)
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
         update_data = {
             'username': 'newusername'
         }
-        response = self.client.patch(self.update_user_url, update_data)
+        response = self.client.patch(self.user_update_url, update_data)
         self.user.refresh_from_db()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(self.user.username, 'newusername')
 
     def test_unauthorized_user_profile_access(self):
-        response = self.client.get(self.manage_user_url)
+        # Use a new APIClient instance to test unauthorized access
+        new_client = APIClient()
+        response = new_client.get(self.user_detail_url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

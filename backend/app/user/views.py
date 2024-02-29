@@ -141,10 +141,13 @@ class UserListView(generics.ListAPIView):
         return super().get(request, *args, **kwargs)
 
 
-class UserProfileDetailView(generics.RetrieveUpdateAPIView):
+class UserProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
-        return self.request.user.profile
+        # Ensures that the request user can only access their profile
+        profile, created = UserProfile.objects.get_or_create(
+            user=self.request.user)
+        return profile
