@@ -117,3 +117,68 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return self.user.username
+
+
+class dttotDoc(models.Model):
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name=_("Created by User")
+    )
+    created_at = models.DateTimeField(
+        _("DTTOT Created at"), auto_now_add=True)
+    updated_at = models.DateTimeField(
+        _("DTTOT Updated at"), auto_now=True)
+    document_id = models.CharField(
+        default=uuid.uuid4,
+        editable=False,
+        max_length=36
+    )
+    dttot_id = models.CharField(
+        default=uuid.uuid4,
+        editable=False,
+        max_length=20)
+    dttot_first_name = models.CharField(
+        _("DTTOT First Name"),
+        max_length=50,
+        blank=True)
+    dttot_last_name = models.CharField(
+        _("DTTOT Last Name"),
+        max_length=50,
+        blank=True)
+    dttot_type = models.CharField(_("DTTOT Type"), max_length=50)
+    dttot_domicile_address1 = models.TextField(
+        _("DTTOT Domicile Address"),
+        blank=True)
+    dttot_domicile_rt = models.IntegerField(
+        _("DTTOT Domicile RT"),
+        blank=True)
+    dttot_domicile_rw = models.IntegerField(
+        _("DTTOT Domicile RW"),
+        blank=True)
+    dttot_domicile_kelurahan = models.CharField(
+        _("DTTOT Domicile Kelurahan"),
+        max_length=50,
+        blank=True)
+    dttot_domicile_kecamatan = models.CharField(
+        _("DTTOT Domicile Kecamatan"),
+        max_length=50,
+        blank=True)
+    dttot_domicile_kabupaten = models.CharField(
+        _("DTTOT Domicile Kabupaten"),
+        max_length=50,
+        blank=True)
+    dttot_domicile_kota = models.CharField(
+        _("DTTOT Domicile Kota"),
+        max_length=50,
+        blank=True)
+    dttot_domicile_provinsi = models.CharField(
+        _("DTTOT Domicile Provinsi"),
+        max_length=50,
+        blank=True)
+    dttot_domicile_postal_code = models.IntegerField(
+        _("DTTOT Domicile Postal code"),
+        blank=True)
+
+    def __str__(self):
+        return f"{self.dttot_first_name} {self.dttot_last_name} - {self.dttot_type}"  # noqa
