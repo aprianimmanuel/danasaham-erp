@@ -28,9 +28,9 @@
 
 ### 3. *User Management:*
 1. **Create a New User:**
-   - **Endpoint:** `POST /api/users/`
+   - **Endpoint:** `POST /create/`
    - **Request Method:** POST
-   - **Request Body:** JSON object containing user information (e.g., email, username, password)
+   - **Request Body:** JSON object containing user information (e.g., email, username, password, password2)
    - **Response:** JSON object containing the newly created user's details or an error message
 
 2. **Get List of All Users:**

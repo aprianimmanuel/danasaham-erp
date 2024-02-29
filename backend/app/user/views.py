@@ -4,13 +4,15 @@ from rest_framework.response import Response
 from django_otp import devices_for_user  # noqa
 from user.serializers import (UserSerializer,
                               AuthTokenSerializer,
-                              VerifyEmailOTPSerializer)
+                              VerifyEmailOTPSerializer,
+                              UserListSerializer,
+                              UserProfileSerializer)
 from rest_framework.authtoken.views import ObtainAuthToken
 from django.shortcuts import get_object_or_404
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
 from django_otp.plugins.otp_email.models import EmailDevice  # noqa
-
+from core.models import UserProfile
 
 User = get_user_model()
 
@@ -117,3 +119,32 @@ class ManageUserView(generics.GenericAPIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserListView(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserListSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request, *args, **kwargs):
+        # Looking for a 'user_id' query parameter to fetch a single user
+        user_id = request.query_params.get('user_id')
+        if user_id is not None:
+            try:
+                user = User.objects.get(pk=user_id)
+                serializer = self.get_serializer(user)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except User.DoesNotExist:
+                return Response(
+                    {"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        # If no specific user requested, proceed with the normal list behavior
+        return super().get(request, *args, **kwargs)
+
+
+class UserProfileDetailView(generics.RetrieveUpdateAPIView):
+    queryset = UserProfile.objects.all()
+    serializer_class = UserProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user.profile

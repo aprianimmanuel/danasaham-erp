@@ -9,6 +9,7 @@ from django_otp.plugins.otp_email.models import EmailDevice  # noqa
 from django.utils.encoding import force_text
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
+from core.models import UserProfile
 
 User = get_user_model()
 
@@ -116,6 +117,21 @@ class UserSerializer(serializers.ModelSerializer):
             instance.set_password(password)
         instance.save()
         return instance
+
+
+class UserListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'user_id', 'username', 'email']
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ['user', 'bio', 'phone_number', 'birth_date']
+        extra_kwargs = {
+            'user': {'read_only': True}
+        }
 
 
 class AuthTokenSerializer(serializers.Serializer):

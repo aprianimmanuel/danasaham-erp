@@ -2,6 +2,8 @@
 
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from datetime import date
+from core.models import UserProfile
 
 
 User = get_user_model()
@@ -67,3 +69,42 @@ class UserModelTest(TestCase):
         self.assertNotEqual(user_with_totp.totp_secret_key, 'mysecretkey123')
         decrypted_key = user_with_totp.get_totp_secret_key()
         self.assertEqual(decrypted_key, 'mysecretkey123')
+
+
+class UserProfileModelTests(TestCase):
+
+    def setUp(self):
+        # Create a user instance to link with UserProfile
+        self.email = 'test@example.com'
+        self.username = 'testuser'
+        self.password = 'Testp@ss!23'
+        self.totp_secret = 'base32secret3232'
+        self.user = User.objects.create_user(
+            email=self.email,
+            username=self.username,
+            password=self.password,
+            totp_secret_key=self.totp_secret
+        )
+
+        # Create a UserProfile instance
+        self.user_profile = UserProfile.objects.create(
+            user=self.user,
+            bio="This is a test bio.",
+            phone_number="1234567890",
+            birth_date=date(1990, 1, 1),
+            first_name='Test',
+            last_name='User'
+        )
+
+    def test_user_profile_creation(self):
+        """Test the user profile is created successfully"""
+        self.assertEqual(self.user_profile.user.username, 'testuser')
+        self.assertEqual(self.user_profile.bio, 'This is a test bio.')
+        self.assertEqual(self.user_profile.phone_number, '1234567890')
+        self.assertEqual(self.user_profile.birth_date, date(1990, 1, 1))
+        self.assertEqual(self.user_profile.first_name, 'Test')
+        self.assertEqual(self.user_profile.last_name, 'User')
+
+    def test_user_profile_str(self):
+        """Test the string representation of the user profile"""
+        self.assertEqual(str(self.user_profile), 'testuser')

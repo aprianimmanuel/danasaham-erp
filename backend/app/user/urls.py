@@ -4,7 +4,8 @@ from user.views import (
     UserDetailView,
     LoginView,
     ManageUserView,
-    VerifyEmailView
+    VerifyEmailView,
+    UserListView
 )
 
 app_name = 'user'
@@ -21,4 +22,5 @@ urlpatterns = [
         r'^account/update/(?P<user_id>[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/$',  # noqa
         ManageUserView.as_view(),
         name='account_update'),
+    path('user/', UserListView.as_view(), name='user-list'),
 ]
