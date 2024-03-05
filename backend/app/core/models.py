@@ -122,7 +122,8 @@ class UserProfile(models.Model):
 class dttotDoc(models.Model):
     input_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
         verbose_name=_("Created by User")
     )
     updated_at = models.DateTimeField(

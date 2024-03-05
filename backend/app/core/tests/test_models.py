@@ -182,7 +182,7 @@ class DttotDocModelTest(TestCase):
 
     def test_user_deletion_cascade(self):
         # Test dttotDoc instances are deleted when the related User is deleted
-        user_id = self.test_user.user_id
         self.test_user.delete()
-        with self.assertRaises(dttotDoc.DoesNotExist):
-            dttotDoc.objects.get(input_by=user_id)
+        dttot_doc_instance = dttotDoc.objects.get(
+            dttot_id=self.dttot_doc.dttot_id)
+        self.assertIsNone(dttot_doc_instance.input_by)
