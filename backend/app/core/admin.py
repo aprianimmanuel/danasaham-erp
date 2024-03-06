@@ -5,7 +5,7 @@ Django admin customization
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext as _
-from .models import User, UserProfile
+from .models import User, UserProfile, dttotDoc
 from django.utils import timezone
 
 
@@ -68,4 +68,32 @@ class UserAdmin(BaseUserAdmin):
     custom_last_login.short_description = _('Last Login (GMT+7)')
 
 
+class DttotDocAdmin(admin.ModelAdmin):
+    list_display = (
+        'document_id',
+        'dttot_id',
+        'dttot_type',
+        'display_username',
+        'updated_at'
+    )
+    search_fields = (
+        'document_id',
+        'dttot_id',
+        'dttot_type',
+        '_dttot_first_name',
+        '_dttot_last_name',
+        'input_by__username'
+    )
+    list_filter = (
+        'dttot_type',
+        'updated_at'
+    )
+    readonly_fields = ('document_id', 'dttot_id')
+
+    def display_username(self, obj):
+        return obj.input_by.username
+    display_username.short_description = 'username'
+
+
 admin.site.register(User, UserAdmin)
+admin.site.register(dttotDoc, DttotDocAdmin)

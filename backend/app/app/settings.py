@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'two_factor.plugins.phonenumber',
     'drf_spectacular',
     'formtools',
+    'dttotDoc',
 ]
 
 MIDDLEWARE = [

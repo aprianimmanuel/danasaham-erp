@@ -40,4 +40,7 @@ urlpatterns = [
     # User API
     path('api/user/', include('user.urls')),
 
+    # DTTOT Document API
+    path('api/', include('dttotDoc.urls')),
+
 ]
