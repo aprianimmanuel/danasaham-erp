@@ -1,153 +1,56 @@
-from django.contrib.auth import get_user_model
-from rest_framework import generics, permissions, status
-from rest_framework.response import Response
-from django_otp import devices_for_user  # noqa
-from user.serializers import (UserSerializer,
-                              AuthTokenSerializer,
-                              VerifyEmailOTPSerializer,
-                              UserListSerializer,
-                              UserProfileSerializer)
-from rest_framework.authtoken.views import ObtainAuthToken
-from django.shortcuts import get_object_or_404
-from rest_framework.authtoken.models import Token
-from rest_framework.views import APIView
-from django_otp.plugins.otp_email.models import EmailDevice  # noqa
-from core.models import UserProfile
-
-User = get_user_model()
+from dj_rest_auth.views import UserDetailsView as BaseUserDetailsView
+from user.serializers import (
+    CustomUserDetailsSerializer,
+    CustomRegisterSerializer)
+from dj_rest_auth.registration.views import RegisterView
+from dj_rest_auth.views import PasswordResetView as DjRestAuthPasswordResetView
+from django.urls import reverse
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from dj_rest_auth.views import PasswordResetConfirmView as DjRestAuthPasswordConfirmView  # noqa
+from dj_rest_auth.app_settings import api_settings
+from rest_framework.permissions import AllowAny
 
 
-# User Creation View
-class CreateUserView(generics.CreateAPIView):
-    serializer_class = UserSerializer
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            # OTP setup and verification logic is handled within the serializer
-            return Response({
-                "user_id": user.user_id,
-                "email": user.email,
-                "username": user.username,
-                "email_verified": user.email_verified,
-                "message": "User created successfully. Please check your email to verify."  # noqa
-            }, status=status.HTTP_201_CREATED)
-        else:
-            return Response(
-                serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class CustomUserDetailsView(BaseUserDetailsView):
+    serializer_class = CustomUserDetailsSerializer
 
 
-# OTP Verification View
-class VerifyEmailView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request, *args, **kwargs):
-        serializer = VerifyEmailOTPSerializer(data=request.data)
-        if serializer.is_valid():
-            # If serializer is valid, OTP verification was successful
-            return Response(
-                {
-                    "message": "Email verified successfully."},
-                status=status.HTTP_200_OK
-            )
-        else:
-            # If serializer is not valid, return the errors
-            return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST)
+class CustomRegisterView(RegisterView):
+    serializer_class = CustomRegisterSerializer
 
 
-class UserDetailView(generics.RetrieveAPIView):
-    permission_classes = [permissions.IsAuthenticated]
-    serializer_class = UserSerializer
+def custom_url_generator(self, request, temp_key):
+    uid = urlsafe_base64_encode(force_bytes(self.user))
+    token = temp_key
 
-    def get_object(self):
-        user_id = self.kwargs.get('user_id')
-        user = get_object_or_404(User, user_id=user_id)
-        self.check_object_permissions(self.request, user)
-        return user
+    path = reverse(
+        'password_reset_confirm',
+        kwargs={
+            'uidb64': uid,
+            'token': token
+        }
+    )
+    return request.build_absolute_uri(path)
 
 
-class LoginView(ObtainAuthToken):
-    serializer_class = AuthTokenSerializer
+class CustomPasswordResetView(DjRestAuthPasswordResetView):
+
+    def get_email_options(self):
+        """
+        Return the email options including the custom URL generator.
+        """
+        return {
+            "url_generator": custom_url_generator,
+        }
+
+
+class CustomPasswordResetConfirmView(DjRestAuthPasswordConfirmView):
+    permission_classes = (AllowAny,)
+    serializer_class = api_settings.PASSWORD_RESET_CONFIRM_SERIALIZER
 
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(
-            data=request.data,
-            context={'request': request})
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-
-            # Email verification check
-            if not user.email_verified:
-                return Response(
-                    {"error": "Email not verified. Please verify your email first."},  # noqa
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
-
-            # Generate auth token for successfully authenticated users
-            token, created = Token.objects.get_or_create(user=user)
-            return Response({
-                'token': token.key,
-                'user_id': user.user_id,
-                'email': user.email,
-                'username': user.username
-            })
-
-        else:
-            return Response(
-                serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
-
-
-# User Management View
-class ManageUserView(generics.GenericAPIView):
-    serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_object(self):
-        user_id = self.kwargs.get('user_id')
-        user = get_object_or_404(User, user_id=user_id)
-        self.check_object_permissions(self.request, user)
-        return user
-
-    def patch(self, request, *args, **kwargs):
-        user = self.get_object()
-        serializer = self.get_serializer(user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class UserListView(generics.ListAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserListSerializer
-    permission_classes = [permissions.IsAdminUser]
-
-    def get(self, request, *args, **kwargs):
-        # Looking for a 'user_id' query parameter to fetch a single user
-        user_id = request.query_params.get('user_id')
-        if user_id is not None:
-            try:
-                user = User.objects.get(pk=user_id)
-                serializer = self.get_serializer(user)
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            except User.DoesNotExist:
-                return Response(
-                    {"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
-        # If no specific user requested, proceed with the normal list behavior
-        return super().get(request, *args, **kwargs)
-
-
-class UserProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = UserProfile.objects.all()
-    serializer_class = UserProfileSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_object(self):
-        # Ensures that the request user can only access their profile
-        profile, created = UserProfile.objects.get_or_create(
-            user=self.request.user)
-        return profile
+        # Call the parent method, which handles the password reset confirmation
+        response = super().post(request, *args, **kwargs)
+        # Custom response or additional actions after successful password reset
+        return response

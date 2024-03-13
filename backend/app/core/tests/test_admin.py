@@ -19,7 +19,7 @@ class AdminSiteTests(TestCase):
         cls.user = get_user_model().objects.create_user(
             email='test@example.com',
             username='testuser',
-            password='testpass123',
+            password='Testp@ss!23',
         )
 
         cls.admin_user = get_user_model().objects.create_superuser(

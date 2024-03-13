@@ -3,321 +3,223 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
-from unittest.mock import patch, MagicMock
-from django_otp.plugins.otp_email.models import EmailDevice  # noqa
-from django_otp import devices_for_user  # noqa
-from django_otp.oath import totp
-import uuid  # noqa
-from rest_framework.authtoken.models import Token
+from core.models import UserProfile
+from unittest.mock import patch
+from django.core import mail
 
 User = get_user_model()
-CREATE_USER_URL = reverse('user:create')
-TOKEN_OBTAIN_URL = reverse('user:login')
-VERIFY_EMAIL_URL = reverse('user:verify_email')
 
 
-class MockQuerySet:
-    def __init__(self, *args):
-        self._items = list(args)
-
-    def filter(self, **kwargs):
-        filtered_items = [
-            item for item in self._items if all(getattr(item, k) == v for k, v in kwargs.items())   # noqa
-        ]
-        return MockQuerySet(*filtered_items)
-
-    def all(self):
-        return self
-
-    def first(self):
-        return self._items[0] if self._items else None
-
-    def last(self):
-        return self._items[-1] if self._items else None
-
-    def exists(self):
-        return bool(self._items)
-
-    def count(self):
-        return len(self._items)
-
-    def __getitem__(self, key):
-        return self._items[key]
-
-    def __iter__(self):
-        return iter(self._items)
-
-    def __len__(self):
-        return len(self._items)
-
-
-class PublicUserAPITest(TestCase):
+class PublicUserAPITests(TestCase):
 
     def setUp(self):
         self.client = APIClient()
-        self.user_data = {
-            'user_id': str(uuid.uuid4()),
-            'email': 'test@example.com',
-            'username': 'testuser',
-            'password': 'Testp@ss!23',
-            'password2': 'Testp@ss!23',
-        }
+        self.registration_url = reverse('rest_register')
 
-    @patch('django_otp.devices_for_user')
-    def test_create_user_success(self, mocked_devices_for_user):
+    def test_user_registration_valid(self):
         """
-        Test creating a new user with a mocked OTP email setup.
+        Test registering a user with valid data is successful.
         """
-        data = {
-            'user_id': str(uuid.uuid4()),
-            'email': 'test@example.com',
-            'username': 'testuser',
-            'password': 'Testp@ss!23',
-            'password2': 'Testp@ss!23',
+        user_data = {
+            'username': 'newuser',
+            'email': 'newuser@example.com',
+            'password1': 'Testpass!123',
+            'password2': 'Testpass!123',
         }
-
-        # Set up MagicMock to simulate QuerySet behavior
-        mock_device = MagicMock(spec=EmailDevice)
-        mock_device.verify_token.return_value = True
-        mock_queryset = MagicMock()
-        mock_queryset.filter.return_value = [mock_device]
-
-        # Use MockQuerySet to simulate queryset behavior
-        mocked_devices_for_user.return_value = MockQuerySet(mock_device)
-
-        response = self.client.post(CREATE_USER_URL, data)
-
+        response = self.client.post(self.registration_url, user_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_password_too_short_error(self):
-        """Test creating a user with a password that is too short"""
-        data = {
-            'user_id': str(uuid.uuid4()),
-            'email': 'test@example.com',
-            'username': 'testuser',
-            'password': 'pw',
-            'password2': 'pw',
+    def test_user_registration_password_mismatch(self):
+        """
+        Test registering a user with passwords that do not match fails.
+        """
+        user_data = {
+            'username': 'mismatch',
+            'email': 'mismatch@example.com',
+            'password1': 'Testpass!123',
+            'password2': 'Testpass!124',
         }
-        response = self.client.post(CREATE_USER_URL, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('password', response.data)
+        response = self.client.post(self.registration_url, user_data)
+        self.assertNotEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_create_user_invalid_data(self):
-        """Test creating a new user with invalid data"""
-        invalid_data = [
-            {
-                'user_id': str(uuid.uuid4()),
-                'email': '',
-                'username': 'testuser',
-                'password': 'Testp@ss!23',
-                'password2': 'Testp@ss!23'},
-            {
-                'user_id': str(uuid.uuid4()),
-                'email': 'invalidemail',
-                'username': 'testuser',
-                'password': 'Testp@ss!23',
-                'password2': 'Testp@ss!23'},
-            {
-                'user_id': str(uuid.uuid4()),
-                'email': 'test@example.com',
-                'username': '',
-                'password': 'Testp@ss!23',
-                'password2': 'Testp@ss!23'},
-            {
-                'user_id': str(uuid.uuid4()),
-                'email': 'test@example.com',
-                'username': 'testuser',
-                'password': '',
-                'password2': ''},
-            {
-                'user_id': str(uuid.uuid4()),
-                'email': 'test@example.com',
-                'username': 'test_user#1',
-                'password': 'Testp@ss!23',
-                'password2': 'Testp@ss!23'},
-        ]
-
-        for data in invalid_data:
-            response = self.client.post(CREATE_USER_URL, data)
-            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-        for key in data:
-            if key in response.data:
-                self.assertIn(key, response.data)
-
-            user_exists = User.objects.filter(email=data.get('email', '')).exists()  # noqa
-            self.assertFalse(user_exists, f"User should not be created with data: {data}")  # noqa
-
-    def test_create_user_duplicate_fields(self):
-        """Test creating a new user with duplicate email or username"""
-        data = {
-            'user_id': str(uuid.uuid4()),
-            'email': 'test@example.com',
-            'username': 'testuser',
-            'password': 'Testp@ss!23',
-            'password2': 'Testp@ss!23',
+    def test_user_registration_short_password(self):
+        """
+        Test registering a user with a short password fails.
+        """
+        user_data = {
+            'username': 'shortpassword',
+            'email': 'shortpass@example.com',
+            'password1': 'short',
+            'password2': 'short',
         }
-        create_user_response = self.client.post(CREATE_USER_URL, data)
-        self.assertEqual(create_user_response.status_code, status.HTTP_201_CREATED)  # noqa
+        response = self.client.post(self.registration_url, user_data)
+        self.assertNotEqual(response.status_code, status.HTTP_201_CREATED)
 
-        duplicate_email_data = {
-            'user_id': str(uuid.uuid4()),
-            'email': 'test@example.com',
-            'username': 'testuser2',
-            'password': 'Testp@ss!23',
-            'password2': 'Testp@ss!23',
+    def test_user_registration_no_email(self):
+        """
+        Test registering a user without an email fails.
+        """
+        user_data = {
+            'username': 'noemail',
+            'password1': 'Testpass!123',
+            'password2': 'Testpass!123',
         }
-        duplicate_email_response = self.client.post(CREATE_USER_URL,
-                                                    duplicate_email_data)
-        self.assertEqual(duplicate_email_response.status_code,
-                         status.HTTP_400_BAD_REQUEST)
-        self.assertIn('email', duplicate_email_response.data)
+        response = self.client.post(self.registration_url, user_data)
+        self.assertNotEqual(response.status_code, status.HTTP_201_CREATED)
 
-        duplicate_username_data = {
-            'user_id': str(uuid.uuid4()),
-            'email': 'test1@example.com',
-            'username': 'testuser',
-            'password': 'Testp@ss!23',
-            'password2': 'Testp@ss!23',
+    def test_user_registration_existing_username(self):
+        """
+        Test registering a user with an existing username fails.
+        """
+        user_data_1 = {
+            'username': 'uniqueuser',
+            'email': 'uniqueuser1@example.com',
+            'password1': 'Testpass!123',
+            'password2': 'Testpass!123',
         }
-        duplicate_username_response = self.client.post(CREATE_USER_URL,
-                                                       duplicate_username_data)
-        self.assertEqual(duplicate_username_response.status_code,
-                         status.HTTP_400_BAD_REQUEST)
-        self.assertIn('username', duplicate_username_response.data)
-
-    def test_create_user_missing_required_fields(self):
-        """Test creating a new user with missing required fields"""
-        data = {
-            'user_id': str(uuid.uuid4()),
-            'email': '',
-            'username': '',
-            'password': '',
-            'password2': '',
+        user_data_2 = {
+            'username': 'uniqueuser',
+            'email': 'uniqueuser2@example.com',
+            'password1': 'Testpass!123',
+            'password2': 'Testpass!123',
         }
-        response = self.client.post(CREATE_USER_URL, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.client.post(self.registration_url, user_data_1)
+        response = self.client.post(self.registration_url, user_data_2)
+        self.assertNotEqual(response.status_code, status.HTTP_201_CREATED)
 
-    def test_create_user_password_mismatch(self):
-        """Test creating a new user with password confirmation mismatch"""
-        data = {
-            'user_id': str(uuid.uuid4()),
-            'email': 'test@example.com',
-            'username': 'testuser',
-            'password': 'Testp@ss!23',
-            'password2': 'Testp@ss!24',
+    def test_user_registration_existing_email(self):
+        """
+        Test registering a user with an existing email fails.
+        """
+        user_data_1 = {
+            'username': 'useremail1',
+            'email': 'sameemail@example.com',
+            'password1': 'Testpass!23',
+            'password2': 'Testpass!23',
         }
-        response = self.client.post(CREATE_USER_URL, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('password2', response.data)
-
-    def create_user_and_device(self):
-        # Create a user
-        response = self.client.post(CREATE_USER_URL, self.user_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        # Retrieve the created user
-        user = User.objects.get(email=self.user_data['email'])
-        # Create an EmailDevice for OTP
-        device = EmailDevice.objects.create(user=user, confirmed=False)
-        return user, device
-
-    def test_email_verification_success(self):
-        user, device = self.create_user_and_device()
-        # Generate a valid OTP token
-        valid_token = totp(device.bin_key, step=30)
-        verification_data = {
-            'email': user.email,
-            'token': valid_token,
+        user_data_2 = {
+            'username': 'useremail2',
+            'email': 'sameemail@example.com',
+            'password1': 'Testpass!23',
+            'password2': 'Testpass!23',
         }
-        response = self.client.post(VERIFY_EMAIL_URL, verification_data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        user.refresh_from_db()
-        self.assertTrue(user.email_verified)
-
-    def test_verify_email_user_not_found(self):
-        data = {
-            'email': 'nonexistence@example.com',
-            'token': '123456'
-        }
-        response = self.client.post(VERIFY_EMAIL_URL, data)
-        self.assertEqual(
-            response.status_code,
-            status.HTTP_400_BAD_REQUEST)
-        self.assertIn('error', response.data)
+        self.client.post(self.registration_url, user_data_1)
+        response = self.client.post(self.registration_url, user_data_2)
+        self.assertNotEqual(response.status_code, status.HTTP_201_CREATED)
 
 
-class PrivateUserApiTest(TestCase):
+class PrivateUserAPITests(TestCase):
     def setUp(self):
-        self.client = APIClient()
         self.user = User.objects.create_user(
             email='test@example.com',
             username='testuser',
-            password='Testp@ss!23',
-            email_verified=True
+            password='Testpass!23'
         )
-        self.token, _ = Token.objects.get_or_create(user=self.user)
-
-        # Authenticate the user for all test methods
+        self.user_profile = UserProfile.objects.create(
+            user=self.user,
+            first_name='TestName',
+            last_name='TestSurname')
+        self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
-        # Generate URL attributes
-        self.user_detail_url = reverse(
-            'user:detail', kwargs={'user_id': self.user.user_id})
-        self.user_update_url = reverse(
-            'user:update', kwargs={'user_id': self.user.user_id})
-        self.profile_url = reverse(
-            'user:profile', kwargs={'user_id': self.user.user_id})
-        self.TOKEN_OBTAIN_URL = reverse('user:login')
+    def test_user_profile_retrieve(self):
+        profile_url = reverse('rest_details')
+        response = self.client.get(profile_url)
 
-    # Define methods to generate URLs dynamically
-    def user_detail_url(self, user_id):
-        return reverse('user:detail', kwargs={'user_id': user_id})
+        print("Response Data:", response.data)
 
-    def user_update_url(self, user_id):
-        return reverse('user:update', kwargs={'user_id': user_id})
-
-    def profile_url(self, user_id):
-        return reverse('user:profile', kwargs={'user_id': user_id})
-
-    def test_login_success(self):
-        data = {
-            'email': 'test@example.com',
-            'password': 'Testp@ss!23',
-        }
-        response = self.client.post(TOKEN_OBTAIN_URL, data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['token'], self.token.key)
-
-    def test_login_unsuccesful(self):
-        data = {
-            'email': 'test@example.com',
-            'password': 'wrongpassword',
-        }
-        response = self.client.post(TOKEN_OBTAIN_URL, data)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_user_profile_access(self):
-        data = {
-            'email': 'test@example.com',
-            'password': 'Testp@ss!23',
-        }
-        self.client.post(TOKEN_OBTAIN_URL, data)
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
-        response = self.client.get(self.user_detail_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['email'], self.user.email)
+        self.assertEqual(response.data['username'], self.user.username)
+        self.assertEqual(
+            response.data.get(
+                'first_name'
+            ), self.user_profile.first_name)
 
     def test_user_profile_update(self):
-        update_data = {
-            'username': 'newusername'
-        }
-        response = self.client.patch(self.user_update_url, update_data)
-        self.user.refresh_from_db()
+        profile_url = reverse('rest_details')
+        update_data = {'first_name': 'NewName'}
+        response = self.client.patch(profile_url, update_data)
+        self.user_profile.refresh_from_db()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(self.user.username, 'newusername')
+        self.assertEqual(self.user_profile.first_name, 'NewName')
 
-    def test_unauthorized_user_profile_access(self):
-        # Use a new APIClient instance to test unauthorized access
-        new_client = APIClient()
-        response = new_client.get(self.user_detail_url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    def test_user_change_password(self):
+        change_password_url = reverse('rest_password_change')
+        password_data = {
+            'old_password': 'Testpass!23',
+            'new_password1': 'NewTestpass!123',
+            'new_password2': 'NewTestpass!123',
+        }
+        response = self.client.post(change_password_url, password_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch('dj_rest_auth.registration.views.ConfirmEmailView.get_object')
+    def test_user_email_verification(self, mock_get_object):
+        mock_confirm = mock_get_object.return_value
+        mock_confirm.confirm.return_value = True
+        email_verification_url = reverse('rest_verify_email')
+        response = self.client.post(
+            email_verification_url,
+            {
+                'key': 'dummy-key'
+                }
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_user_password_reset(self):
+        password_reset_url = reverse('rest_password_reset')
+        reset_data = {'email': self.user.email}
+        response = self.client.post(password_reset_url, reset_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_password_reset_confirmation(self):
+        # Request a password reset (this should trigger an email to be sent)
+        self.client.post(
+            reverse('rest_password_reset'), {'email': self.user.email})
+
+        # Ensure an email has been sent
+        self.assertEqual(len(mail.outbox), 1)
+
+        # Extract the password reset token and uidb64 from the email
+        email_body = mail.outbox[0].body
+
+        import re
+        reset_link_pattern = re.compile(
+            r'http://testserver(/api/user/password/reset/confirm/(?P<uidb64>[0-9a-f-]+)/(?P<token>[0-9A-Za-z-]+)/)')  # noqa
+        match = reset_link_pattern.search(email_body)
+
+        print("Email Body:", email_body)  # Debugging print
+
+        if not match:
+            self.fail("Reset URL not found in email body.")
+
+        uidb64, token = match.group('uidb64'), match.group('token')
+
+        # Prepare data for password reset confirmation
+        post_data = {
+            'uid': uidb64,
+            'token': token,
+            'new_password1': 'NewPassword123',
+            'new_password2': 'NewPassword123',
+        }
+        # Construct URL for password reset confirmation
+        confirm_url = f"/api/user/password/reset/confirm/{uidb64}/{token}/"
+
+        # Make the POST request
+        response = self.client.post(confirm_url, post_data)
+
+        # Assert response status
+        self.assertEqual(
+            response.status_code, status.HTTP_200_OK,
+            f"Response content: {response.content}")
+
+        # Verify the user's password was updated
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('NewPassword123'))
+
+    def test_unauthorized_access(self):
+        self.client.logout()
+        profile_url = reverse('rest_details')
+        response = self.client.get(profile_url)
+        self.assertNotEqual(response.status_code, status.HTTP_200_OK)

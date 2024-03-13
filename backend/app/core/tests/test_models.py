@@ -17,21 +17,16 @@ class UserModelTest(TestCase):
         self.email = 'test@example.com'
         self.username = 'testuser'
         self.password = 'Testp@ss!23'
-        self.totp_secret = 'base32secret3232'
         self.user = User.objects.create_user(
             email=self.email,
             username=self.username,
             password=self.password,
-            totp_secret_key=self.totp_secret
         )
 
     def test_create_user_with_email_successful(self):
         """Test creating a user with an email is successful."""
         self.assertEqual(self.user.email, self.email)
         self.assertTrue(self.user.check_password(self.password))
-        # Ensure the totp_secret_key gets encrypted and can be decrypted
-        decrypted_totp = self.user.get_totp_secret_key()
-        self.assertEqual(decrypted_totp, self.totp_secret)
 
     def test_create_superuser(self):
         """Test creating a superuser."""
@@ -60,18 +55,6 @@ class UserModelTest(TestCase):
         self.assertTrue(hasattr(self.user, 'user_id'))
         self.assertIsNotNone(self.user.user_id)
 
-    def test_totp_secret_key_encryption(self):
-        """Test that the TOTP secret key is encrypted."""
-        user_with_totp = User.objects.create_user(
-            email='totpuser@example.com',
-            username='totpuser',
-            password='Testp@ss!23',
-            totp_secret_key='mysecretkey123'
-        )
-        self.assertNotEqual(user_with_totp.totp_secret_key, 'mysecretkey123')
-        decrypted_key = user_with_totp.get_totp_secret_key()
-        self.assertEqual(decrypted_key, 'mysecretkey123')
-
 
 class UserProfileModelTests(TestCase):
 
@@ -80,12 +63,10 @@ class UserProfileModelTests(TestCase):
         self.email = 'test@example.com'
         self.username = 'testuser'
         self.password = 'Testp@ss!23'
-        self.totp_secret = 'base32secret3232'
         self.user = User.objects.create_user(
             email=self.email,
             username=self.username,
             password=self.password,
-            totp_secret_key=self.totp_secret
         )
 
         # Create a UserProfile instance
