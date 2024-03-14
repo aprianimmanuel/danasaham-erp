@@ -3,9 +3,12 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from datetime import date
-from core.models import UserProfile, dttotDoc
+from core.models import UserProfile, dttotDoc, Document
 from cryptography.fernet import Fernet
 import os
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.conf import settings
+from tempfile import TemporaryDirectory
 
 
 User = get_user_model()
@@ -167,3 +170,97 @@ class DttotDocModelTest(TestCase):
         dttot_doc_instance = dttotDoc.objects.get(
             dttot_id=self.dttot_doc.dttot_id)
         self.assertIsNone(dttot_doc_instance.input_by)
+
+
+class DocumentModelTests(TestCase):
+
+    @classmethod
+    def setUpTestData(cls):
+        # Set up non-modified objects used by all test methods
+        cls.user = User.objects.create_user(
+            email='test@example.com',
+            username='testuser',
+            password='Testp@ss!23'
+        )
+
+    def setUp(self):
+        # Create a temporary directory for media files
+        self.media_root = TemporaryDirectory(dir=settings.BASE_DIR)
+        settings.MEDIA_ROOT = self.media_root.name
+
+    def tearDown(self):
+        # Delete the temporary directory after the test
+        self.media_root.cleanup()
+
+    def test_document_creation(self):
+        """Test the document model can be created successfully."""
+        document = Document.objects.create(
+            document_name='Test Document',
+            description='A test document description.',
+            document_type='Type1',
+            created_by=self.user,
+            updated_by=self.user
+        )
+        self.assertEqual(document.document_name, 'Test Document')
+        self.assertEqual(document.description, 'A test document description.')
+        self.assertEqual(document.document_type, 'Type1')
+        self.assertEqual(document.created_by, self.user)
+        self.assertEqual(document.updated_by, self.user)
+
+    def test_document_str(self):
+        """Test the document string representation."""
+        document = Document.objects.create(
+            document_name='Test Document',
+            description='A test document description.',
+            document_type='Type1',
+            created_by=self.user,
+            updated_by=self.user
+        )
+        self.assertEqual(str(document), 'Test Document')
+
+    def upload_document_test_helper(self, filename, content, document_type):
+        """Helper function to test document uploads."""
+        upload_file = SimpleUploadedFile(
+            name=filename,
+            content=content,
+            content_type='application/octet-stream')
+        document = Document.objects.create(
+            document_name=filename,
+            document_file=upload_file,
+            document_type=document_type,
+            created_by=self.user,
+            updated_by=self.user
+        )
+        self.assertTrue(os.path.exists(document.document_file.path))
+        # Clean up file after test
+        document.document_file.delete()
+
+    def test_document_upload_pdf(self):
+        """Test uploading a PDF file."""
+        self.upload_document_test_helper(
+            'test.pdf', b'PDF file content', 'PDF')
+
+    def test_document_upload_xls(self):
+        """Test uploading an XLS file."""
+        self.upload_document_test_helper(
+            'test.xls', b'XLS file content', 'XLS')
+
+    def test_document_upload_csv(self):
+        """Test uploading a CSV file."""
+        self.upload_document_test_helper(
+            'test.csv', b'CSV,Content', 'CSV')
+
+    def test_document_update(self):
+        """Test updating an existing document's metadata."""
+        document = Document.objects.create(
+            document_name='Initial Name',
+            document_type='Initial Type',
+            created_by=self.user,
+            updated_by=self.user
+        )
+        document.document_name = 'Updated Name'
+        document.document_type = 'Updated Type'
+        document.save()
+        updated_document = Document.objects.get(pk=document.pk)
+        self.assertEqual(updated_document.document_name, 'Updated Name')
+        self.assertEqual(updated_document.document_type, 'Updated Type')

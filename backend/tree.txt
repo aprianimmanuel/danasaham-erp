@@ -6,7 +6,8 @@
 │   │   ├── __pycache__
 │   │   │   ├── __init__.cpython-39.pyc
 │   │   │   ├── settings.cpython-39.pyc
-│   │   │   └── urls.cpython-39.pyc
+│   │   │   ├── urls.cpython-39.pyc
+│   │   │   └── wsgi.cpython-39.pyc
 │   │   ├── asgi.py
 │   │   ├── settings.py
 │   │   ├── urls.py
@@ -53,6 +54,10 @@
 │   │   │   ├── 0020_alter_dttotdoc_dttot_domicile_postal_code.py
 │   │   │   ├── 0021_auto_20240305_0432.py
 │   │   │   ├── 0022_alter_dttotdoc_input_by.py
+│   │   │   ├── 0023_auto_20240307_0701.py
+│   │   │   ├── 0024_alter_user_email.py
+│   │   │   ├── 0025_alter_user_email.py
+│   │   │   ├── 0026_alter_userprofile_last_name.py
 │   │   │   ├── __init__.py
 │   │   │   └── __pycache__
 │   │   │       ├── 0001_initial.cpython-39.pyc
@@ -77,6 +82,10 @@
 │   │   │       ├── 0020_alter_dttotdoc_dttot_domicile_postal_code.cpython-39.pyc
 │   │   │       ├── 0021_auto_20240305_0432.cpython-39.pyc
 │   │   │       ├── 0022_alter_dttotdoc_input_by.cpython-39.pyc
+│   │   │       ├── 0023_auto_20240307_0701.cpython-39.pyc
+│   │   │       ├── 0024_alter_user_email.cpython-39.pyc
+│   │   │       ├── 0025_alter_user_email.cpython-39.pyc
+│   │   │       ├── 0026_alter_userprofile_last_name.cpython-39.pyc
 │   │   │       └── __init__.cpython-39.pyc
 │   │   ├── models.py
 │   │   └── tests
@@ -94,11 +103,19 @@
 │   │   ├── __pycache__
 │   │   │   ├── __init__.cpython-39.pyc
 │   │   │   ├── apps.cpython-39.pyc
-│   │   │   └── urls.cpython-39.pyc
+│   │   │   ├── serializers.cpython-39.pyc
+│   │   │   ├── urls.cpython-39.pyc
+│   │   │   └── views.cpython-39.pyc
 │   │   ├── apps.py
 │   │   ├── serializers.py
+│   │   ├── tasks.py
 │   │   ├── tests
+│   │   │   ├── test_dttotDoc_api.py
+│   │   │   └── test_etl.py
 │   │   ├── urls.py
+│   │   ├── utils
+│   │   │   ├── __init__.py
+│   │   │   └── data_cleaning.py
 │   │   └── views.py
 │   ├── manage.py
 │   └── user
@@ -118,7 +135,6 @@
 │       │   │   ├── __init__.cpython-39.pyc
 │       │   │   └── test_user_api.cpython-39.pyc
 │       │   └── test_user_api.py
-│       ├── urls.py
 │       └── views.py
 ├── docker-compose.yml
 ├── env-test.toml
@@ -126,4 +142,4 @@
 ├── requirements.txt
 └── tree.txt
 
-20 directories, 106 files
+21 directories, 121 files

@@ -103,6 +103,36 @@ class UserProfile(models.Model):
         return self.user.username
 
 
+class Document(models.Model):
+    document_name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    document_file = models.FileField(upload_to='documents/', blank=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+    document_id = models.CharField(
+        default=uuid.uuid4,
+        editable=False,
+        primary_key=True,
+        max_length=36
+    )
+    document_type = models.CharField(
+        _("Document Type"), max_length=50)
+    updated_date = models.DateTimeField(
+        _("Date when Document modified"), auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="created_documents")
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="updated_documents")
+
+    def __str__(self):
+        return self.document_name
+
+
 class dttotDoc(models.Model):
     input_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -112,6 +142,7 @@ class dttotDoc(models.Model):
     )
     updated_at = models.DateTimeField(
         _("DTTOT Updated at"), auto_now=True)
+
     document_id = models.CharField(
         default=uuid.uuid4,
         editable=False,

@@ -72,9 +72,6 @@ urlpatterns = [
         ),
         name='api-docs'),
 
-    # DTTOT Document API and any other app-specific URLs
-    path('api/dttotdoc/', include('dttotDoc.urls')),
-
     # Custom password reset confirm URL
     path(
         'api/user/password/reset/confirm/<uidb64>/<token>/',
