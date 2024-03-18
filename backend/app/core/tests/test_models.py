@@ -1,6 +1,6 @@
 """Tests for models"""
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
 from datetime import date
 from core.models import UserProfile, dttotDoc, Document
@@ -172,6 +172,9 @@ class DttotDocModelTest(TestCase):
         self.assertIsNone(dttot_doc_instance.input_by)
 
 
+@override_settings(
+    MEDIA_ROOT=os.path.join(
+        settings.BASE_DIR, 'media', 'test_media'))
 class DocumentModelTests(TestCase):
 
     @classmethod
@@ -184,13 +187,15 @@ class DocumentModelTests(TestCase):
         )
 
     def setUp(self):
-        # Create a temporary directory for media files
-        self.media_root = TemporaryDirectory(dir=settings.BASE_DIR)
-        settings.MEDIA_ROOT = self.media_root.name
+        # Ensure the base directory for temporary media files exists
+        documents_media_base_dir = os.path.join(
+            settings.BASE_DIR, 'media', 'test_media')
+        os.makedirs(documents_media_base_dir, exist_ok=True)
 
-    def tearDown(self):
-        # Delete the temporary directory after the test
-        self.media_root.cleanup()
+        # Now create the TemporaryDirectory within the ensured base directory
+        self.media_root = TemporaryDirectory(dir=documents_media_base_dir)
+        self.original_media_root = settings.MEDIA_ROOT
+        settings.MEDIA_ROOT = self.media_root.name
 
     def test_document_creation(self):
         """Test the document model can be created successfully."""
@@ -264,3 +269,9 @@ class DocumentModelTests(TestCase):
         updated_document = Document.objects.get(pk=document.pk)
         self.assertEqual(updated_document.document_name, 'Updated Name')
         self.assertEqual(updated_document.document_type, 'Updated Type')
+
+    def tearDown(self):
+        # Clean up the temporary directory and
+        # restore the original MEDIA_ROOT after the test
+        self.media_root.cleanup()
+        settings.MEDIA_ROOT = self.original_media_root

@@ -27,7 +27,9 @@ RUN python -m venv /py && \
     --no-create-home \
     django-user
 
-RUN chown -R django-user:django-user /py
+RUN mkdir -p /app/media/test_media && \
+    chown -R django-user:django-user /py && \
+    chown -R django-user:django-user /app/media
 
 ENV PATH="/py/bin:$PATH"
 
