@@ -28,6 +28,11 @@ jobs:
           docker-compose down -v --rmi all --remove-orphans
           docker volume rm $(docker volume ls -q -f dangling=true) || true
 
+      - name: Prepare media directory
+        run: |
+          cd backend
+          mkdir -p app/media/test_media
+
       # Rebuild and start the services with Docker Compose
       - name: Rebuild the Docker Container with Docker Compose
         run: |
