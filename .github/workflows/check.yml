@@ -38,7 +38,7 @@ jobs:
       - name: Create Custom Temporary Media Directory and Set Permissions
         run: |
           cd backend
-          docker-compose run --rm app sh -c "chown -R django-user:django-user /app/media"
+          docker-compose run --user=root --rm app sh -c "mkdir -p /app/media/test_media && chown -R django-user:django-user /app/media"
 
       - name: Run Migrations
         run: |
