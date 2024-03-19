@@ -26,7 +26,6 @@ jobs:
         run: |
           cd backend
           docker-compose down -v --rmi all --remove-orphans
-          docker volume rm $(docker volume ls -q -f dangling=true) || true
 
       # Rebuild and start the services with Docker Compose
       - name: Rebuild the Docker Container with Docker Compose
@@ -38,6 +37,7 @@ jobs:
       - name: Create Custom Temporary Media Directory and Set Permissions
         run: |
           cd backend
+          docker volume rm $(docker volume ls -q -f dangling=true) || true
           docker-compose run --user=root --rm app sh -c "mkdir -p /app/media/test_media && chown -R django-user:django-user /app/media"
 
       - name: Run Migrations
