@@ -44,6 +44,8 @@ jobs:
       - name: Run Migrations
         run: |
           cd backend
+          docker-compose exec -T devdb-danasaham-erp devdanasaham -U postgres -c 'ALTER SYSTEM SET enable_parallel_hash TO off;'
+          docker-compose exec -T devdb-danasaham-erp devdanasaham -U postgres -c 'SELECT pg_reload_conf();'
           docker-compose run --rm app sh -c "python manage.py wait_for_db && python manage.py migrate"
 
       # Run tests
