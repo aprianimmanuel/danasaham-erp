@@ -34,16 +34,16 @@ jobs:
           cd backend
           docker-compose up -d --build
 
-      - name: Run Migrations
-        run: |
-          cd backend
-          docker-compose run --rm app sh -c "python manage.py wait_for_db && python manage.py makemigrations && python manage.py migrate"
-
       # Create and adjust permissions for Custom Temporary Directory mirroring MEDIA_ROOT
       - name: Create Custom Temporary Media Directory and Set Permissions
         run: |
           docker-compose exec app mkdir -p /app/media/test_media
           docker-compose exec app chown -R django-user:django-user /app/media
+
+      - name: Run Migrations
+        run: |
+          cd backend
+          docker-compose run --rm app sh -c "python manage.py wait_for_db && python manage.py makemigrations && python manage.py migrate"
 
       # Run tests
       - name: Test
