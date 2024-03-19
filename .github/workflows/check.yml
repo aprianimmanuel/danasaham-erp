@@ -28,6 +28,13 @@ jobs:
           docker-compose down -v --rmi all --remove-orphans
           docker volume rm $(docker volume ls -q -f dangling=true) || true
 
+      # Create and adjust permissions for Custom Temporary Directory mirroring MEDIA_ROOT
+      - name: Create Custom Temporary Media Directory
+        run: mkdir -p ${{ github.workspace }}/app/media/test_media
+
+      - name: Adjust Permissions for Custom Temporary Media Directory
+        run: chmod -R 777 ${{ github.workspace }}/app/media
+
       # Rebuild and start the services with Docker Compose
       - name: Rebuild the Docker Container with Docker Compose
         run: |

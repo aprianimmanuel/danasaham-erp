@@ -5,7 +5,9 @@ Django admin customization
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext as _
-from .models import User, UserProfile, dttotDoc
+from .models import User, UserProfile, dttotDoc, Document
+
+
 from django.utils import timezone
 
 
@@ -95,5 +97,31 @@ class DttotDocAdmin(admin.ModelAdmin):
     display_username.short_description = 'username'
 
 
+class DocumentAdmin(admin.ModelAdmin):
+    list_display = [
+        'document_id',
+        'document_name',
+        'document_type',
+        'created_by_username',
+        'updated_by_username',
+    ]
+    search_fields = (
+        'document_name',
+        'document_type',
+        'created_by__username',
+        'updated_by__username',
+    )
+    readonly_fields = ('document_id',)
+
+    def created_by_username(self, obj):
+        return obj.created_by.username
+    created_by_username.short_description = 'username'
+
+    def updated_by_username(self, obj):
+        return obj.updated_by.username
+    updated_by_username.short_description = 'username'
+
+
 admin.site.register(User, UserAdmin)
 admin.site.register(dttotDoc, DttotDocAdmin)
+admin.site.register(Document, DocumentAdmin)

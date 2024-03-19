@@ -2,12 +2,15 @@
 Test for the Django admin modifications
 """
 
-from django.test import TestCase, Client
+from django.test import TestCase, Client, override_settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from core.models import UserProfile, dttotDoc
+from core.models import UserProfile, dttotDoc, Document
 from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
+from django.core.files.uploadedfile import SimpleUploadedFile
+import shutil
+from tempfile import mkdtemp
 
 
 class AdminSiteTests(TestCase):
@@ -168,3 +171,73 @@ class DttotDocAdminTest(TestCase):
         url = reverse('admin:core_dttotdoc_add')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+
+
+class DocumentAdminTest(TestCase):
+
+    def setUp(self):
+        # Create a temporary directory to serve as MEDIA_ROOT
+        self.temp_media_dir = mkdtemp()
+
+        # Apply override_settings decorator dynamically
+        self.override_media_root = override_settings(
+            MEDIA_ROOT=self.temp_media_dir)
+        self.override_media_root.enable()
+
+        self.client = Client()
+        self.admin_user = get_user_model().objects.create_superuser(
+            email='admin@example.com',
+            username='adminuser',
+            password='adminpass123'
+        )
+        self.client.force_login(self.admin_user)
+
+        self.user = get_user_model().objects.create_user(
+            email='user@example.com',
+            username='normaluser',
+            password='password123'
+        )
+
+        self.document = Document.objects.create(
+            document_name='Test Document',
+            description='A test document description.',
+            document_file=SimpleUploadedFile(
+                name='test_document.pdf',
+                content=b'',
+                content_type='application/pdf'),
+            document_type='PDF',
+            created_by=self.user,
+            updated_by=self.user
+        )
+
+    def test_documents_list_display(self):
+        """Test that documents are listed with the correct fields in admin."""
+        url = reverse('admin:core_document_changelist')
+        res = self.client.get(url)
+
+        self.assertContains(res, self.document.document_name)
+        self.assertContains(res, self.document.document_type)
+        self.assertContains(res, self.user.username)
+
+    def test_document_change_page(self):
+        """Test the document admin change page works."""
+        url = reverse(
+            'admin:core_document_change',
+            args=[self.document.document_id])
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, 200)
+
+    def test_document_add_page(self):
+        """Test the document admin add page works."""
+        url = reverse('admin:core_document_add')
+        res = self.client.get(url)
+
+        self.assertEqual(res.status_code, 200)
+
+    def tearDown(self):
+        # Disable the overridden MEDIA_ROOT setting
+        self.override_media_root.disable()
+
+        # Remove the temporary directory after the test
+        shutil.rmtree(self.temp_media_dir)
