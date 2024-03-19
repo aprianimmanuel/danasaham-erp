@@ -28,13 +28,6 @@ jobs:
           docker-compose down -v --rmi all --remove-orphans
           docker volume rm $(docker volume ls -q -f dangling=true) || true
 
-      # Create and adjust permissions for Custom Temporary Directory mirroring MEDIA_ROOT
-      - name: Create Custom Temporary Media Directory
-        run: mkdir -p ${{ github.workspace }}/app/media/test_media
-
-      - name: Adjust Permissions for Custom Temporary Media Directory
-        run: chmod -R 777 ${{ github.workspace }}/app/media
-
       # Rebuild and start the services with Docker Compose
       - name: Rebuild the Docker Container with Docker Compose
         run: |
@@ -45,6 +38,12 @@ jobs:
         run: |
           cd backend
           docker-compose run --rm app sh -c "python manage.py wait_for_db && python manage.py makemigrations && python manage.py migrate"
+
+      # Create and adjust permissions for Custom Temporary Directory mirroring MEDIA_ROOT
+      - name: Create Custom Temporary Media Directory and Set Permissions
+        run: |
+          docker-compose exec app mkdir -p /app/media/test_media
+          docker-compose exec app chown -R django-user:django-user /app/media
 
       # Run tests
       - name: Test
