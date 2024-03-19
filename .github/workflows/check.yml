@@ -37,6 +37,7 @@ jobs:
       # Create and adjust permissions for Custom Temporary Directory mirroring MEDIA_ROOT
       - name: Create Custom Temporary Media Directory and Set Permissions
         run: |
+          cd backend
           docker-compose run --rm app sh -c "mkdir -p /app/media/test_media"
           docker-compose run --rm app sh -c "chown -R django-user:django-user /app/media"
 
