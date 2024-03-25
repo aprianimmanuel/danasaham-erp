@@ -114,6 +114,12 @@ class Document(models.Model):
         primary_key=True,
         max_length=36
     )
+    document_file_type = models.CharField(
+        _(
+            "Document File Type (PDF, XLS, TEXT, or etc)"),
+        max_length=50,
+        null=True,
+        blank=True)
     document_type = models.CharField(
         _("Document Type"), max_length=50)
     updated_date = models.DateTimeField(

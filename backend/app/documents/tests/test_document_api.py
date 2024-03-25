@@ -2,10 +2,12 @@ import shutil
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.test import APITestCase, APIClient
 from django.contrib.auth import get_user_model
-from core.models import Document
+from core.models import Document, dttotDoc
 from django.conf import settings
+import os
+from tempfile import TemporaryDirectory
 
 
 def document_list_url():
@@ -113,3 +115,60 @@ class DocumentAPITests(APITestCase):
         self.assertFalse(
             Document.objects.filter(
                 pk=document.pk).exists())
+
+
+class DTTOTDocumentUploadTests(APITestCase):
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            'test@example.com', 'password123')
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+        # Create a TemporaryDirectory for MEDIA_ROOT
+        self.temp_media_dir = TemporaryDirectory()
+        self.addCleanup(self.temp_media_dir.cleanup)  # Ensure cleanup
+        # Update MEDIA_ROOT to use the temporary directory
+        self.original_media_root = settings.MEDIA_ROOT
+        settings.MEDIA_ROOT = self.temp_media_dir.name
+
+    def tearDown(self):
+        # Reset MEDIA_ROOT to its original value
+        settings.MEDIA_ROOT = self.original_media_root
+        super().tearDown()
+
+    def test_upload_dttot_document_and_process(self):
+        """Test uploading a 'DTTOT Document', processing it, and saving to dttotDoc models."""  # noqa
+        document_path = os.path.join(self.temp_media_dir.name, 'document.csv')
+        # Create a temporary CSV file in the temporary directory
+        with open(document_path, 'w') as temp_file:
+            temp_file.write("Sample data")
+
+        # Step 1: Upload the document
+        upload_url = document_list_url()
+        with open(document_path, 'rb') as doc_file:
+            upload_payload = {
+                'document_name': 'DTTOT Upload Test',
+                'document_type': 'DTTOT Document',
+                'document_file': doc_file
+            }
+            response = self.client.post(
+                upload_url, upload_payload, format='multipart')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        document_id = response.data['document_id']
+        self.assertTrue(Document.objects.filter(pk=document_id).exists())
+
+        # Step 2: Trigger processing of the uploaded document
+        process_url = reverse('dttot-process', args=[document_id])
+        process_response = self.client.post(process_url)
+        self.assertEqual(process_response.status_code, status.HTTP_200_OK)
+
+        # Step 3:
+        # Verify the document was processed and saved into dttotDoc models
+        self.assertTrue(dttotDoc.objects.exists())
+
+        # Cleanup: Optionally, delete the uploaded document if not needed
+        delete_url = document_detail_url(document_id)
+        delete_response = self.client.delete(delete_url)
+        self.assertEqual(
+            delete_response.status_code, status.HTTP_204_NO_CONTENT)

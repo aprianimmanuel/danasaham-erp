@@ -15,8 +15,11 @@ from user.views import (
     CustomPasswordResetView)
 
 # JSON Web Token Authentiction
-from rest_framework_simplejwt.views import TokenVerifyView
-from dj_rest_auth.jwt_auth import get_refresh_view
+from rest_framework_simplejwt.views import (
+    TokenVerifyView,
+    TokenObtainPairView,
+    TokenRefreshView
+)
 
 urlpatterns = [
     # Admin URL
@@ -60,9 +63,13 @@ urlpatterns = [
         name='token_verify'),
     path(
         'api/token/refresh/',
-        get_refresh_view().as_view(),
+        TokenRefreshView.as_view(),
         name='token_refresh'),
-
+    path(
+        'api/token/',
+        TokenObtainPairView.as_view(),
+        name='token_obtain_pair'
+    ),
     # DRF spectacular for API schema and documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='api-schema'),
     path(

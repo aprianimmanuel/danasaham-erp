@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'core',
     'user',
     'documents',
+    'documents.utils',
     'dttotDoc',
 ]
 
@@ -145,6 +146,9 @@ REST_FRAMEWORK = {
   'DEFAULT_RENDERER_CLASSES': [
     'rest_framework.renderers.JSONRenderer',
   ],
+  'DEFAULT_PERMISSION_CLASSES': (
+    'rest_framework.permissions.IsAuthenticated',
+    ),
   'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
@@ -181,11 +185,11 @@ REST_AUTH = {
     'PASSWORD_RESET_USE_SITES_DOMAIN': False,
     'OLD_PASSWORD_FIELD_ENABLED': False,
     'LOGOUT_ON_PASSWORD_CHANGE': False,
-    'SESSION_LOGIN': True,
-    'USE_JWT': False,
+    'SESSION_LOGIN': False,
+    'USE_JWT': True,
 
-    'JWT_AUTH_COOKIE': None,
-    'JWT_AUTH_REFRESH_COOKIE': None,
+    'JWT_AUTH_COOKIE': 'danasaham-erp-jwt-cookie',
+    'JWT_AUTH_REFRESH_COOKIE': 'danasaham-erp-jwtrefresh-cookie',
     'JWT_AUTH_REFRESH_COOKIE_PATH': '/',
     'JWT_AUTH_SECURE': False,
     'JWT_AUTH_HTTPONLY': True,
