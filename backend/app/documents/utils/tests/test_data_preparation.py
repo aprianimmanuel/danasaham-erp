@@ -3,8 +3,11 @@ import tempfile
 import shutil
 from django.test import TestCase
 import pandas as pd
-from documents.utils.data_preparation import DTTOTDocumentProcessing
+from documents.utils.data_preparation import (
+    DTTOTDocumentProcessing,
+    ExtractNIKandPassportNumber)
 from openpyxl import Workbook
+from pandas.testing import assert_frame_equal
 
 # Ensure that openpyxl is used for handling Excel files
 pd.ExcelWriter = pd.ExcelWriter
@@ -96,6 +99,7 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
     def setUp(cls):
         # Create a temporary directory to hold the test files
         cls.temp_dir = tempfile.mkdtemp()
+        cls.processing_extract = ExtractNIKandPassportNumber()
         cls.processing = DTTOTDocumentProcessing()
         # Create a test XLS file using openpyxl
         cls.xls_file_path = os.path.join(cls.temp_dir, 'test.xlsx')
@@ -131,30 +135,45 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
             'Nama': [
                 'John Doe Alias Don John Alias John Krew',
                 'Jane Elizabeth Smith Alias Yan Hitms',
+                'Yayasan Abdi Mulia Sentosa',
+            ],
+            'Terduga': [
+                'Orang',
+                'Orang',
+                'Korporasi'
             ]
         })
 
         # Processing input DataFrame to separate names and aliases
-        processed_df = self.processing.extract_and_split_names(input_df)
+        processed_df = self.processing.extract_and_split_names(
+            input_df)
 
         # Constructing the expected DataFrame
         expected_data = {
             'Nama': [
                 'John Doe Alias Don John Alias John Krew',
-                'Jane Elizabeth Smith Alias Yan Hitms'],
-            'first_name': ['John', 'Jane'],
-            'middle_name': ['', 'Elizabeth'],
-            'last_name': ['Doe', 'Smith'],
+                'Jane Elizabeth Smith Alias Yan Hitms',
+                'Yayasan Abdi Mulia Sentosa'],
+            'Terduga': [
+                'Orang',
+                'Orang',
+                'Korporasi'],
+            'first_name': [
+                'John',
+                'Jane',
+                'Yayasan'],
+            'middle_name': ['', 'Elizabeth', 'Abdi Mulia'],
+            'last_name': ['Doe', 'Smith', 'Sentosa'],
             # Assuming 'extract_aliases_from_names'
             # dynamically adds 'Alias_name_1'
-            'Alias_name_1': ['Don John', 'Yan Hitms'],
-            'first_name_alias_1': ['Don', 'Yan'],
-            'middle_name_alias_1': ['', ''],
-            'last_name_alias_1': ['John', 'Hitms'],
-            'Alias_name_2': ['John Krew', ''],
-            'first_name_alias_2': ['John', ''],
-            'middle_name_alias_2': ['', ''],
-            'last_name_alias_2': ['Krew', ''],
+            'Alias_name_1': ['Don John', 'Yan Hitms', ''],
+            'first_name_alias_1': ['Don', 'Yan', ''],
+            'middle_name_alias_1': ['', '', ''],
+            'last_name_alias_1': ['John', 'Hitms', ''],
+            'Alias_name_2': ['John Krew', '', ''],
+            'first_name_alias_2': ['John', '', ''],
+            'middle_name_alias_2': ['', '', ''],
+            'last_name_alias_2': ['Krew', '', ''],
         }
         expected_df = pd.DataFrame(expected_data)
         pd.testing.assert_frame_equal(
@@ -162,3 +181,124 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
             expected_df,
             check_like=True,
             check_dtype=False)
+
+    def test_extract_idNumber_and_Paspor_fromDeskripsi_column(self):
+        """Test extracting id_number from deskripsi name of column
+        that has value `Orang` on `Terduga` column"""  # noqa
+        # Given input DataFrame with 'Nama' column
+        input_df = pd.DataFrame({
+            "Terduga": [
+                "Orang",
+                "Orang",
+                "Orang",
+                "Korporasi",
+                "Orang",
+                "Orang",
+            ],
+            "Deskripsi": [
+                """
+                '- NIK nomor: 1234567898765432
+                '- paspor A0987654
+                '- pekerjaan: Karyawan Swasta
+                """,
+                """
+                '- NIK 1232546589765954;
+                '- paspor PA6574873
+                '- diduga berada di Amerika
+                '- relawan The SintoSintoBule
+                """,
+                """
+                - NIK 9087654536287512;
+                '- paspor 7865473 (dikeluarkan oleh madagascar);
+                - pekerjaan Pegawai Negeri Sipil;
+                """,
+                """
+                - didirikan pada tahun 1940 oleh Indriyana Nurhayati;
+                - beberapa anggota terbutki secara sah melakukan penipuan
+                '- kegiatan amal (Charity)
+                """,
+                """
+                1. NIK 7765484598234123;
+                2. no. paspor A 4876576
+                3. saat ini berada di madagascar
+                """,
+                """
+                - NIK 6654786328764102
+                - Pendidikan SLTA/Sederajat
+                - Yang bersangkutan tercatat dimana saja boleh
+                - paspor B 5438675;
+                """,
+            ]
+        })
+
+        # Function to be tested
+        processed_df = self.processing_extract.extract_nik_and_passport_number(
+            input_df)
+
+        # Expected output DataFrame
+        expected_data = {
+                'Terduga': [
+                    'Orang',
+                    'Orang',
+                    'Orang',
+                    'Korporasi',
+                    'Orang',
+                    'Orang'],
+                "Deskripsi": ["""'- NIK nomor:
+                '- paspor
+                '- pekerjaan: Karyawan Swasta""", """'- NIK ;
+                '- paspor
+                '- diduga berada di Amerika
+                '- relawan The SintoSintoBule""", """- NIK ;
+                '- paspor  (dikeluarkan oleh madagascar);
+                - pekerjaan Pegawai Negeri Sipil;""", """
+                - didirikan pada tahun 1940 oleh Indriyana Nurhayati;
+                - beberapa anggota terbutki secara sah melakukan penipuan
+                - kegiatan amal (Charity)
+                """, """1. NIK ;
+                2. no. paspor
+                3. saat ini berada di madagascar""", """- NIK
+                - Pendidikan SLTA/Sederajat
+                - Yang bersangkutan tercatat dimana saja boleh
+                - paspor ;"""
+            ],  # noqa
+                'idNumber': [
+                    '1234567898765432',
+                    '1232546589765954',
+                    '9087654536287512',
+                    '',
+                    '7765484598234123',
+                    '6654786328764102'],
+                'passport_number': [
+                    'A0987654',
+                    'PA6574873',
+                    '7865473',
+                    '',
+                    'A 4876576',
+                    'B 5438675',
+                ]
+            }
+        expected_df = pd.DataFrame(expected_data)
+        # Custom comparison logic for "Deskripsi" column
+        similarities = []
+        for processed_text, expected_text in zip(
+                processed_df['Deskripsi'],
+                expected_df['Deskripsi']):
+            similarity = self.processing_extract.calculate_similarity(
+                processed_text,
+                expected_text)
+            similarities.append(similarity)
+
+        # Check if average similarity is above a threshold (e.g., 0.9 for 90% similarity)  # noqa
+        average_similarity = sum(similarities) / len(similarities)
+        print(f"Average similarity: {average_similarity}")
+        self.assertTrue(
+            average_similarity >= 0.95, "Average text similarity is below 95%")
+
+        # For other columns where exact matches are expected,
+        for column in ['Terduga', 'idNumber', 'passport_number']:
+            assert_frame_equal(
+                processed_df[[column]],
+                expected_df[[column]],
+                check_like=True,
+                check_dtype=False)

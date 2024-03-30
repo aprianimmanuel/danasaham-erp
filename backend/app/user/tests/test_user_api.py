@@ -27,7 +27,11 @@ class PublicUserAPITests(TestCase):
             'password2': 'Testpass!123',
         }
         response = self.client.post(self.registration_url, user_data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        try:
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        except AssertionError as e:
+            print("Failed to register user. Response:", response.content)
+            raise e
 
     def test_user_registration_password_mismatch(self):
         """

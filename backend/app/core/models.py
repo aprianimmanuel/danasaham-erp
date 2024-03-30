@@ -162,6 +162,9 @@ class dttotDoc(models.Model):
     _dttot_first_name = models.TextField(
         _("DTTOT First Name"),
         blank=True)
+    _dttot_middle_name = models.TextField(
+        _("DTTOT Middle Name"),
+        blank=True)
     _dttot_last_name = models.TextField(
         _("DTTOT Last Name"),
         blank=True)
@@ -286,6 +289,9 @@ class dttotDoc(models.Model):
         self._dttot_first_name = fernet.encrypt(
             self._dttot_first_name.encode()
         ).decode() if self._dttot_first_name else ''
+        self._dttot_middle_name = fernet.encrypt(
+            self._dttot_middle_name.encode()
+        ).decode() if self._dttot_middle_name else ''
         self._dttot_last_name = fernet.encrypt(
             self._dttot_last_name.encode()
         ).decode() if self._dttot_last_name else ''
@@ -343,6 +349,12 @@ class dttotDoc(models.Model):
         return fernet.decrypt(
             self._dttot_first_name.encode()
         ).decode() if self._dttot_first_name else ''
+
+    @property
+    def dttot_middle_name(self):
+        return fernet.decrypt(
+            self._dttot_middle_name.encode()
+        ).decode() if self._dttot_middle_name else ''
 
     @property
     def dttot_last_name(self):

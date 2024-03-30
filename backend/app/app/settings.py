@@ -146,14 +146,14 @@ REST_FRAMEWORK = {
   'DEFAULT_RENDERER_CLASSES': [
     'rest_framework.renderers.JSONRenderer',
   ],
+  'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
+        'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
+  ),
   'DEFAULT_PERMISSION_CLASSES': (
     'rest_framework.permissions.IsAuthenticated',
     ),
-  'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
-        'dj_rest_auth.jwt_auth.JWTCookieAuthentication'
-  ),
+
 }
 
 REST_AUTH = {
@@ -177,7 +177,8 @@ REST_AUTH = {
     'REGISTER_SERIALIZER':
     'user.serializers.CustomRegisterSerializer',
 
-    'REGISTER_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
+    'REGISTER_PERMISSION_CLASSES': (
+        'rest_framework.permissions.AllowAny',),
 
     'TOKEN_MODEL': 'rest_framework.authtoken.models.Token',
     'TOKEN_CREATOR': 'dj_rest_auth.utils.default_create_token',

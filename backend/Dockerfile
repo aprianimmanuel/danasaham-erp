@@ -60,6 +60,14 @@ RUN python -m venv /py && \
     python3-dev \
     python3-numpy \
     python3-pip \
+    python3-sklearn \
+    python3-sklearn-lib \
+    python3-joblib \
+    python-sklearn-doc \
+    python3-matplotlib \
+    python3-threadpoolctl \
+    python3-numpy \
+    python3-mdp \
     wget \
     unzip && \
     /py/bin/pip install -r /tmp/requirements.txt && \
