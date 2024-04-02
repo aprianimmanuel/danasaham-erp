@@ -2,6 +2,8 @@ import re
 import pandas as pd  # noqa
 from sklearn.metrics.pairwise import cosine_similarity  # noqa
 from sklearn.feature_extraction.text import CountVectorizer  # noqa
+from collections import Counter
+from dateutil.parser import parse
 
 
 class DTTOTDocumentProcessing:
@@ -115,110 +117,247 @@ class DTTOTDocumentProcessing:
 
 class ExtractNIKandPassportNumber:
     """
-    A class to extract and clean NIK (Nomor Induk Kependudukan) and
-    passport numbers from a given DataFrame column. It utilizes regular
-    expressions to identify and extract the relevant data, and then cleans
-    the original text by removing the extracted parts. Additionally, it
-    calculates the similarity between extracted patterns and original text
-    using cosine similarity.
+    A class designed to extract and clean National Identification Numbers (NIK)
+    and passport numbers from specified description columns within a pandas DataFrame.
+    Utilizes regular expressions (regex) to accurately identify and extract these
+    numerical and alphanumeric sequences. Post-extraction, the original text from
+    which these numbers are extracted is cleaned by removing the identified numbers,
+    enhancing the clarity and utility of the dataset.
 
     Attributes:
-        nik_patterns (list of str): A list of regex patterns for extracting NIK numbers.
-        passport_patterns (list of str): A list of regex patterns for extracting passport numbers.
+        nik_regex (list of str): Contains regex patterns designed to match NIK numbers,
+                                  which typically consist of a 16-digit sequence.
+        passport_regex (list of str): Contains regex patterns aimed at identifying
+                                       passport numbers, which may include up to two
+                                       letters followed by six or more digits, with an
+                                       optional space between letters and digits.
     """  # noqa
     def __init__(self):
-        """Initialize the pattern lists for NIK and passport number extraction."""  # noqa
-        self.nik_patterns = [
-            r"\bNIK nomor:\s+(\d+)",
-            r"\bNIK\s+(\d+)"
-        ]
-
-        self.passport_patterns = [
-            r"(?:-?\s*\d*\.\s*)?-?\s*paspor\s+?\s*([A-Z0-9]+(?:\s?[A-Z0-9]+)*)\s*(?:\(dikeluarkan\s+oleh\s+[^\)]+\);?)?"  # noqa
-        ]
-
-    def vectorize_text(self, text1, text2):
         """
-        Vectorize two strings for cosine similarity comparison.
-
-        Args:
-            text1 (str): The first text to be vectorized.
-            text2 (str): The second text to be vectorized.
-
-        Returns:
-            numpy.ndarray: The array representation of vectorized texts.
-        """
-        vectorizer = CountVectorizer().fit_transform([text1, text2])
-        vectors = vectorizer.toarray()
-        return vectors
-
-    def calculate_similarity(self, text1, text2):
-        """
-        Calculates the cosine similarity between two strings.
-
-        Args:
-            text1 (str): The first text to compare.
-            text2 (str): The second text to compare.
-
-        Returns:
-            float: The cosine similarity score between the two texts.
-        """
-        vectors = self.vectorize_text(text1, text2)
-        return cosine_similarity(vectors[0:1], vectors[1:2])[0][0]
-
-    def extract_with_highest_similarity(self, text, patterns):
-        """
-        Extracts data based on the highest similarity score between the text and regex pattern matches.
-        Now simplified to only return the best match and the cleaned text.
+        Initializes the ExtractNIKandPassportNumber class with specific regex patterns
+        for identifying NIK and passport numbers within text.
         """  # noqa
-        match_data = []  # Store tuples of (matched_text, similarity_score)
+        self.nik_regex = [
+            r"\b\d{16}\b",  # Pattern for NIK numbers
+        ]
 
-        for pattern in patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
-            for match in matches:
-                matched_text = ''.join(match)
-                if matched_text:
-                    similarity = self.calculate_similarity(text, matched_text)
-                    # Store matched text with its similarity score
-                    match_data.append((matched_text, similarity))
-
-        # Sort match_data by similarity score in descending order to pick the highest similarity  # noqa
-        match_data.sort(key=lambda x: x[1], reverse=True)
-
-        # Choose the match with the highest similarity that's less than 90%
-        for matched_text, similarity in match_data:
-            if similarity < 0.9:
-                best_match = matched_text
-                # Remove the best match from the text to clean it
-                cleaned_text = re.sub(re.escape(best_match), '', text, flags=re.IGNORECASE).strip()  # noqa
-                return best_match, cleaned_text
-
-        # Fallback if no match or all matches are >= 90% similarity
-        return "", text
+        self.passport_regex = [
+            r"\b[A-Z]{0,2}\s*\d{6,}\b",  # Pattern for passport numbers
+        ]
 
     def extract_nik_and_passport_number(self, df):
         """
-        Extracts NIK and passport numbers from the `Deskripsi` column of a dataframe,
-        based on the highest similarity score, then cleans the text by removing the extracted information,
-        and updates the dataframe with new columns for the extracted data.
+        Iterates over each row within the DataFrame to extract NIK and passport numbers
+        from dynamically identified description columns. Updates the DataFrame with
+        extracted numbers and cleans the description text from which these numbers were
+        extracted.
+
+        Args:
+            df (pd.DataFrame): The input DataFrame containing the description columns.
+
+        Returns:
+            pd.DataFrame: The modified DataFrame with NIK and passport numbers extracted
+                          and original description texts cleaned.
         """  # noqa
-        idNumbers, passportNumbers, cleanedDeskripsi = [], [], []
+        # Iterate over each row in the DataFrame
+        for index, row in df.iterrows():
+            # Initialize or clear the idNumber and passport_number for the row
+            df.at[index, 'idNumber'] = ''
+            df.at[index, 'passport_number'] = ''
 
-        for _, row in df.iterrows():
-            if row['Terduga'] == 'Orang':
-                nik_best_match, cleaned_text = self.extract_with_highest_similarity(row['Deskripsi'], self.nik_patterns)  # noqa
-                passport_best_match, cleaned_text = self.extract_with_highest_similarity(cleaned_text, self.passport_patterns)  # noqa
+            # Iterate through each description column
+            description_columns = self._detect_description_columns(df)
+            for description_column in description_columns:
+                text = row[description_column]
+                nik_number, passport_number, cleaned_text = self._extract_from_description(text)  # noqa
 
-                idNumbers.append(nik_best_match)
-                passportNumbers.append(passport_best_match)
-                cleanedDeskripsi.append(cleaned_text)
-            else:
-                idNumbers.append('')
-                passportNumbers.append('')
-                cleanedDeskripsi.append(row['Deskripsi'])
-
-        df['idNumber'] = idNumbers
-        df['passport_number'] = passportNumbers
-        df['Deskripsi'] = cleanedDeskripsi
+                # Update the DataFrame with extracted data if not already set
+                if not df.at[index, 'idNumber'] and nik_number:
+                    df.at[index, 'idNumber'] = nik_number
+                if not df.at[index, 'passport_number'] and passport_number:
+                    df.at[index, 'passport_number'] = passport_number
+                # Update the cleaned description back into the DataFrame
+                df.at[index, description_column] = cleaned_text
 
         return df
+
+    def _detect_description_columns(self, df):
+        """
+        Identifies columns within the DataFrame that are likely to contain descriptive
+        texts from which NIK and passport numbers need to be extracted. This identification
+        is based on a consistent naming pattern for these columns.
+
+        Args:
+            df (pd.DataFrame): The input DataFrame to analyze.
+
+        Returns:
+            list: A list of column names that match the expected pattern for description columns.
+        """  # noqa
+        return [col for col in df.columns if col.startswith('description_')]
+
+    def _extract_from_description(self, text):
+        """
+        Extracts NIK and passport numbers from a given piece of text. Utilizes the
+        class's regex patterns for identification and extraction. Also cleans the text
+        by removing the extracted numbers.
+
+        Args:
+            text (str): The text from which to extract NIK and passport numbers.
+
+        Returns:
+            tuple: Contains the extracted NIK number, passport number, and the cleaned text.
+        """  # noqa
+        # Extract NIK and passport numbers from text, then clean the text
+        id_number = ''
+        passport_number = ''
+        cleaned_text = text
+
+        # Try each NIK pattern until a match is found
+        for nik_regex in self.nik_regex:
+            nik_match = re.search(nik_regex, cleaned_text)
+            if nik_match:
+                id_number = nik_match.group()
+                cleaned_text = re.sub(nik_regex, '', cleaned_text, 1)
+                break  # Stop after finding the first match
+
+        # Try each passport pattern until a match is found
+        for passport_regex in self.passport_regex:
+            passport_match = re.search(passport_regex, cleaned_text)
+            if passport_match:
+                passport_number = passport_match.group()
+                cleaned_text = re.sub(passport_regex, '', cleaned_text, 1)
+                break  # Stop after finding the first match
+
+        return id_number, passport_number, cleaned_text.strip()
+
+
+class CleaningSeparatingDeskripsi:
+    """
+    Class for dynamically separating the 'Deskripsi' column of a DataFrame into multiple
+    'description_{seqNumber}' columns based on the content of bullet points or numbered items.
+    """  # noqa
+
+    def __init__(self):
+        """
+        Initializes the CleaningSeparatingDeskripsi instance.
+        """
+        self.split_regex = r'\n\s*(?:-\s+|\d+\.\s+|\*\s+)?(?=[^;\.,]*[;\.,]?\s*(?:-\s+|\d+\.\s+|\*\s+|$))'  # noqa
+
+    def separating_cleaning_deskripsi(self, df):
+        """
+        Separates bullet points or numbered items in the 'Deskripsi' column into
+        individual 'description_{seqNumber}' columns based on the maximum count of items
+        found in the column. Removes the original 'Deskripsi' column afterward.
+
+        Args:
+            df (pd.DataFrame): The input DataFrame with a 'Deskripsi' column.
+
+        Returns:
+            pd.DataFrame: The processed DataFrame with separated description columns.
+        """  # noqa
+        max_items = self._find_max_descriptions(df['Deskripsi'])
+
+        # Initialize and clean description columns
+        # based on the maximum count of bullet points or numbered items
+        description_cols = [f'description_{i+1}' for i in range(max_items)]
+        for col in description_cols:
+            df[col] = None
+
+        for index, row in df.iterrows():
+            descriptions = self._extract_descriptions(row['Deskripsi'])
+
+            for i, desc in enumerate(descriptions):
+                if i < max_items:
+                    df.at[index, f'description_{i+1}'] = desc
+
+        # Optionally remove the original 'Deskripsi' column if no longer needed
+        df.drop(columns=['Deskripsi'], inplace=True)
+
+        return df
+
+    def _find_max_descriptions(self, descriptions):
+        """
+        Finds the maximum number of bullet points or numbered items in the 'Deskripsi' column.
+
+        Args:
+            descriptions (pd.Series): The 'Deskripsi' column of the DataFrame.
+
+        Returns:
+            int: The maximum count of descriptions found in any single row.
+        """  # noqa
+        counts = descriptions.apply(
+            lambda text: len(
+                re.split(
+                    self.split_regex, text.strip())) - 1)
+        return max(counts, default=0)
+
+    def _extract_descriptions(self, text):
+        """
+        Extracts individual descriptions from the given text based on bullet points or numbering.
+
+        Args:
+            text (str): The text containing descriptions to extract.
+
+        Returns:
+            list: A list of extracted descriptions.
+        """  # noqa
+        descriptions = re.split(self.split_regex, text.strip())
+        return [desc.strip() for desc in descriptions if desc.strip()]
+
+
+class FormattingBirthDate:
+    def __init__(self):
+        self.months_dict = {
+            'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04',
+            'may': '05', 'jun': '06', 'jul': '07', 'aug': '08',
+            'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12',
+            'januari': '01', 'februari': '02', 'maret': '03', 'april': '04',
+            'mei': '05', 'juni': '06', 'juli': '07', 'agustus': '08',
+            'september': '09', 'oktober': '10',
+            'november': '11', 'desember': '12'
+        }  # noqa
+        self.date_pattern = re.compile(r"""
+            (?P<day>\d{1,2})
+            [\s/-]
+            (?P<month>[a-zA-Z]+|\d{1,2})
+            [\s/-]
+            (?P<year>\d{4}|\d{2}
+            (?=[\s/-]?|$)
+        """, re.VERBOSE | re.IGNORECASE)
+
+    def format_birth_date(self, df):
+        for i in range(1, 4):
+            df[f'birth_date_{i}'] = ""
+
+        for index, row in df.iterrows():
+            # Skip formatting if 'Tgl lahir' is "00/00/0000"
+            if row['Tgl lahir'] == "00/00/0000":
+                continue
+            dates = self.extract_dates(row['Tgl lahir'])
+            for i, date_str in enumerate(dates):
+                if i >= 3:
+                    break
+                df.at[index, f'birth_date_{i+1}'] = date_str
+
+        return df
+
+    def extract_dates(self, text):
+        if not isinstance(text, str) or text == "00/00/0000":
+            return []
+        matches = self.date_pattern.finditer(text)
+        dates = [self._format_match(match) for match in matches]
+        return dates
+
+    def _format_match(self, match):
+        day, month, year = match.group('day'), match.group('month'), match.group('year')  # noqa
+        month_number = self._month_to_number(month)
+        year = self._adjust_year(year)
+        return f"{day.zfill(2)}/{month_number}/{year}"
+
+    def _month_to_number(self, month):
+        return self.months_dict.get(month.lower(), month.zfill(2))
+
+    def _adjust_year(self, year):
+        if len(year) == 2:
+            return f"19{year}" if int(year) > 22 else f"20{year}"
+        return year

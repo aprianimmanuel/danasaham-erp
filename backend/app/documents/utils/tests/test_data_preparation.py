@@ -5,7 +5,9 @@ from django.test import TestCase
 import pandas as pd
 from documents.utils.data_preparation import (
     DTTOTDocumentProcessing,
-    ExtractNIKandPassportNumber)
+    ExtractNIKandPassportNumber,
+    CleaningSeparatingDeskripsi,
+    FormattingBirthDate)
 from openpyxl import Workbook
 from pandas.testing import assert_frame_equal
 
@@ -95,12 +97,36 @@ Jane Smith,Guru Honorer,Orang"""
 
 
 class DTTOTDocumentProcessingXLSTests(TestCase):
+    """
+    A set of unit tests designed to verify the functionality of document processing
+    related to XLS files within the DTTOT document processing framework. This class
+    focuses on testing the ability to import XLS documents, as well as the extraction
+    of specific data from those documents, such as alias information from names and
+    organization types from descriptions.
+
+    The tests ensure that XLS documents are correctly imported, and that data extraction
+    follows expected patterns and yields accurate results.
+
+    Attributes:
+        temp_dir (str): A directory created to temporarily store test files.
+        processing_extract (ExtractNIKandPassportNumber): An instance of the class used to extract NIK and passport numbers.
+        processing (DTTOTDocumentProcessing): An instance of the class under test that processes documents.
+        xls_file_path (str): The file path to the test XLS document created for testing.
+    """  # noqa
     @classmethod
     def setUp(cls):
+        """
+        Set up the test environment before running each test in the class. This method
+        creates a temporary directory to hold test XLS files and initializes instances
+        of the document processing classes. It also creates a sample XLS file to be used
+        in the tests.
+        """  # noqa
         # Create a temporary directory to hold the test files
         cls.temp_dir = tempfile.mkdtemp()
         cls.processing_extract = ExtractNIKandPassportNumber()
         cls.processing = DTTOTDocumentProcessing()
+        cls.processing_separating = CleaningSeparatingDeskripsi()
+        cls.processing_formatting_birthDate = FormattingBirthDate()
         # Create a test XLS file using openpyxl
         cls.xls_file_path = os.path.join(cls.temp_dir, 'test.xlsx')
         workbook = Workbook()
@@ -118,18 +144,29 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
 
     @classmethod
     def tearDown(cls):
+        """
+        Tear down the test environment after each test in the class has run. This method
+        removes the temporary directory and all its contents, cleaning up the test environment.
+        """  # noqa
         # Remove the temporary directory and all its contents after the tests
         shutil.rmtree(cls.temp_dir)
 
     def test_import_document_xls(self):
-        """Test importing a document uploaded as an XLS file."""
+        """
+        Test the functionality of importing a document uploaded as an XLS file. This test
+        verifies that the imported document has the expected columns and is not empty.
+        """  # noqa
         df = self.processing.import_document(self.xls_file_path, 'XLS')
         expected_columns = ['Nama', 'Deskripsi', 'Terduga']
         self.assertEqual(list(df.columns), expected_columns)
         self.assertTrue(not df.empty)
 
     def test_extract_aliases_from_names(self):
-        """Test separating full names into first, middle, and last names."""
+        """
+        Test the extraction of aliases from full names within the imported document. This test
+        checks whether the extraction and separation of names and aliases are performed accurately,
+        comparing the processed DataFrame against an expected structure.
+        """  # noqa
         # Given input DataFrame with 'Nama' column
         input_df = pd.DataFrame({
             'Nama': [
@@ -164,8 +201,6 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
                 'Yayasan'],
             'middle_name': ['', 'Elizabeth', 'Abdi Mulia'],
             'last_name': ['Doe', 'Smith', 'Sentosa'],
-            # Assuming 'extract_aliases_from_names'
-            # dynamically adds 'Alias_name_1'
             'Alias_name_1': ['Don John', 'Yan Hitms', ''],
             'first_name_alias_1': ['Don', 'Yan', ''],
             'middle_name_alias_1': ['', '', ''],
@@ -183,9 +218,200 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
             check_dtype=False)
 
     def test_extract_idNumber_and_Paspor_fromDeskripsi_column(self):
-        """Test extracting id_number from deskripsi name of column
-        that has value `Orang` on `Terduga` column"""  # noqa
-        # Given input DataFrame with 'Nama' column
+        """Test extracting id_number and passport_number from separated description columns
+        where 'Terduga' has the value 'Orang'."""  # noqa
+        # Given input DataFrame with separated description columns
+        input_df = pd.DataFrame({
+            "Terduga": [
+                "Orang", "Orang", "Orang", "Korporasi", "Orang", "Orang",
+            ],
+            "description_1": [
+                "- NIK nomor: 1234567898765432",
+                "- NIK 1232546589765954;",
+                "- NIK 9087654536287512;",
+                "- didirikan pada tahun 1940 oleh Indriyana Nurhayati;",
+                "1. NIK 7765484598234123;",
+                "- NIK 6654786328764102"
+            ],
+            "description_2": [
+                "- paspor A0987654",
+                "- paspor PA6574873",
+                "- paspor 7865473 (dikeluarkan oleh madagascar);",
+                "beberapa anggota terbutki secara sah melakukan penipuan",
+                "no. paspor A 4876576",
+                "Pendidikan SLTA/Sederajat"
+            ],
+            "description_3": [
+                "- pekerjaan: Karyawan Swasta",
+                "- diduga berada di Amerika",
+                "pekerjaan Pegawai Negeri Sipil;",
+                "- kegiatan amal (Charity)",
+                "saat ini berada di madagascar",
+                "Yang bersangkutan tercatat dimana saja boleh"
+            ],
+            "description_4": [
+                "",
+                "- relawan The SintoSintoBule",
+                "",
+                "",
+                "",
+                "- paspor B 5438675;"
+            ]
+        })
+
+        # Function to be tested
+        processed_df = self.processing_extract.extract_nik_and_passport_number(input_df)  # noqa
+
+        # Expected output DataFrame
+        expected_data = {
+            'Terduga': ["Orang", "Orang", "Orang", "Korporasi", "Orang", "Orang"],  # noqa
+            "description_1": ["- NIK nomor:", "- NIK ;", "- NIK ;", "- didirikan pada tahun 1940 oleh Indriyana Nurhayati;", "1. NIK ;", "- NIK"],  # noqa
+            "description_2": ["- paspor", "- paspor", "- paspor (dikeluarkan oleh madagascar);", "beberapa anggota terbutki secara sah melakukan penipuan", "no. paspor", "Pendidikan SLTA/Sederajat"],  # noqa
+            "description_3": ["- pekerjaan: Karyawan Swasta", "- diduga berada di Amerika", "pekerjaan Pegawai Negeri Sipil;", "- kegiatan amal (Charity)", "saat ini berada di madagascar", "Yang bersangkutan tercatat dimana saja boleh"],  # noqa
+            "description_4": ["", "- relawan The SintoSintoBule", "", "", "", "- paspor ;"],  # noqa
+            'idNumber': ['1234567898765432', '1232546589765954', '9087654536287512', '', '7765484598234123', '6654786328764102'],  # noqa
+            'passport_number': ['A0987654', 'PA6574873', ' 7865473', '', 'A 4876576', 'B 5438675']  # noqa
+        }
+        expected_df = pd.DataFrame(expected_data)
+
+        # Assert equality between processed_df and expected_df for relevant columns  # noqa
+        pd.testing.assert_frame_equal(
+            processed_df[
+                [
+                    'Terduga',
+                    'idNumber',
+                    'passport_number',
+                    'description_1',
+                    'description_2',
+                    'description_3',
+                    'description_4'
+                    ]
+                ],
+            expected_df,
+            check_like=True,
+            check_dtype=False
+        )
+
+    def test_separating_description(self):
+        """
+        Test separating per bulletpoint in `Deskripsi` column to sequennce of
+        description column (description_{number of sequence})
+        """
+        input_df = pd.DataFrame(
+            {
+                "Kode_ID": [
+                    "EDD-013", "IDD-015", "ILQ-O54", "EDD-033", "ILQ-022", "IDD-021", "EDD-011"  # noqa
+                ],
+                "Terduga": [
+                    "Orang", "Orang", "Orang", "Korporasi", "Orang", "Orang", "Orang"  # noqa
+                ],
+                "Deskripsi": [
+                    """'- NIK nomor: 1234567898765432\n'- paspor nomor: A0987654\n'- pekerjaan: Karyawan Swasta""",  # noqa
+                    """'- NIK 1232546589765954;\n'- paspor PA6574873\n'- diduga berada di Amerika\n'- relawan The SintoSintoBule""",  # noqa
+                    """- NIK 9087654536287512;\n'- paspor 7865473 (dikeluarkan oleh madagascar);\n- pekerjaan Pegawai Negeri Sipil;""",  # noqa
+                    """- didirikan pada tahun 1940 oleh Indriyana Nurhayati;\n- beberapa anggota terbutki secara sah melakukan penipuan\n'- kegiatan amal (Charity)""",  # noqa
+                    """1. NIK 7765484598234123;\n2. no. paspor A 4876576\n3. saat ini berada di madagascar""",  # noqa
+                    """- NIK 6654786328764102\n- Pendidikan SLTA/Sederajat\n- Yang bersangkutan tercatat dimana saja boleh\n- paspor B 5438675;""",  # noqa
+                    """'- Terafiliasi dengan madagascar;\n'- NIK 2234574598760954;\n'- Badut banget sih;"""  # noqa
+                    ]
+            }
+        )
+
+        max_descriptions = self.processing_separating._find_max_descriptions(input_df['Deskripsi']) # noqa
+
+        # Function to be tested
+        processed_df = self.processing_separating.separating_cleaning_deskripsi(input_df)  # noqa
+
+        # Check if description columns exist and correspond
+        # to the maximum bullet points in any 'Deskripsi' entry
+        description_columns = [
+            f'description_{i+1}' for i in range(max_descriptions)]
+        self.assertTrue(
+            all(
+                column in processed_df.columns for column in description_columns  # noqa
+            ), "Missing description columns")
+
+        # Expected output DataFrame
+        expected_data = {
+            "Kode_ID": [
+                "EDD-013", "IDD-015", "ILQ-O54", "EDD-033", "ILQ-022", "IDQ-021", "EDD-011"  # noqa
+            ],
+            'Terduga': [
+                'Orang', 'Orang', 'Orang', 'Korporasi', 'Orang', 'Orang', "Orang"  # noqa
+            ],
+            "description_1": [
+                "'- NIK nomor: 1234567898765432", "'- NIK 1232546589765954;", "- NIK 9087654536287512;", "- didirikan pada tahun 1940 oleh Indriyana Nurhayati;", "1. NIK 7765484598234123;", "- NIK 6654786328764102", "'- Terafiliasi dengan madagascar;"  # noqa
+            ],
+            "description_2": [
+                "'- paspor nomor: A0987654", "'- paspor PA6574873", "'- paspor 7865473 (dikeluarkan oleh madagascar);", "beberapa anggota terbutki secara sah melakukan penipuan", "2. no. paspor A 4876576", "Pendidikan SLTA/Sederajat", "'- NIK 2234574598760954;"  # noqa
+            ],
+            "description_3": [
+                "'- pekerjaan: Karyawan Swasta", "'- diduga berada di Amerika", "pekerjaan Pegawai Negeri Sipil;", "'- kegiatan amal (Charity)", "saat ini berada di madagascar", "Yang bersangkutan tercatat dimana saja boleh", "'- Badut banget sih;"  # noqa
+            ],
+            "description_4": [
+                "", "'- relawan The SintoSintoBule", "", "", "", "- paspor B 5438675;", ""  # noqa
+            ]
+        }
+
+        expected_df = pd.DataFrame(expected_data)
+
+        # Assert that the structure of processed_df is as expected
+        self.assertTrue(
+            all(
+                processed_df[column].equals(
+                    input_df[column]
+                ) for column in ["Kode_ID", "Terduga"]))
+
+        # Assert the equality of each description_{i+1} column
+        for column in description_columns:
+            pd.testing.assert_series_equal(
+                processed_df[column],
+                expected_df[column],
+                check_names=False,
+                check_dtype=False,
+                check_exact=False,
+            )
+
+        # Assert no unexpected columns are present
+        expected_columns = set(["Kode_ID", "Terduga"] + description_columns)
+        self.assertEqual(
+            set(
+                processed_df.columns
+            ),
+            expected_columns, "Unexpected columns in processed DataFrame")
+
+        # Verify 'Terduga' column remains unchanged
+        pd.testing.assert_series_equal(
+            processed_df['Terduga'],
+            expected_df['Terduga'],
+            check_names=False
+        )
+
+        # Verify the correctness of description columns
+        for i in range(1, max_descriptions + 1):
+            column_name = f'description_{i}'
+            self.assertIn(
+                column_name,
+                processed_df.columns,
+                f"{column_name} is missing in the processed DataFrame"
+            )
+
+            # Content check - ensuring column is not empty
+            if 'Deskripsi' in input_df.columns:
+                non_empty_deskripsi_rows = input_df['Deskripsi'].apply(
+                    lambda x: x.strip()
+                ) != ''
+                expected_non_empty = non_empty_deskripsi_rows.sum()
+                processed_non_empty = processed_df[column_name].dropna().apply(
+                    lambda x: x.strip() != '').sum()
+                self.assertTrue(processed_non_empty <= expected_non_empty,
+                                f"Column {column_name} has more non-empty entries than expected.")  # noqa
+
+    def test_birth_date_formatting(self):
+        """
+        Test formatting value from `Tgl lahir` column thas has different formatting style for each row
+        """  # noqa
+        # Given input DataFrame with different formatting style in `Tgl lahir` column  # noqa
         input_df = pd.DataFrame({
             "Terduga": [
                 "Orang",
@@ -194,111 +420,103 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
                 "Korporasi",
                 "Orang",
                 "Orang",
+                "Korporasi",
+                "Orang",
+                "Orang",
+                "Korporasi",
+                "Orang",
+                "Orang"
             ],
-            "Deskripsi": [
-                """
-                '- NIK nomor: 1234567898765432
-                '- paspor A0987654
-                '- pekerjaan: Karyawan Swasta
-                """,
-                """
-                '- NIK 1232546589765954;
-                '- paspor PA6574873
-                '- diduga berada di Amerika
-                '- relawan The SintoSintoBule
-                """,
-                """
-                - NIK 9087654536287512;
-                '- paspor 7865473 (dikeluarkan oleh madagascar);
-                - pekerjaan Pegawai Negeri Sipil;
-                """,
-                """
-                - didirikan pada tahun 1940 oleh Indriyana Nurhayati;
-                - beberapa anggota terbutki secara sah melakukan penipuan
-                '- kegiatan amal (Charity)
-                """,
-                """
-                1. NIK 7765484598234123;
-                2. no. paspor A 4876576
-                3. saat ini berada di madagascar
-                """,
-                """
-                - NIK 6654786328764102
-                - Pendidikan SLTA/Sederajat
-                - Yang bersangkutan tercatat dimana saja boleh
-                - paspor B 5438675;
-                """,
+            "Tgl lahir": [
+                "4 Januari 1973/4 November 1974/4 November 1973",
+                "03-Apr-78",
+                "29 Juli 1983",
+                "",
+                "01-Apr-61",
+                "5 Oktober 1991;",
+                "",
+                "1 Oktober 1983 atau 15 Maret 1983 atau 1 Januari 1980",
+                "26/06/1978",
+                "",
+                "05/10/1976 atau 01/10/1976",
+                "00/00/0000"
             ]
         })
 
-        # Function to be tested
-        processed_df = self.processing_extract.extract_nik_and_passport_number(
-            input_df)
+        processed_df = self.processing_formatting_birthDate.format_birth_date(input_df)  # noqa
 
         # Expected output DataFrame
         expected_data = {
-                'Terduga': [
-                    'Orang',
-                    'Orang',
-                    'Orang',
-                    'Korporasi',
-                    'Orang',
-                    'Orang'],
-                "Deskripsi": ["""'- NIK nomor:
-                '- paspor
-                '- pekerjaan: Karyawan Swasta""", """'- NIK ;
-                '- paspor
-                '- diduga berada di Amerika
-                '- relawan The SintoSintoBule""", """- NIK ;
-                '- paspor  (dikeluarkan oleh madagascar);
-                - pekerjaan Pegawai Negeri Sipil;""", """
-                - didirikan pada tahun 1940 oleh Indriyana Nurhayati;
-                - beberapa anggota terbutki secara sah melakukan penipuan
-                - kegiatan amal (Charity)
-                """, """1. NIK ;
-                2. no. paspor
-                3. saat ini berada di madagascar""", """- NIK
-                - Pendidikan SLTA/Sederajat
-                - Yang bersangkutan tercatat dimana saja boleh
-                - paspor ;"""
-            ],  # noqa
-                'idNumber': [
-                    '1234567898765432',
-                    '1232546589765954',
-                    '9087654536287512',
-                    '',
-                    '7765484598234123',
-                    '6654786328764102'],
-                'passport_number': [
-                    'A0987654',
-                    'PA6574873',
-                    '7865473',
-                    '',
-                    'A 4876576',
-                    'B 5438675',
-                ]
-            }
+            "Terduga": [
+                "Orang",
+                "Orang",
+                "Orang",
+                "Korporasi",
+                "Orang",
+                "Orang",
+                "Korporasi",
+                "Orang",
+                "Orang",
+                "Korporasi",
+                "Orang",
+                "Orang"
+            ],
+            "birth_date_1": [
+                "04/01/1973",
+                "03/04/1978",
+                "29/07/1983",
+                "",
+                "01/04/1961",
+                "05/10/1991",
+                "",
+                "01/10/1983",
+                "26/06/1978",
+                "",
+                "05/10/1976",
+                "",
+            ],
+            "birth_date_2": [
+                "04/11/1974",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "15/03/1983",
+                "",
+                "",
+                "01/10/1976",
+                ""
+            ],
+            "birth_date_3": [
+                "04/11/1973",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "01/01/1980",
+                "",
+                "",
+                "",
+                ""
+            ]
+        }
         expected_df = pd.DataFrame(expected_data)
-        # Custom comparison logic for "Deskripsi" column
-        similarities = []
-        for processed_text, expected_text in zip(
-                processed_df['Deskripsi'],
-                expected_df['Deskripsi']):
-            similarity = self.processing_extract.calculate_similarity(
-                processed_text,
-                expected_text)
-            similarities.append(similarity)
 
-        # Check if average similarity is above a threshold (e.g., 0.9 for 90% similarity)  # noqa
-        average_similarity = sum(similarities) / len(similarities)
-        print(f"Average similarity: {average_similarity}")
-        self.assertTrue(
-            average_similarity >= 0.95, "Average text similarity is below 95%")
-
-        # For other columns where exact matches are expected,
-        for column in ['Terduga', 'idNumber', 'passport_number']:
-            assert_frame_equal(
-                processed_df[[column]],
-                expected_df[[column]],
-                check_like=True,
-                check_dtype=False)
+        # Assert equality between processed_df and expected_df for relevant columns  # noqa
+        pd.testing.assert_frame_equal(
+            processed_df[
+                [
+                    'Terduga',
+                    'birth_date_1',
+                    'birth_date_2',
+                    'birth_date_3'
+                    ]
+                ],
+            expected_df,
+            check_like=True,
+            check_dtype=False
+        )
