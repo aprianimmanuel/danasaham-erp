@@ -306,7 +306,25 @@ class CleaningSeparatingDeskripsi:
 
 
 class FormattingBirthDate:
+    """
+    A class to format birth dates from various formats to a standardized DD/MM/YYYY format.
+
+    The class handles various date formats found in a 'Tgl lahir' column of a DataFrame,
+    converting them to a consistent format. It also skips any date entries marked as '00/00/0000',
+    treating them as invalid or placeholder values.
+
+    Attributes:
+        months_dict (dict): A dictionary mapping month names and abbreviations to their
+                            numerical representations.
+        date_pattern (re.Pattern): A compiled regular expression pattern used to identify
+                                   and extract date components from text.
+    """  # noqa
+
     def __init__(self):
+        """
+        Initializes the FormattingBirthDate instance, setting up the month dictionary and
+        compiling the date pattern regular expression.
+        """  # noqa
         self.months_dict = {
             'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04',
             'may': '05', 'jun': '06', 'jul': '07', 'aug': '08',
@@ -326,6 +344,15 @@ class FormattingBirthDate:
         """, re.VERBOSE | re.IGNORECASE)
 
     def format_birth_date(self, df):
+        """
+        Formats birth dates from the 'Tgl lahir' column of the input DataFrame.
+
+        Args:
+            df (pd.DataFrame): The input DataFrame containing a 'Tgl lahir' column.
+
+        Returns:
+            pd.DataFrame: The DataFrame with additional columns for formatted birth dates.
+        """  # noqa
         for i in range(1, 4):
             df[f'birth_date_{i}'] = ""
 
@@ -342,6 +369,15 @@ class FormattingBirthDate:
         return df
 
     def extract_dates(self, text):
+        """
+        Extracts and formats dates from a text string containing one or more dates.
+
+        Args:
+            text (str): The input text from which to extract and format dates.
+
+        Returns:
+            list: A list of formatted dates as strings.
+        """  # noqa
         if not isinstance(text, str) or text == "00/00/0000":
             return []
         matches = self.date_pattern.finditer(text)
@@ -349,15 +385,42 @@ class FormattingBirthDate:
         return dates
 
     def _format_match(self, match):
+        """
+        Formats a single date match into DD/MM/YYYY format.
+
+        Args:
+            match (re.Match): A regex match object containing date components.
+
+        Returns:
+            str: The formatted date string.
+        """  # noqa
         day, month, year = match.group('day'), match.group('month'), match.group('year')  # noqa
         month_number = self._month_to_number(month)
         year = self._adjust_year(year)
         return f"{day.zfill(2)}/{month_number}/{year}"
 
     def _month_to_number(self, month):
+        """
+        Converts a month name or abbreviation to its numeric representation.
+
+        Args:
+            month (str): The month name or abbreviation.
+
+        Returns:
+            str: The numeric representation of the month, zero-padded to two digits.
+        """  # noqa
         return self.months_dict.get(month.lower(), month.zfill(2))
 
     def _adjust_year(self, year):
+        """
+        Adjusts a two-digit year to a four-digit year based on a cutoff.
+
+        Args:
+            year (str): The year component of a date.
+
+        Returns:
+            str: The adjusted four-digit year.
+        """  # noqa
         if len(year) == 2:
             return f"19{year}" if int(year) > 22 else f"20{year}"
         return year
