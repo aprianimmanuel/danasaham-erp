@@ -58,6 +58,9 @@
 │   │   │   ├── 0024_alter_user_email.py
 │   │   │   ├── 0025_alter_user_email.py
 │   │   │   ├── 0026_alter_userprofile_last_name.py
+│   │   │   ├── 0027_document.py
+│   │   │   ├── 0028_document_document_file_type.py
+│   │   │   ├── 0029_dttotdoc__dttot_middle_name.py
 │   │   │   ├── __init__.py
 │   │   │   └── __pycache__
 │   │   │       ├── 0001_initial.cpython-39.pyc
@@ -86,6 +89,9 @@
 │   │   │       ├── 0024_alter_user_email.cpython-39.pyc
 │   │   │       ├── 0025_alter_user_email.cpython-39.pyc
 │   │   │       ├── 0026_alter_userprofile_last_name.cpython-39.pyc
+│   │   │       ├── 0027_document.cpython-39.pyc
+│   │   │       ├── 0028_document_document_file_type.cpython-39.pyc
+│   │   │       ├── 0029_dttotdoc__dttot_middle_name.cpython-39.pyc
 │   │   │       └── __init__.cpython-39.pyc
 │   │   ├── models.py
 │   │   └── tests
@@ -98,6 +104,36 @@
 │   │       ├── test_admin.py
 │   │       ├── test_commands.py
 │   │       └── test_models.py
+│   ├── documents
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   ├── __init__.cpython-39.pyc
+│   │   │   ├── apps.cpython-39.pyc
+│   │   │   ├── serializers.cpython-39.pyc
+│   │   │   ├── urls.cpython-39.pyc
+│   │   │   └── views.cpython-39.pyc
+│   │   ├── apps.py
+│   │   ├── serializers.py
+│   │   ├── tests
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   │   ├── __init__.cpython-39.pyc
+│   │   │   │   └── test_document_api.cpython-39.pyc
+│   │   │   └── test_document_api.py
+│   │   ├── urls.py
+│   │   ├── utils
+│   │   │   ├── __init__.py
+│   │   │   ├── __pycache__
+│   │   │   │   ├── __init__.cpython-39.pyc
+│   │   │   │   └── data_preparation.cpython-39.pyc
+│   │   │   ├── data_preparation.py
+│   │   │   └── tests
+│   │   │       ├── __init__.py
+│   │   │       ├── __pycache__
+│   │   │       │   ├── __init__.cpython-39.pyc
+│   │   │       │   └── test_data_preparation.cpython-39.pyc
+│   │   │       └── test_data_preparation.py
+│   │   └── views.py
 │   ├── dttotDoc
 │   │   ├── __init__.py
 │   │   ├── __pycache__
@@ -110,12 +146,8 @@
 │   │   ├── serializers.py
 │   │   ├── tasks.py
 │   │   ├── tests
-│   │   │   ├── test_dttotDoc_api.py
-│   │   │   └── test_etl.py
+│   │   │   └── test_dttotDoc_api.py
 │   │   ├── urls.py
-│   │   ├── utils
-│   │   │   ├── __init__.py
-│   │   │   └── data_cleaning.py
 │   │   └── views.py
 │   ├── manage.py
 │   └── user
@@ -142,4 +174,4 @@
 ├── requirements.txt
 └── tree.txt
 
-21 directories, 121 files
+28 directories, 146 files

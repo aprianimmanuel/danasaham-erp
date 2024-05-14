@@ -20,7 +20,7 @@ class DTTOTDocumentProcessing:
         """
         if document_format == 'CSV':
             return pd.read_csv(file_path)
-        elif document_format == 'XLS':
+        elif document_format == 'XLS' or document_format == 'XLSX':
             return pd.read_excel(file_path)
         else:
             raise ValueError(
@@ -305,7 +305,7 @@ class CleaningSeparatingDeskripsi:
         return [desc.strip() for desc in descriptions if desc.strip()]
 
 
-class FormattingBirthDate:
+class FormattingColumn:
     """
     A class to format birth dates from various formats to a standardized DD/MM/YYYY format.
 
@@ -322,7 +322,7 @@ class FormattingBirthDate:
 
     def __init__(self):
         """
-        Initializes the FormattingBirthDate instance, setting up the month dictionary and
+        Initializes the FormattingColumn instance, setting up the month dictionary and
         compiling the date pattern regular expression.
         """  # noqa
         self.months_dict = {
@@ -334,6 +334,7 @@ class FormattingBirthDate:
             'september': '09', 'oktober': '10',
             'november': '11', 'desember': '12'
         }  # noqa
+
         self.date_pattern = re.compile(r"""
             (?P<day>\d{1,2})
             [\s/-]
@@ -342,6 +343,249 @@ class FormattingBirthDate:
             (?P<year>\d{4}|\d{2})
             (?=[\s/-]?|$)
         """, re.VERBOSE | re.IGNORECASE)
+
+        self.country_dict = {
+            "Afghanistan": "Afghanistan",
+            "Albania": "Albania",
+            "Algeria": "Algeria",
+            "Aljazair": "Algeria",
+            "Andorra": "Andorra",
+            "Angola": "Angola",
+            "Antigua dan Barbuda": "Antigua and Barbuda",
+            "Argentina": "Argentina",
+            "Armenia": "Armenia",
+            "Austria": "Austria",
+            "Australia": "Australia",
+            "Azerbaijan": "Azerbaijan",
+            "Amerika Serikat": "United States of America",
+            "Bahrain": "Bahrain",
+            "Bangladesh": "Bangladesh",
+            "Barbados": "Barbados",
+            "Belarus": "Belarus",
+            "Belgium": "Belgium",
+            "Belize": "Belize",
+            "Benin": "Benin",
+            "Bhutan": "Bhutan",
+            "Bolivia": "Bolivia",
+            "Bosnia dan Herzegovina": "Bosnia and Herzegovina",
+            "Botswana": "Botswana",
+            "Brazil": "Brazil",
+            "Brunei": "Brunei",
+            "Bulgaria": "Bulgaria",
+            "Burkina Faso": "Burkina Faso",
+            "Burundi": "Burundi",
+            "Bosnia Herzegonia": "Bosnia and Herzegovina",
+            "Cabo Verde": "Cabo Verde",
+            "Kamboja": "Cambodia",
+            "Kamerun": "Cameroon",
+            "Kanada": "Canada",
+            "Republik Afrika Tengah": "Central African Republic",
+            "Chad": "Chad",
+            "Channel Islands": "Channel Islands",
+            "Cile": "Chile",
+            "Cina": "China",
+            "Kolombia": "Colombia",
+            "Comoros": "Comoros",
+            "Congo": "Congo",
+            "Costa Rica": "Costa Rica",
+            "Côte d'Ivoire": "Côte d'Ivoire",
+            "Kroasia": "Croatia",
+            "Kuba": "Cuba",
+            "Siprus": "Cyprus",
+            "Czech Republic": "Czech Republic",
+            "Denmark": "Denmark",
+            "Djibouti": "Djibouti",
+            "Dominica": "Dominica",
+            "Republik Dominika": "Dominican Republic",
+            "Republik Congo": "Democratic Republic of the Congo",
+            "Ekuador": "Ecuador",
+            "Mesir": "Egypt",
+            "El Salvador": "El Salvador",
+            "Equatorial Guinea": "Equatorial Guinea",
+            "Eritrea": "Eritrea",
+            "Estonia": "Estonia",
+            "Eswatini": "Eswatini",
+            "Ethiopia": "Ethiopia",
+            "Faeroe Islands": "Faeroe Islands",
+            "Finlandia": "Finland",
+            "Perancis": "France",
+            "French Guiana": "French Guiana",
+            "Fiji": "Fiji",
+            "Gabon": "Gabon",
+            "Gambia": "Gambia",
+            "Georgia": "Georgia",
+            "Jerman": "Germany",
+            "Ghana": "Ghana",
+            "Gibraltar": "Gibraltar",
+            "Yunani": "Greece",
+            "Grenada": "Grenada",
+            "Guatemala": "Guatemala",
+            "Guinea": "Guinea",
+            "Guinea-Bissau": "Guinea-Bissau",
+            "Guyana": "Guyana",
+            "Haiti": "Haiti",
+            "Holy See": "Holy See",
+            "Honduras": "Honduras",
+            "Hong Kong": "Hong Kong",
+            "Hungaria": "Hungary",
+            "Islandia": "Iceland",
+            "India": "India",
+            "Indonesia": "Indonesia",
+            "Iran": "Iran",
+            "Irak": "Iraq",
+            "Irlandia": "Ireland",
+            "Isle of Man": "Isle of Man",
+            "Israel": "Israel",
+            "Italia": "Italy",
+            "Jamaika": "Jamaica",
+            "Jepang": "Japan",
+            "Yordania": "Jordan",
+            "Laos": "Laos",
+            "Latvia": "Latvia",
+            "Lebanon": "Lebanon",
+            "Lesotho": "Lesotho",
+            "Liberia": "Liberia",
+            "Libya": "Libya",
+            "Liechtenstein": "Liechtenstein",
+            "Lithuania": "Lithuania",
+            "Luxembourg": "Luxembourg",
+            "Macao": "Macao",
+            "Madagaskar": "Madagascar",
+            "Malawi": "Malawi",
+            "Malaysia": "Malaysia",
+            "Maldives": "Maldives",
+            "Mali": "Mali",
+            "Malta": "Malta",
+            "Mauritania": "Mauritania",
+            "Mauritius": "Mauritius",
+            "Mayotte": "Mayotte",
+            "Mexico": "Mexico",
+            "Moldova": "Moldova",
+            "Monaco": "Monaco",
+            "Mongolia": "Mongolia",
+            "Montenegro": "Montenegro",
+            "Maroko": "Morocco",
+            "Mozambique": "Mozambique",
+            "Myanmar": "Myanmar",
+            "Namibia": "Namibia",
+            "Nepal": "Nepal",
+            "Netherlands": "Netherlands",
+            "Nikaragua": "Nicaragua",
+            "Niger": "Niger",
+            "Nigeria": "Nigeria",
+            "Korea Utara": "North Korea",
+            "North Macedonia": "North Macedonia",
+            "Nauru": "Nauru",
+            "Norwegia": "Norway",
+            "New Zealand": "New Zealand",
+            "Oman": "Oman",
+            "Palestina": "Palestine",
+            "Pakistan": "Pakistan",
+            "Panama": "Panama",
+            "Paraguay": "Paraguay",
+            "Peru": "Peru",
+            "Filipina": "Philippines",
+            "Polandia": "Poland",
+            "Portugal": "Portugal",
+            "Palau": "Palau",
+            "Papua Nugini": "Papua New Guinea",
+            "Qatar": "Qatar",
+            "Republik Arab Suriah": "Syria",
+            "Réunion": "Réunion",
+            "Rumania": "Romania",
+            "Rusia": "Russia",
+            "Rwanda": "Rwanda",
+            "Saint Helena": "Saint Helena",
+            "Saint Kitts and Nevis": "Saint Kitts and Nevis",
+            "Saint Lucia": "Saint Lucia",
+            "Saint Vincent and the Grenadines": "Saint Vincent and the Grenadines",  # noqa
+            "San Marino": "San Marino",
+            "Sao Tome & Principe": "Sao Tome & Principe",
+            "Pulau Solomon": "Solomon Islands",
+            "Arab Saudi": "Saudi Arabia",
+            "Senegal": "Senegal",
+            "Serbia": "Serbia",
+            "Seychelles": "Seychelles",
+            "Sierra Leone": "Sierra Leone",
+            "Singapura": "Singapore",
+            "Slovakia": "Slovakia",
+            "Slovenia": "Slovenia",
+            "Somalia": "Somalia",
+            "Afrika Selatan": "South Africa",
+            "Korea Selatan": "South Korea",
+            "South Sudan": "South Sudan",
+            "Spanyol": "Spain",
+            "Sri Lanka": "Sri Lanka",
+            "Sudan": "Sudan",
+            "Suriname": "Suriname",
+            "Swedia": "Sweden",
+            "Swiss": "Switzerland",
+            "Suriah": "Syria",
+            "Taiwan": "Taiwan",
+            "Tajikistan": "Tajikistan",
+            "Tanzania": "Tanzania",
+            "Thailand": "Thailand",
+            "Bahamas": "The Bahamas",
+            "Timor-Leste": "Timor-Leste",
+            "Togo": "Togo",
+            "Trinidad dan Tobago": "Trinidad and Tobago",
+            "Tunisia": "Tunisia",
+            "Turki": "Turkey",
+            "Turkmenistan": "Turkmenistan",
+            "Uganda": "Uganda",
+            "Ukraina": "Ukraine",
+            "Uni Emirat Arab": "United Arab Emirates",
+            "United Kingdom": "United Kingdom",
+            "Uzbekistan": "Uzbekistan",
+            "Uruguay": "Uruguay",
+            "Venezuela": "Venezuela",
+            "Vietnam": "Vietnam",
+            "Western Sahara": "Western Sahara",
+            "Yaman": "Yemen",
+            "Zambia": "Zambia",
+            "Zimbabwe": "Zimbabwe",
+        }
+
+    @staticmethod
+    def _calculate_similarity(str1, str2):
+        """
+        Calculate the similarity percentage between two strings using Levenshtein distance.
+
+        Args:
+            str1 (str): First string for comparison.
+            str2 (str): Second string for comparison.
+
+        Returns:
+            float: The similarity percentage between the two strings.
+        """  # noqa
+        len_str1, len_str2 = len(str1), len(str2)
+        max_len = max(len_str1, len_str2)
+        if max_len == 0:
+            return 100.0  # Both strings are empty, considered 100% similar
+
+        # Create a matrix to calculate distances
+        matrix = [[0] * (len_str2 + 1) for _ in range(len_str1 + 1)]
+
+        # Initialize the matrix
+        for i in range(len_str1 + 1):
+            matrix[i][0] = i
+        for j in range(len_str2 + 1):
+            matrix[0][j] = j
+
+        # Calculate distances
+        for i in range(1, len_str1 + 1):
+            for j in range(1, len_str2 + 1):
+                if str1[i-1] == str2[j-1]:
+                    cost = 0
+                else:
+                    cost = 1
+                matrix[i][j] = min(matrix[i-1][j] + 1,  # Deletion
+                                   matrix[i][j-1] + 1,  # Insertion
+                                   matrix[i-1][j-1] + cost)  # Substitution
+
+        distance = matrix[len_str1][len_str2]
+        similarity = ((max_len - distance) / max_len) * 100
+        return similarity
 
     def format_birth_date(self, df):
         """
@@ -424,3 +668,80 @@ class FormattingBirthDate:
         if len(year) == 2:
             return f"19{year}" if int(year) > 22 else f"20{year}"
         return year
+
+    def format_nationality(self, df):
+        """
+        Processes and formats the 'WN' column of the input DataFrame, standardizing nationality information
+        and splitting into multiple columns if necessary.
+
+        Args:
+            df (pd.DataFrame): The input DataFrame containing a 'WN' column.
+
+        Returns:
+            pd.DataFrame: The DataFrame with formatted and possibly split nationality information.
+        """  # noqa
+        # Initialize new columns for the potentially split nationalities
+        df['WN_1'], df['WN_2'] = "", ""
+
+        for index, row in df.iterrows():
+            nationalities = self._clean_and_split_nationality(row['WN'])
+            if len(nationalities) > 0:
+                df.at[index, 'WN_1'] = self._standardize_country_name(nationalities[0])  # noqa
+            if len(nationalities) > 1:
+                df.at[index, 'WN_2'] = self._standardize_country_name(nationalities[1])  # noqa
+
+        return df
+
+    def _clean_and_split_nationality(self, nationality_str):
+        """
+        Cleans, splits, and standardizes the nationality string into a list of standardized nationalities,
+        based on the `country_dict`. If there are differences between the raw nationality and the dictionary
+        entries, those are cleaned and standardized.
+
+        Args:
+            nationality_str (str): The raw nationality string from the 'WN' column.
+
+        Returns:
+            list: A list of cleaned, split, and potentially standardized nationalities.
+        """  # noqa
+        # Remove known extraneous phrases and split by commas or semicolons
+        cleaned_str = re.sub(
+            r"(; officially the United Republic of Tanzania)", "", nationality_str)  # noqa
+        split_nationalities = [
+            n.strip() for n in re.split(r"[,;]", cleaned_str) if n]
+
+        standardized_nationalities = []
+        for nationality in split_nationalities:
+            standardized = self._standardize_country_name(nationality)
+            if standardized:
+                standardized_nationalities.append(standardized)
+            else:
+                # If no standardization is found, keep the original
+                standardized_nationalities.append(nationality)
+
+        return standardized_nationalities
+
+    def _standardize_country_name(self, country_name):
+        """
+        Standardizes a country name based on known variations and similarity comparison, choosing the closest match
+        from `country_dict` based on the highest similarity score.
+
+        Args:
+            country_name (str): The raw country name to standardize.
+
+        Returns:
+            str: The standardized country name if a similar name is found in the dictionary with the highest similarity
+                score; otherwise, the input name.
+        """  # noqa
+        best_score = 0
+        best_match = None
+        for key, standardized_name in self.country_dict.items():
+            score = self._calculate_similarity(
+                country_name.lower(), key.lower())
+            if score > best_score:
+                best_score = score
+                best_match = standardized_name
+
+        if best_score >= 85:
+            return best_match
+        return country_name

@@ -112,7 +112,7 @@ class Document(models.Model):
         default=uuid.uuid4,
         editable=False,
         primary_key=True,
-        max_length=36
+        max_length=36,
     )
     document_file_type = models.CharField(
         _(
@@ -149,14 +149,19 @@ class dttotDoc(models.Model):
     updated_at = models.DateTimeField(
         _("DTTOT Updated at"), auto_now=True)
 
-    document_id = models.CharField(
-        default=uuid.uuid4,
-        editable=False,
-        primary_key=True,
-        max_length=36
+    document = models.ForeignKey(
+        'Document',
+        on_delete=models.SET_NULL,
+        related_name='dttotDocs',
+        related_query_name='dttotDoc',
+        null=True,
+        blank=True
     )
+
     dttot_id = models.TextField(
         default=uuid.uuid4,
+        primary_key=True,
+        max_length=36,
         editable=False
     )
     _dttot_first_name = models.TextField(

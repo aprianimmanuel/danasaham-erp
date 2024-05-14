@@ -71,25 +71,24 @@ class UserAdmin(BaseUserAdmin):
 
 
 class DttotDocAdmin(admin.ModelAdmin):
-    list_display = (
+    list_display = [
         'document_id',
         'dttot_id',
         'dttot_type',
         'display_username',
         'updated_at'
-    )
-    search_fields = (
-        'document_id',
+    ]
+    search_fields = [
         'dttot_id',
         'dttot_type',
         '_dttot_first_name',
         '_dttot_last_name',
         'input_by__username'
-    )
-    list_filter = (
+    ]
+    list_filter = [
         'dttot_type',
         'updated_at'
-    )
+    ]
     readonly_fields = ('document_id', 'dttot_id')
 
     def display_username(self, obj):

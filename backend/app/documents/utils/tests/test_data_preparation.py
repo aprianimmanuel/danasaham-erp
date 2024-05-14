@@ -7,7 +7,7 @@ from documents.utils.data_preparation import (
     DTTOTDocumentProcessing,
     ExtractNIKandPassportNumber,
     CleaningSeparatingDeskripsi,
-    FormattingBirthDate)
+    FormattingColumn)
 from openpyxl import Workbook
 from pandas.testing import assert_frame_equal
 
@@ -126,7 +126,7 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
         cls.processing_extract = ExtractNIKandPassportNumber()
         cls.processing = DTTOTDocumentProcessing()
         cls.processing_separating = CleaningSeparatingDeskripsi()
-        cls.processing_formatting_birthDate = FormattingBirthDate()
+        cls.processing_formatting = FormattingColumn()
         # Create a test XLS file using openpyxl
         cls.xls_file_path = os.path.join(cls.temp_dir, 'test.xlsx')
         workbook = Workbook()
@@ -443,7 +443,7 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
             ]
         })
 
-        processed_df = self.processing_formatting_birthDate.format_birth_date(input_df)  # noqa
+        processed_df = self.processing_formatting.format_birth_date(input_df)  # noqa
 
         # Expected output DataFrame
         expected_data = {
@@ -514,6 +514,110 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
                     'birth_date_1',
                     'birth_date_2',
                     'birth_date_3'
+                    ]
+                ],
+            expected_df,
+            check_like=True,
+            check_dtype=False
+        )
+
+    def test_formatting_nationality(self):
+        """Test style of formatting WN columns"""
+        # Given input dataframe with different formatting style in `WN` column
+        input_df = pd.DataFrame(
+            {
+                "Terduga": [
+                    "Orang",
+                    "Orang",
+                    "Orang",
+                    "Korporasi",
+                    "Orang",
+                    "Orang",
+                    "Korporasi",
+                    "Orang",
+                    "Orang",
+                    "Korporasi",
+                    "Orang",
+                    "Orang",
+                    "Orang",
+                ],
+                "WN": [
+                    "Indonesia,Yaman",
+                    "Pakistan,Republik Arab Syria",
+                    "Trinidad and Tobago;",
+                    "",
+                    "Republik Arab Suriah",
+                    "Bosnia Herzegonia",
+                    "",
+                    "Palestina,Suriah",
+                    "Tanzania; officially the United Republic of Tanzania",
+                    "",
+                    "Mali,Mauritania",
+                    "Amerika Serikat,Yaman",
+                    "Etiopia,banglades"
+                ]
+            }
+        )
+
+        processed_df = self.processing_formatting.format_nationality(input_df)  # noqa
+
+        # Expected output DataFrame
+        expected_data = {
+            "Terduga": [
+                "Orang",
+                "Orang",
+                "Orang",
+                "Korporasi",
+                "Orang",
+                "Orang",
+                "Korporasi",
+                "Orang",
+                "Orang",
+                "Korporasi",
+                "Orang",
+                "Orang",
+                "Orang"
+            ],
+            "WN_1": [
+                "Indonesia",
+                "Pakistan",
+                "Trinidad and Tobago",
+                "",
+                "Syria",
+                "Bosnia and Herzegovina",
+                "",
+                "Palestine",
+                "Tanzania",
+                "",
+                "Mali",
+                "United States of America",
+                "Ethiopia",
+            ],
+            "WN_2": [
+                "Yemen",
+                "Syria",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "Syria",
+                "",
+                "",
+                "Mauritania",
+                "Yemen",
+                "Bangladesh"
+            ]
+        }
+        expected_df = pd.DataFrame(expected_data)
+
+        # Assert equality between processed_df and expected_df for relevant columns  # noqa
+        pd.testing.assert_frame_equal(
+            processed_df[
+                [
+                    'Terduga',
+                    'WN_1',
+                    'WN_2'
                     ]
                 ],
             expected_df,

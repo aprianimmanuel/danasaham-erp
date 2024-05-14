@@ -130,7 +130,7 @@ class DttotDocAdminTest(TestCase):
             input_by=self.normal_user,
             dttot_type="Personal",
             _dttot_first_name="John",
-            _dttot_last_name="Doe"
+            _dttot_last_name="Doe" 
         )
 
     def test_list_display(self):
@@ -162,7 +162,7 @@ class DttotDocAdminTest(TestCase):
         """Test that the dttotDoc change page works"""
         url = reverse(
             'admin:core_dttotdoc_change',
-            args=[self.dttot_doc.document_id])
+            args=[self.dttot_doc.dttot_id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 

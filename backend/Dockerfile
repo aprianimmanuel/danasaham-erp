@@ -80,7 +80,7 @@ RUN python -m venv /py && \
 
 RUN mkdir -p /app/media/test_media && \
     chown -R django-user:django-user /py && \
-    chown -R django-user:django-user /app/media
+    chown -R django-user:django-user /app
 
 ENV PATH="/py/bin:$PATH"
 

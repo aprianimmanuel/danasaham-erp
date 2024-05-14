@@ -1,11 +1,6 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import DttotDocViewSet
-
-# Create a router and register our viewsets with it.
-router = DefaultRouter()
-router.register(r'dttotdocs', DttotDocViewSet)
+from django.urls import path
+from .views import DttotDocListCreateAPIView
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('dttotdocs/', DttotDocListCreateAPIView.as_view(), name='dttotdocs-create'),
 ]

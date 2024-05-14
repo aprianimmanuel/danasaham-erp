@@ -1,16 +1,24 @@
 from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import DocumentViewSet
-
-router = DefaultRouter()
-router.register(r'documents', DocumentViewSet)
+from .views import (
+    DocumentCreateAPIView,
+    DocumentListAPIView,
+    DocumentDetailAPIView
+)
 
 urlpatterns = [
-
-    # Document API URLs
-    path('', include(router.urls)),
+    path(
+        'documents/upload/',
+        DocumentCreateAPIView.as_view(),
+        name='document-create'),
+    path(
+        'documents/',
+        DocumentListAPIView.as_view(),
+        name='document-list'),
+    path(
+        'documents/<uuid:pk>/',
+        DocumentDetailAPIView.as_view(),
+        name='document-detail'),
 
     # DTTOT Document API and any other app-specific URLs
     path('documents/', include('dttotDoc.urls')),
-
 ]

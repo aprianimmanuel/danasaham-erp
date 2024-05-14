@@ -1,4 +1,5 @@
 import shutil
+from tempfile import TemporaryDirectory
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
@@ -7,7 +8,7 @@ from django.contrib.auth import get_user_model
 from core.models import Document, dttotDoc
 from django.conf import settings
 import os
-from tempfile import TemporaryDirectory
+from openpyxl import Workbook
 
 
 def document_list_url():
@@ -16,6 +17,14 @@ def document_list_url():
 
 def document_detail_url(document_pk):
     return reverse('document-detail', args=[document_pk])
+
+
+def dttot_process_url(document_pk):
+    return reverse('dttot-process', args=[document_pk])
+
+
+def document_create_url():
+    return reverse('document-create')
 
 
 class DocumentAPITests(APITestCase):
@@ -41,7 +50,7 @@ class DocumentAPITests(APITestCase):
                 content_type='application/pdf')
         }
         res = self.client.post(
-            document_list_url(),
+            document_create_url(),
             payload,
             format='multipart')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
@@ -53,6 +62,7 @@ class DocumentAPITests(APITestCase):
 
     def test_retrieve_documents_list(self):
         """Test retrieving a list of documents."""
+        self.client.force_authenticate(user=self.user)
         Document.objects.create(
             document_name='Test1',
             document_type='PDF',
@@ -70,6 +80,7 @@ class DocumentAPITests(APITestCase):
 
     def test_retrieve_document_detail(self):
         """Test retrieving a document's detail."""
+        self.client.force_authenticate(user=self.user)
         document = Document.objects.create(
             document_name='Test',
             document_type='PDF',
@@ -120,10 +131,22 @@ class DocumentAPITests(APITestCase):
 class DTTOTDocumentUploadTests(APITestCase):
 
     def setUp(self):
-        self.user = get_user_model().objects.create_user(
-            'test@example.com', 'password123')
+        super().setUp()
         self.client = APIClient()
-        self.client.force_authenticate(user=self.user)
+        self.user = get_user_model().objects.create_user(
+            email='test@example.com',
+            username='testuser',
+            password='Testpass!23')
+        # Authenticate the user
+        url = reverse('token_obtain_pair')
+        response = self.client.post(url, {
+            'email': 'test@example.com',
+            'password': 'Testpass!23'
+        })
+        self.token = response.data['access']
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.token)
+        self.verify_url = reverse('token_verify')
+
         # Create a TemporaryDirectory for MEDIA_ROOT
         self.temp_media_dir = TemporaryDirectory()
         self.addCleanup(self.temp_media_dir.cleanup)  # Ensure cleanup
@@ -131,44 +154,82 @@ class DTTOTDocumentUploadTests(APITestCase):
         self.original_media_root = settings.MEDIA_ROOT
         settings.MEDIA_ROOT = self.temp_media_dir.name
 
+        # Create an XLSX file in memory and save it directly to the file path
+        self.document_path = os.path.join(self.temp_media_dir.name, 'test.xlsx')
+        wb = Workbook()
+        ws = wb.active
+        ws.append(
+            [
+                "Nama",
+                "Deskripsi",
+                "Terduga",
+                "Kode Densus",
+                "Tpt Lahir",
+                "Tgl lahir",
+                "WN",
+                "Alamat"
+            ]
+        )
+        ws.append([
+            "John Doe Alias Don John Alias John Krew",
+            "'- NIK nomor: 1234567898765432\n'- paspor nomor: A0987654\n'- pekerjaan: Karyawan Swasta",
+            "Orang",
+            "EDD-013",
+            "Surabaya",
+            "4 Januari 1973/4 November 1974/4 November 1973",
+            "Indonesia",
+            "Jalan Getis Gg.III/95A, RT/RW. 013/003, Kel. Lemah Putro, Kec. Sidoarjo, Kab/Kota. Sidoarjo, Prov. Jawa Timur"
+        ])
+        # Save the workbook to the file path
+        wb.save(self.document_path)
+
     def tearDown(self):
         # Reset MEDIA_ROOT to its original value
         settings.MEDIA_ROOT = self.original_media_root
         super().tearDown()
 
     def test_upload_dttot_document_and_process(self):
-        """Test uploading a 'DTTOT Document', processing it, and saving to dttotDoc models."""  # noqa
-        document_path = os.path.join(self.temp_media_dir.name, 'document.csv')
-        # Create a temporary CSV file in the temporary directory
-        with open(document_path, 'w') as temp_file:
-            temp_file.write("Sample data")
+        """Test uploading a 'DTTOT Document', processing it, and saving to dttotDoc models."""
+        document_url = document_create_url()
+        data = {
+            'document_name': 'DTTOT Document Upload Test',
+            'document_type': 'DTTOT Document',
+            'document_file_type': 'XLSX',
+            'created_by': self.user.user_id,
+            'updated_by': self.user.user_id
+        }
 
-        # Step 1: Upload the document
-        upload_url = document_list_url()
-        with open(document_path, 'rb') as doc_file:
-            upload_payload = {
-                'document_name': 'DTTOT Upload Test',
-                'document_type': 'DTTOT Document',
-                'document_file': doc_file
-            }
-            response = self.client.post(
-                upload_url, upload_payload, format='multipart')
+        response = self.client.post(document_url, data)
+        if response.status_code != status.HTTP_201_CREATED:
+            print("Failed to create document:")
+            print("Status Code:", response.status_code)
+            print("Response Body:", response.data)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        document_id = response.data['document_id']
-        self.assertTrue(Document.objects.filter(pk=document_id).exists())
+        document_id = response.data.get('document_id')
 
-        # Step 2: Trigger processing of the uploaded document
-        process_url = reverse('dttot-process', args=[document_id])
-        process_response = self.client.post(process_url)
-        self.assertEqual(process_response.status_code, status.HTTP_200_OK)
+        # Upload the document
+        upload_url = reverse('dttot-create', args=[document_id])  # Assuming there's a specific URL for DTTOT document creation
+        with open(self.document_path, 'rb') as doc_file:
+            upload_data = {
+                'document_file': doc_file,
+                'document_file_type': 'XLSX'
+            }
+            response = self.client.post(upload_url, upload_data, format='multipart')
 
-        # Step 3:
-        # Verify the document was processed and saved into dttotDoc models
-        self.assertTrue(dttotDoc.objects.exists())
+        # Evaluate the response
+        if response.status_code != status.HTTP_201_CREATED:
+            print("Failed to create document:")
+            print("Status Code:", response.status_code)
+            print("Response Body:", response.data)
 
-        # Cleanup: Optionally, delete the uploaded document if not needed
-        delete_url = document_detail_url(document_id)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Verify the processing outcome
+        self.assertTrue(Document.objects.filter(pk=document_id).exists(), "Document was not created in the database.")
+        self.assertTrue(dttotDoc.objects.filter(document_id=document_id).exists(), "DTTOT Doc entry was not created.")
+
+        # Cleanup
+        delete_url = reverse('document-detail', args=[document_id])
         delete_response = self.client.delete(delete_url)
-        self.assertEqual(
-            delete_response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
