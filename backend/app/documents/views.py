@@ -35,7 +35,11 @@ class DocumentAPIView(ListCreateAPIView):
         document = serializer.save()
 
         # Emit the signal with the context
-        post_save.send(sender=Document, instance=document, created=True, context=context)
+        post_save.send(
+            sender=Document,
+            instance=document,
+            created=True,
+            context=context)
 
         if document.document_type == 'DTTOT Document':
             response_data = {
