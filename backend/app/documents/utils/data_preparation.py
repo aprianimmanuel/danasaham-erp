@@ -2,8 +2,6 @@ import re
 import pandas as pd  # noqa
 from sklearn.metrics.pairwise import cosine_similarity  # noqa
 from sklearn.feature_extraction.text import CountVectorizer  # noqa
-from collections import Counter
-from dateutil.parser import parse
 
 
 class DTTOTDocumentProcessing:
@@ -20,11 +18,10 @@ class DTTOTDocumentProcessing:
         """
         if document_format == 'CSV':
             return pd.read_csv(file_path)
-        elif document_format == 'XLS' or document_format == 'XLSX':
+        elif document_format in ['XLS', 'XLSX']:
             return pd.read_excel(file_path)
         else:
-            raise ValueError(
-                "Unsupported document format: {}".format(document_format))
+            raise ValueError(f"Unsupported document format: {document_format}")
 
     def retrieve_data_as_dataframe(self, file_path, document_format):
         """
@@ -37,80 +34,81 @@ class DTTOTDocumentProcessing:
         Returns:
             DataFrame: The document data as a pandas DataFrame.
         """
-        df = self.import_document(file_path, document_format)
-        return df
+        return self.import_document(file_path, document_format)
 
     def extract_and_split_names(self, df, name_column='Nama'):
         """
-        Extracts aliases from names in the specified column of a DataFrame,
-        splits the names and aliases into first, middle, and last names, and
-        adds them as new columns.
+        Extracts full names and aliases from a specified column in a DataFrame,
+        then splits these names into first, middle, and last names.
+        Adds new columns for each component of the name and its aliases.
 
         Args:
             df (DataFrame): The DataFrame containing the names.
             name_column (str): The column containing the names from which to extract aliases.
 
         Returns:
-            DataFrame: The modified DataFrame with aliases extracted and names split.
+            DataFrame: The DataFrame with additional columns for name components.
         """  # noqa
-        def split_name(name):
-            """Splits a name into first, middle, and last components."""
-            if not isinstance(name, str):
-                return '', '', ''
-            parts = name.strip().split()
-            if len(parts) >= 3:
-                return parts[0], ' '.join(parts[1:-1]), parts[-1]
-            elif len(parts) == 2:
-                return parts[0], '', parts[1]
-            return name, '', ''
+        # Initialize the full name and aliases
+        df['full_name'] = df[name_column].apply(lambda x: x.split(' Alias ', 1)[0] if isinstance(x, str) else '')
 
-        # Calculate the maximum number of aliases in any name
-        # to standardize column creation
-        max_aliases = df[
-            name_column
-        ].apply(
-            lambda x: x.count(' Alias ') if isinstance(x, str) else 0
-        ).max()
+        # Extract first, middle, and last names from the full_name
+        df[['first_name', 'middle_name', 'last_name']] = df['full_name'].apply(self.split_name).tolist()
 
-        # Initialize columns for the main name split
-        df[
-            [
-                'first_name',
-                'middle_name',
-                'last_name']] = df.apply(
-                    lambda row: pd.Series(
-                        split_name(
-                            row[
-                                name_column
-                            ].split(
-                                ' Alias ', 1
-                                )[0]
-                            ) if isinstance(
-                                row[
-                                    name_column
-                                ], str) else ('', '', '')), axis=1)
+        # Extract aliases and split each alias into name components
+        df = self.extract_aliases(df, name_column)
 
-        # Initialize columns for aliases and their split names
-        for i in range(1, max_aliases + 1):
-            df[f'Alias_name_{i}'] = ''
-            df[f'first_name_alias_{i}'] = ''
-            df[f'middle_name_alias_{i}'] = ''
-            df[f'last_name_alias_{i}'] = ''
+        return df
 
-        # Extract aliases and split names
-        for index, row in df.iterrows():
-            aliases = re.split(
-                r' Alias ',
-                row[name_column],
-                flags=re.IGNORECASE)[1:] if isinstance(
-                    row[name_column], str
-                ) else []
-            for i, alias in enumerate(aliases, start=1):
-                f_name_alias, m_name_alias, l_name_alias = split_name(alias)
-                df.at[index, f'Alias_name_{i}'] = alias
-                df.at[index, f'first_name_alias_{i}'] = f_name_alias
-                df.at[index, f'middle_name_alias_{i}'] = m_name_alias
-                df.at[index, f'last_name_alias_{i}'] = l_name_alias
+    @staticmethod
+    def split_name(name):
+        """Splits a name into first, middle, and last components."""
+        if not isinstance(name, str):
+            return '', '', ''
+        parts = name.strip().split()
+        if len(parts) >= 3:
+            return parts[0], ' '.join(parts[1:-1]), parts[-1]
+        elif len(parts) == 2:
+            return parts[0], '', parts[1]
+        elif len(parts) == 1:
+            return parts[0], '', ''
+        return '', '', ''
+
+    def extract_aliases(self, df, name_column):
+        """
+        Identifies and processes alias names
+        from a name column, creating multiple columns
+        for each alias name component.
+
+        Args:
+            df (DataFrame): DataFrame with a column
+            containing names with aliases.
+            name_column (str): Column name containing the names and aliases.
+
+        Returns:
+            DataFrame: Updated DataFrame
+            with alias name components added as columns.
+        """
+        # Extract all aliases from the name column
+        df['aliases'] = df[name_column].apply(
+            lambda x: x.split(' Alias ')[1:] if ' Alias ' in x else [])
+
+        # Find the maximum number of aliases in any row
+        # to determine the number of columns
+        max_aliases = df['aliases'].str.len().max()
+
+        # Process each alias and split into name components
+        for i in range(max_aliases):
+            alias_col = f'Alias_name_{i+1}'
+            df[alias_col] = df['aliases'].apply(
+                lambda aliases: aliases[i] if len(aliases) > i else '')
+            df[
+                [
+                    f'first_name_alias_{i+1}',
+                    f'middle_name_alias_{i+1}',
+                    f'last_name_alias_{i+1}'
+                ]
+            ] = df[alias_col].apply(self.split_name).tolist()
 
         return df
 
@@ -137,98 +135,94 @@ class ExtractNIKandPassportNumber:
         Initializes the ExtractNIKandPassportNumber class with specific regex patterns
         for identifying NIK and passport numbers within text.
         """  # noqa
-        self.nik_regex = [
-            r"\b\d{16}\b",  # Pattern for NIK numbers
-        ]
-
-        self.passport_regex = [
-            r"\b[A-Z]{0,2}\s*\d{6,}\b",  # Pattern for passport numbers
-        ]
+        self.nik_regex = re.compile(
+            r"(\b\d{16}\b)"
+        )  # Pattern for NIK numbers with a capture group
+        self.passport_regex = re.compile(
+            r"(\b[A-Z]{0,2}\s*\d{6,}\b)"
+        )  # Pattern for passport numbers with a capture group
 
     def extract_nik_and_passport_number(self, df):
         """
-        Iterates over each row within the DataFrame to extract NIK and passport numbers
-        from dynamically identified description columns. Updates the DataFrame with
-        extracted numbers and cleans the description text from which these numbers were
-        extracted.
+        Extracts NIK and passport numbers from the specified description columns
+        in a DataFrame and updates the DataFrame directly with extracted values and cleaned descriptions.
 
         Args:
-            df (pd.DataFrame): The input DataFrame containing the description columns.
+            df (pd.DataFrame): The input DataFrame containing description columns.
 
         Returns:
             pd.DataFrame: The modified DataFrame with NIK and passport numbers extracted
-                          and original description texts cleaned.
+                          and description texts cleaned.
         """  # noqa
-        # Iterate over each row in the DataFrame
-        for index, row in df.iterrows():
-            # Initialize or clear the idNumber and passport_number for the row
-            df.at[index, 'idNumber'] = ''
-            df.at[index, 'passport_number'] = ''
+        # Ensure all description columns
+        # are strings and fill NaN with empty strings
+        description_columns = self._detect_description_columns(df)
+        if not description_columns:
+            return df  # Return early if no description columns are found
 
-            # Iterate through each description column
-            description_columns = self._detect_description_columns(df)
-            for description_column in description_columns:
-                text = row[description_column]
-                nik_number, passport_number, cleaned_text = self._extract_from_description(text)  # noqa
+        # Initialize columns to hold extracted NIK and passport numbers
+        df['idNumber'] = ''
+        df['passport_number'] = ''
 
-                # Update the DataFrame with extracted data if not already set
-                if not df.at[index, 'idNumber'] and nik_number:
-                    df.at[index, 'idNumber'] = nik_number
-                if not df.at[index, 'passport_number'] and passport_number:
-                    df.at[index, 'passport_number'] = passport_number
-                # Update the cleaned description back into the DataFrame
-                df.at[index, description_column] = cleaned_text
+        # Apply regex to all description columns at once
+        for column in description_columns:
+            df[
+                'idNumber'
+            ] = df[
+                column
+            ].str.extract(
+                self.nik_regex,
+                expand=False
+            ).fillna(
+                df[
+                    'idNumber'
+                ]
+            )
+            df[
+                'passport_number'
+            ] = df[
+                column
+            ].str.extract(
+                self.passport_regex,
+                expand=False
+                ).fillna(
+                    df[
+                        'passport_number'
+                    ]
+                )
+
+            # Clean the description text
+            df[
+                column
+            ] = df[
+                column
+            ].str.replace(
+                self.nik_regex,
+                '',
+                regex=True
+            ).str.replace(
+                self.passport_regex,
+                '',
+                regex=True
+            ).str.strip()
 
         return df
 
     def _detect_description_columns(self, df):
         """
-        Identifies columns within the DataFrame that are likely to contain descriptive
-        texts from which NIK and passport numbers need to be extracted. This identification
-        is based on a consistent naming pattern for these columns.
-
-        Args:
-            df (pd.DataFrame): The input DataFrame to analyze.
-
-        Returns:
-            list: A list of column names that match the expected pattern for description columns.
-        """  # noqa
-        return [col for col in df.columns if col.startswith('description_')]
-
-    def _extract_from_description(self, text):
+        Identifies columns within the DataFrame that likely contain descriptive
+        texts for extracting NIK and passport numbers.
         """
-        Extracts NIK and passport numbers from a given piece of text. Utilizes the
-        class's regex patterns for identification and extraction. Also cleans the text
-        by removing the extracted numbers.
+        return [col for col in df.columns if 'description' in col.lower()]
 
-        Args:
-            text (str): The text from which to extract NIK and passport numbers.
-
-        Returns:
-            tuple: Contains the extracted NIK number, passport number, and the cleaned text.
-        """  # noqa
-        # Extract NIK and passport numbers from text, then clean the text
-        id_number = ''
-        passport_number = ''
-        cleaned_text = text
-
-        # Try each NIK pattern until a match is found
-        for nik_regex in self.nik_regex:
-            nik_match = re.search(nik_regex, cleaned_text)
-            if nik_match:
-                id_number = nik_match.group()
-                cleaned_text = re.sub(nik_regex, '', cleaned_text, 1)
-                break  # Stop after finding the first match
-
-        # Try each passport pattern until a match is found
-        for passport_regex in self.passport_regex:
-            passport_match = re.search(passport_regex, cleaned_text)
-            if passport_match:
-                passport_number = passport_match.group()
-                cleaned_text = re.sub(passport_regex, '', cleaned_text, 1)
-                break  # Stop after finding the first match
-
-        return id_number, passport_number, cleaned_text.strip()
+    def _clean_description(self, text):
+        """
+        Cleans the description text
+        by removing detected NIK and passport numbers.
+        """
+        text = self.nik_regex.sub('', text)
+        text = self.passport_regex.sub('', text)
+        return text.strip()
 
 
 class CleaningSeparatingDeskripsi:
@@ -245,34 +239,32 @@ class CleaningSeparatingDeskripsi:
 
     def separating_cleaning_deskripsi(self, df):
         """
-        Separates bullet points or numbered items in the 'Deskripsi' column into
-        individual 'description_{seqNumber}' columns based on the maximum count of items
-        found in the column. Removes the original 'Deskripsi' column afterward.
+        Separates bullet points or numbered items in the 'Deskripsi' column
+        into individual 'description_{seqNumber}' columns
+        based on the maximum count of items found in the column.
+        Removes the original 'Deskripsi' column afterward.
 
         Args:
             df (pd.DataFrame): The input DataFrame with a 'Deskripsi' column.
 
         Returns:
-            pd.DataFrame: The processed DataFrame with separated description columns.
-        """  # noqa
+            pd.DataFrame: The processed DataFrame
+            with separated description columns.
+        """
+        df['Deskripsi'] = df['Deskripsi'].fillna('').astype(str)
         max_items = self._find_max_descriptions(df['Deskripsi'])
 
-        # Initialize and clean description columns
-        # based on the maximum count of bullet points or numbered items
         description_cols = [f'description_{i+1}' for i in range(max_items)]
         for col in description_cols:
             df[col] = None
 
         for index, row in df.iterrows():
             descriptions = self._extract_descriptions(row['Deskripsi'])
-
             for i, desc in enumerate(descriptions):
                 if i < max_items:
                     df.at[index, f'description_{i+1}'] = desc
 
-        # Optionally remove the original 'Deskripsi' column if no longer needed
         df.drop(columns=['Deskripsi'], inplace=True)
-
         return df
 
     def _find_max_descriptions(self, descriptions):
@@ -286,10 +278,9 @@ class CleaningSeparatingDeskripsi:
             int: The maximum count of descriptions found in any single row.
         """  # noqa
         counts = descriptions.apply(
-            lambda text: len(
-                re.split(
-                    self.split_regex, text.strip())) - 1)
-        return max(counts, default=0)
+            lambda text: len(re.split(self.split_regex, text.strip())) - 1
+        )
+        return counts.max()
 
     def _extract_descriptions(self, text):
         """
@@ -309,7 +300,7 @@ class FormattingColumn:
     """
     A class to format birth dates from various formats to a standardized DD/MM/YYYY format.
 
-    The class handles various date formats found in a 'Tgl lahir' column of a DataFrame,
+    The class handles various date formats found in a 'Tgl Lahir' column of a DataFrame,
     converting them to a consistent format. It also skips any date entries marked as '00/00/0000',
     treating them as invalid or placeholder values.
 
@@ -341,7 +332,10 @@ class FormattingColumn:
             (?P<month>[a-zA-Z]+|\d{1,2})
             [\s/-]
             (?P<year>\d{4}|\d{2})
-            (?=[\s/-]?|$)
+            | # Alternative pattern
+            (?P<day2>\d{1,2})\s+
+            (?P<month2>[a-zA-Z]+)\s+
+            (?P<year2>\d{4})
         """, re.VERBOSE | re.IGNORECASE)
 
         self.country_dict = {
@@ -602,9 +596,9 @@ class FormattingColumn:
 
         for index, row in df.iterrows():
             # Skip formatting if 'Tgl lahir' is "00/00/0000"
-            if row['Tgl lahir'] == "00/00/0000":
+            if row['Tgl Lahir'] == "00/00/0000":
                 continue
-            dates = self.extract_dates(row['Tgl lahir'])
+            dates = self.extract_dates(row['Tgl Lahir'])
             for i, date_str in enumerate(dates):
                 if i >= 3:
                     break
@@ -630,18 +624,19 @@ class FormattingColumn:
 
     def _format_match(self, match):
         """
-        Formats a single date match into DD/MM/YYYY format.
+        Formats a single date match into YYYY/MM/DD format.
+        """
+        day = match.group('day') or match.group('day2')
+        month = match.group('month') or match.group('month2')
+        year = match.group('year') or match.group('year2')
 
-        Args:
-            match (re.Match): A regex match object containing date components.
+        if month.isdigit():
+            month_number = month.zfill(2)
+        else:
+            month_number = self._month_to_number(month)
 
-        Returns:
-            str: The formatted date string.
-        """  # noqa
-        day, month, year = match.group('day'), match.group('month'), match.group('year')  # noqa
-        month_number = self._month_to_number(month)
         year = self._adjust_year(year)
-        return f"{day.zfill(2)}/{month_number}/{year}"
+        return f"{year}/{month_number}/{day.zfill(2)}"
 
     def _month_to_number(self, month):
         """
@@ -704,11 +699,14 @@ class FormattingColumn:
         Returns:
             list: A list of cleaned, split, and potentially standardized nationalities.
         """  # noqa
+        if not isinstance(nationality_str, str):
+            return []
+
         # Remove known extraneous phrases and split by commas or semicolons
-        cleaned_str = re.sub(
-            r"(; officially the United Republic of Tanzania)", "", nationality_str)  # noqa
+        cleaned_str = re.sub(r"(;|,|/)", "-", nationality_str)
         split_nationalities = [
-            n.strip() for n in re.split(r"[,;]", cleaned_str) if n]
+            nat.strip() for nat in cleaned_str.split("-") if nat.strip()
+        ]
 
         standardized_nationalities = []
         for nationality in split_nationalities:
@@ -745,3 +743,22 @@ class FormattingColumn:
         if best_score >= 85:
             return best_match
         return country_name
+
+
+def process_data(file_path, document_format):
+    processor = DTTOTDocumentProcessing()
+    df = processor.retrieve_data_as_dataframe(file_path, document_format)
+
+    df = processor.extract_and_split_names(df)
+
+    extractor = ExtractNIKandPassportNumber()
+    df = extractor.extract_nik_and_passport_number(df)
+
+    cleaner = CleaningSeparatingDeskripsi()
+    df = cleaner.separating_cleaning_deskripsi(df)
+
+    formatter = FormattingColumn()
+    df = formatter.format_birth_date(df)
+    df = formatter.format_nationality(df)
+
+    return df

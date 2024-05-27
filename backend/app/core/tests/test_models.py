@@ -106,70 +106,19 @@ class DttotDocModelTest(TestCase):
             username='testuser',
             password='Testp@ss!23')
         self.dttot_doc = dttotDoc.objects.create(
-            input_by=self.test_user,
-            _dttot_first_name="John",
-            _dttot_last_name="Doe",
+            user=self.test_user,
+            dttot_first_name="John",
+            dttot_last_name="Doe",
             dttot_type="Personal",
-            _dttot_domicile_address1="Jalanin aja dulu",
-            _dttot_description_1="KENA GOCEK NIH ABANGKUUWH",
-            _dttot_nik_ktp="1234567890123456",
-            _dttot_passport_number="ABC123456",
-            _dttot_work_number="0123456789",
-            _dttot_mobile_number="0987654321",
+            dttot_domicile_address="Jalanin aja dulu",
+            dttot_description_1="KENA GOCEK NIH ABANGKUUWH",
+            dttot_nik_ktp="1234567890123456",
+            dttot_passport_number="ABC123456"
         )
-
-    def test_encryption(self):
-        # Fetch the record directly from the database
-        doc = dttotDoc.objects.get(dttot_id=self.dttot_doc.dttot_id)
-        fernet = Fernet(os.getenv('FERNET_KEY').encode())
-
-        # Check if the sensitive fields are encrypted
-        self.assertNotEqual(doc._dttot_first_name, "John")
-        self.assertTrue(
-            fernet.decrypt(
-                doc._dttot_first_name.encode()
-            ).decode(), "John"
-        )
-
-    def test_decryption(self):
-        # Use the model's properties to check if decryption works correctly
-        self.assertEqual(self.dttot_doc.dttot_first_name, "John")
-        self.assertEqual(self.dttot_doc.dttot_last_name, "Doe")
-        self.assertEqual(
-            self.dttot_doc.dttot_description_1, "KENA GOCEK NIH ABANGKUUWH")
-        self.assertEqual(self.dttot_doc.dttot_nik_ktp, "1234567890123456")
-        self.assertEqual(self.dttot_doc.dttot_passport_number, "ABC123456")
-        self.assertEqual(self.dttot_doc.dttot_work_number, "0123456789")
-        self.assertEqual(self.dttot_doc.dttot_mobile_number, "0987654321")
 
     def test_str_representation(self):
         # Test the string representation of the model
         self.assertEqual(str(self.dttot_doc), "John Doe - Personal")
-
-    def test_update_encrypted_fields(self):
-        # Test updating encrypted fields
-        self.dttot_doc._dttot_first_name = "Jane"
-        self.dttot_doc.save()
-        self.assertEqual(self.dttot_doc.dttot_first_name, "Jane")
-        # Fetch again from DB to ensure changes are persisted
-        updated_doc = dttotDoc.objects.get(dttot_id=self.dttot_doc.dttot_id)
-        self.assertEqual(updated_doc.dttot_first_name, "Jane")
-
-    def test_empty_string_encryption(self):
-        # Test that empty strings in encrypted fields don't raise errors
-        self.dttot_doc._dttot_first_name = ""
-        self.dttot_doc.save()
-        self.assertEqual(self.dttot_doc.dttot_first_name, "")
-        # Ensure empty value is correctly handled
-        empty_val_doc = dttotDoc.objects.get(dttot_id=self.dttot_doc.dttot_id)
-        self.assertEqual(empty_val_doc.dttot_first_name, "")
-
-    def test_user_deletion_cascade(self):
-        # Test dttotDoc instances are deleted when the related User is deleted
-        self.test_user.delete()
-        dttot_doc_instance = dttotDoc.objects.get(
-            dttot_id=self.dttot_doc.dttot_id)
-        self.assertIsNone(dttot_doc_instance.input_by)
 
 
 @override_settings(

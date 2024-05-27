@@ -127,10 +127,10 @@ class DttotDocAdminTest(TestCase):
 
         # Create a DttotDoc instance
         self.dttot_doc = dttotDoc.objects.create(
-            input_by=self.normal_user,
+            user=self.normal_user,
             dttot_type="Personal",
-            _dttot_first_name="John",
-            _dttot_last_name="Doe" 
+            dttot_first_name="John",
+            dttot_last_name="Doe"
         )
 
     def test_list_display(self):

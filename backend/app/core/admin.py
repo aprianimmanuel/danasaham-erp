@@ -81,9 +81,9 @@ class DttotDocAdmin(admin.ModelAdmin):
     search_fields = [
         'dttot_id',
         'dttot_type',
-        '_dttot_first_name',
-        '_dttot_last_name',
-        'input_by__username'
+        'dttot_first_name',
+        'dttot_last_name',
+        'user__username'
     ]
     list_filter = [
         'dttot_type',
@@ -92,7 +92,7 @@ class DttotDocAdmin(admin.ModelAdmin):
     readonly_fields = ('document_id', 'dttot_id')
 
     def display_username(self, obj):
-        return obj.input_by.username
+        return obj.user.username
     display_username.short_description = 'username'
 
 

@@ -1,5 +1,5 @@
 Django>=3.2.4,<3.3
-djangorestframework>=3.12.4
+djangorestframework>=3.14.0
 psycopg2>=2.8.6,<2.9
 drf-spectacular>=0.26.0
 django-cors-headers>=3.8.0,<4.0
@@ -18,7 +18,8 @@ lxml>= 5.1.0
 dj-rest-auth>=5.0.2
 pytesseract>=0.3.10
 pillow>=10.2.0
-opencv-python>=4.9.0.80
+opencv-python>=4.8.0
 pandas>=2.2.0
 openpyxl>=3.1.2
 scikit-learn>=1.4.0
+xlrd>=2.0.0

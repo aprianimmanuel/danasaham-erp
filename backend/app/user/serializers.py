@@ -19,7 +19,7 @@ class CustomUserDetailsSerializer(UserDetailsSerializer):
     )
 
     class Meta(UserDetailsSerializer.Meta):
-        model = User  # Ensure this is your custom User model
+        model = User
         fields = UserDetailsSerializer.Meta.fields + (
             'username',
             'first_name',

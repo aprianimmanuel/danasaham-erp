@@ -1,36 +1,37 @@
 from rest_framework import serializers
-from core.models import dttotDoc
-from django.contrib.auth import get_user_model
-from core.models import dttotDoc, User
-from documents.serializers import DocumentCreateSerializer, DocumentSerializer
+from core.models import Document, dttotDoc, User
+from documents.serializers import DocumentSerializer
 
 
 class DttotDocSerializer(serializers.ModelSerializer):
-    input_by = serializers.PrimaryKeyRelatedField(
+    user = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
-        write_only=True,
-        default=serializers.CurrentUserDefault()
+        default=serializers.CurrentUserDefault(),
+        required=False
     )
-    document = DocumentCreateSerializer()
+    document = serializers.PrimaryKeyRelatedField(
+        queryset=Document.objects.all(),
+        required=True)
+    document_data = DocumentSerializer(read_only=True, source='document')
 
     class Meta:
         model = dttotDoc
-        fields = '__all__'
-        read_only_fields = ('dttot_id',)
+        fields = ('__all__')
+        read_only_fields = ['dttot_id', 'updated_at']
 
     def create(self, validated_data):
-        """
-        Custom create method for creating a new dttotDoc instance from validated data.
-        """
-        document_data = validated_data.pop('document')
-        document = DocumentCreateSerializer().create(DocumentCreateSerializer(), validated_data=document_data)
-        dttot_doc = dttotDoc.objects.create(document=document, **validated_data)
-        return dttot_doc
+        user = self.context.get(
+            'request').user if self.context.get('request') else None
+        validated_data['user'] = validated_data.get('user', user)
+        document = validated_data.pop('document', None)
+        return dttotDoc.objects.create(document=document, **validated_data)
 
     def to_representation(self, instance):
-        """
-        Custom method to modify the output to display user email instead of user_id.
-        """
         representation = super().to_representation(instance)
-        representation['document'] = DocumentSerializer(instance.document).data
+        representation[
+            'user_id'
+        ] = instance.user.user_id if instance.user else None
+        representation[
+            'document_id'
+        ] = instance.document.document_id if instance.document else None
         return representation

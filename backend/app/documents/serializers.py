@@ -1,52 +1,67 @@
+import uuid
 from rest_framework import serializers
 from core.models import Document
+from django.utils import timezone
 
 
 class DocumentSerializer(serializers.ModelSerializer):
+    document_name = serializers.CharField(required=True)
+    description = serializers.CharField(allow_blank=True, required=False)
+    document_file = serializers.FileField(required=False)
+    document_file_type = serializers.CharField(required=False)
+    document_type = serializers.CharField(required=True)
+    created_date = serializers.DateTimeField(
+        default=timezone.now,
+        read_only=True)
+    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    updated_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    document_id = serializers.CharField(default=uuid.uuid4)
+
     class Meta:
         model = Document
         fields = '__all__'
         read_only_fields = [
             'created_date',
             'document_id',
+            'updated_at',
             'created_by',
-            'updated_by',
-            'updated_at']
-
-
-class DocumentCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Document
-        fields = '__all__'
-        read_only_fields = ['document_id']
+            'updated_by'
+        ]
         extra_kwargs = {
-            'document_file': {
-                'required': False
-            },
             'created_by': {
-                'write_only': True,
                 'default': serializers.CurrentUserDefault()
             },
             'updated_by': {
-                'write_only': True,
                 'default': serializers.CurrentUserDefault()
             }
         }
 
     def create(self, validated_data):
         """
-        Create and return a new `Document` instance, given the validated data.
+        Create and return a new `Document` instance,
+        given the validated data.
         """
-        # Additional custom creation logic can be placed here.
-        return Document.objects.create(**validated_data)
+        request = self.context.get('request', None)
+        if request and request.user.is_authenticated:
+            validated_data['created_by'] = request.user
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        """
+        Update and return an existing `Document` instance,
+        given the validated data.
+        """
+        request = self.context.get('request', None)
+        if request and request.user.is_authenticated:
+            validated_data['updated_by'] = request.user
+        return super().update(instance, validated_data)
 
     def to_representation(self, instance):
         """
-        Optionally, modify the way the data is presented.
-        This can include presenting a full URL to the uploaded file or adding additional read-only fields.
+        Modify the way data is presented,
+        including URLs for files and handling any custom representations.
         """
         representation = super().to_representation(instance)
-        # Example of how to modify the file field representation:
         if instance.document_file:
             representation['document_file'] = instance.document_file.url
         return representation

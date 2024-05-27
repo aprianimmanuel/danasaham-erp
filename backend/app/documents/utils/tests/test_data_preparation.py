@@ -68,6 +68,14 @@ Jane Smith,Guru Honorer,Orang"""
             'Nama': [
                 'John Doe Alias Don Manuel John Alias John Krew',
                 'Jane Maria Smith Alias Yan Miths'],
+            'full_name': [
+                'John Doe',
+                'Jane Maria Smith'
+            ],
+            'aliases': [
+                ['Don Manuel John', 'John Krew'],
+                ['Yan Miths']
+            ],
             'first_name': ['John', 'Jane'],
             'middle_name': ['', 'Maria'],
             'last_name': ['Doe', 'Smith'],
@@ -195,6 +203,16 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
                 'Orang',
                 'Orang',
                 'Korporasi'],
+            'full_name': [
+                'John Doe',
+                'Jane Elizabeth Smith',
+                'Yayasan Abdi Mulia Sentosa'
+            ],
+            'aliases': [
+                ['Don John', 'John Krew'],
+                ['Yan Hitms'],
+                []
+            ],
             'first_name': [
                 'John',
                 'Jane',
@@ -279,13 +297,12 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
             processed_df[
                 [
                     'Terduga',
-                    'idNumber',
-                    'passport_number',
                     'description_1',
                     'description_2',
                     'description_3',
-                    'description_4'
-                    ]
+                    'description_4',
+                    'idNumber',
+                    'passport_number']
                 ],
             expected_df,
             check_like=True,
@@ -427,11 +444,11 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
                 "Orang",
                 "Orang"
             ],
-            "Tgl lahir": [
+            "Tgl Lahir": [
                 "4 Januari 1973/4 November 1974/4 November 1973",
                 "03-Apr-78",
                 "29 Juli 1983",
-                "",
+                "22 Oktober 1978;",
                 "01-Apr-61",
                 "5 Oktober 1991;",
                 "",
@@ -462,42 +479,42 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
                 "Orang"
             ],
             "birth_date_1": [
-                "04/01/1973",
-                "03/04/1978",
-                "29/07/1983",
+                "1973/01/04",
+                "1978/04/03",
+                "1983/07/29",
+                "1978/10/22",
+                "1961/04/01",
+                "1991/10/05",
                 "",
-                "01/04/1961",
-                "05/10/1991",
+                "1983/10/01",
+                "1978/06/26",
                 "",
-                "01/10/1983",
-                "26/06/1978",
-                "",
-                "05/10/1976",
+                "1976/10/05",
                 "",
             ],
             "birth_date_2": [
-                "04/11/1974",
+                "1974/11/04",
                 "",
                 "",
                 "",
                 "",
                 "",
                 "",
-                "15/03/1983",
+                "1983/03/15",
                 "",
                 "",
-                "01/10/1976",
+                "1976/10/01",
                 ""
             ],
             "birth_date_3": [
-                "04/11/1973",
+                "1973/11/04",
                 "",
                 "",
                 "",
                 "",
                 "",
                 "",
-                "01/01/1980",
+                "1980/01/01",
                 "",
                 "",
                 "",
@@ -602,7 +619,7 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
                 "",
                 "",
                 "Syria",
-                "",
+                "officially the United Republic of Tanzania",
                 "",
                 "Mauritania",
                 "Yemen",

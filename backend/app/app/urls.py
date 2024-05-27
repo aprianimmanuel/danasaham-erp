@@ -7,12 +7,12 @@ from dj_rest_auth.registration.views import (
 from dj_rest_auth.views import (
     LoginView,
     LogoutView,
-    PasswordChangeView,
-    PasswordResetConfirmView)
+    PasswordChangeView)
 from user.views import (
     CustomUserDetailsView,
     CustomRegisterView,
-    CustomPasswordResetView)
+    CustomPasswordResetView,
+    CustomPasswordResetConfirmView)
 
 # JSON Web Token Authentiction
 from rest_framework_simplejwt.views import (
@@ -81,8 +81,10 @@ urlpatterns = [
 
     # Custom password reset confirm URL
     path(
-        'api/user/password/reset/confirm/<uidb64>/<token>/',
-        PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+        'api/user/password/reset/confirm/<uuid:user_id>/<str:token>/',
+        CustomPasswordResetConfirmView.as_view(),
+        name='password_reset_confirm'
+    ),
 
     path('api/', include('documents.urls')),
 ]

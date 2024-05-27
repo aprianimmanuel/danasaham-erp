@@ -1,19 +1,14 @@
 from django.urls import path, include
 from .views import (
-    DocumentCreateAPIView,
-    DocumentListAPIView,
+    DocumentAPIView,
     DocumentDetailAPIView
 )
 
 urlpatterns = [
     path(
-        'documents/upload/',
-        DocumentCreateAPIView.as_view(),
-        name='document-create'),
-    path(
         'documents/',
-        DocumentListAPIView.as_view(),
-        name='document-list'),
+        DocumentAPIView.as_view(),
+        name='document-create'),
     path(
         'documents/<uuid:pk>/',
         DocumentDetailAPIView.as_view(),

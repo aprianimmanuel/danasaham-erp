@@ -24,6 +24,18 @@ services:
     depends_on:
       - db
 
+  smtp:
+    build:
+      context: .
+      args:
+        - DEV=true
+    command: >
+      sh -c "python -m aiosmtpd -n -l 0.0.0.0:8025"
+    ports:
+      - "8025:8025"
+    volumes:
+      - ./app:/app
+
   db:
     image: postgres:13-alpine
     volumes:
