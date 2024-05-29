@@ -6,4 +6,4 @@ class DttotDocConfig(AppConfig):
     name = 'dttotDoc'
 
     def ready(self):
-        import dttotDoc.signals
+        import dttotDoc.signals  # noqa

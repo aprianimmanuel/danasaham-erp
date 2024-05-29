@@ -9,7 +9,6 @@ from documents.utils.data_preparation import (
     CleaningSeparatingDeskripsi,
     FormattingColumn)
 from openpyxl import Workbook
-from pandas.testing import assert_frame_equal
 
 # Ensure that openpyxl is used for handling Excel files
 pd.ExcelWriter = pd.ExcelWriter

@@ -13,6 +13,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from drf_spectacular.utils import extend_schema, OpenApiExample
 
+
 class CustomUserDetailsView(BaseUserDetailsView):
     serializer_class = CustomUserDetailsSerializer
 
@@ -52,7 +53,7 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
 
     @extend_schema(
         summary="Confirm password reset with UID and token",
-        description="This endpoint confirms a password reset based on a user ID (UID) and a security token.",
+        description="This endpoint confirms a password reset based on a user ID (UID) and a security token.",  # noqa
         responses={
             status.HTTP_200_OK: OpenApiExample(
                 "Password successfully reset",

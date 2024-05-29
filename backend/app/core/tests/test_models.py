@@ -4,7 +4,6 @@ from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
 from datetime import date
 from core.models import UserProfile, dttotDoc, Document
-from cryptography.fernet import Fernet
 import os
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.conf import settings

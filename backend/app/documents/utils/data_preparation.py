@@ -49,11 +49,28 @@ class DTTOTDocumentProcessing:
         Returns:
             DataFrame: The DataFrame with additional columns for name components.
         """  # noqa
-        # Initialize the full name and aliases
-        df['full_name'] = df[name_column].apply(lambda x: x.split(' Alias ', 1)[0] if isinstance(x, str) else '')
+        # Initialize the full name and aliases.
+        # Use case-insensitive regex to split on ' Alias ' or ' alias '
+        df[
+            'full_name'
+        ] = df[
+            name_column
+        ].apply(
+            lambda x: re.split(
+                ' (?i)alias ', x, 1
+            )[0] if isinstance(
+                x, str
+            ) else ''
+        )
 
         # Extract first, middle, and last names from the full_name
-        df[['first_name', 'middle_name', 'last_name']] = df['full_name'].apply(self.split_name).tolist()
+        df[
+            [
+                'first_name',
+                'middle_name',
+                'last_name'
+            ]
+        ] = df['full_name'].apply(self.split_name).tolist()
 
         # Extract aliases and split each alias into name components
         df = self.extract_aliases(df, name_column)

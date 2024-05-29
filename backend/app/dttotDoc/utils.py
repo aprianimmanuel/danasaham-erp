@@ -125,4 +125,11 @@ def handle_dttot_document(document, user, request):
             if dttot_serializer.is_valid():
                 dttot_serializer.save()
             else:
-                raise ValidationError(dttot_serializer.errors)
+                # Log serializer errors
+                # raise a ValidationError with detailed info
+                errors = dttot_serializer.errors
+                error_msg = f"Failed to save DTTOT document data due to validation errors: {errors}"  # noqa
+                raise ValidationError(error_msg)
+
+    # Optionally, log successful processing and saving of data
+    print("DTTOT Document processing and saving completed successfully.")

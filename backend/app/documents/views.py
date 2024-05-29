@@ -3,14 +3,12 @@ from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from documents.serializers import DocumentSerializer
-from dttotDoc.serializers import DttotDocSerializer
-from core.models import Document, dttotDoc
+from core.models import Document
 from rest_framework.generics import (
     ListCreateAPIView,
     RetrieveUpdateDestroyAPIView
 )
 from drf_spectacular.utils import extend_schema
-from django.db import transaction
 from django.db.models.signals import post_save
 
 logger = logging.getLogger(__name__)

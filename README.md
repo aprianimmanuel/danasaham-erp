@@ -2,7 +2,7 @@
 
 ## General Information
 
-- **API Version:** 3.0.3
+- **API Version:** 0.4.2
 - **Base URL:** `http://localhost:8000/api`
 
 ## Authentication

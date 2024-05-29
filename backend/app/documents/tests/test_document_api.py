@@ -4,7 +4,7 @@ from tempfile import TemporaryDirectory
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
-from rest_framework.test import APITestCase, APIClient
+from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from core.models import Document, dttotDoc, User
 from django.conf import settings
@@ -145,7 +145,6 @@ class DTTOTDocumentUploadTests(APITestCase):
 
         # Set up a temporary directory for MEDIA_ROOT
         self.temp_media_dir = TemporaryDirectory()
-        self.addCleanup(self.temp_media_dir.cleanup)  # Ensure cleanup
 
         # Set up a document to be uploaded
         self.document_file = self.create_test_document_file()
@@ -156,7 +155,7 @@ class DTTOTDocumentUploadTests(APITestCase):
         output = io.BytesIO()
         wb = Workbook()
         ws = wb.active
-        ws.append(["Nama", "Deskripsi", "Terduga", "Kode Densus", "Tpt Lahir", "Tgl lahir", "WN", "Alamat"])  # noqa
+        ws.append(["Nama", "Deskripsi", "Terduga", "Kode Densus", "Tpt Lahir", "Tgl Lahir", "WN", "Alamat"])  # noqa
         ws.append(
             [
                 "John Doe Alias Don John Alias John Krew",
@@ -181,7 +180,12 @@ class DTTOTDocumentUploadTests(APITestCase):
         with self.settings(MEDIA_ROOT=self.temp_media_dir.name):
             response = self.client.post(
                 self.document_url,
-                {'document_file': self.document_file},
+                {
+                    'document_file': self.document_file,
+                    'document_name': 'Test Document',
+                    'document_type': 'DTTOT Document',
+                    'document_file_type': 'XLSX'
+                },
                 format='multipart'
             )
             self.assertEqual(
@@ -190,13 +194,29 @@ class DTTOTDocumentUploadTests(APITestCase):
                 "Document upload failed")
 
             # Get document ID from response
-            document_id = response.data.get('document_id')
+            document_id = response.data[
+                'document'
+            ][
+                'document_id'
+            ]
             self.assertIsNotNone(document_id, "Document ID was not returned")
+
+            # Check the document_file URL if provided by serializer
+            if 'document_file' in response.data:
+                self.assertIn(
+                    'url',
+                    response.data[
+                        'document_file'
+                    ], "Document file URL not included in the response")
 
             # Check if document and its associated dttotDoc entry was created
             self.assertTrue(
                 Document.objects.filter(pk=document_id).exists(),
                 "Document was not created in the database.")
             self.assertTrue(
-                dttotDoc.objects.filter(document_id=document_id).exists(),
+                dttotDoc.objects.filter(
+                    document__document_id=document_id).exists(),
                 "DTTOT Doc entry was not created.")
+
+        # Perform cleanup after all assertions are done
+        self.temp_media_dir.cleanup()
