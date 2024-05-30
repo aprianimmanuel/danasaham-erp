@@ -35,3 +35,25 @@ class DttotDocSerializer(serializers.ModelSerializer):
             'document_id'
         ] = instance.document.document_id if instance.document else None
         return representation
+
+
+class DttotDocListSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        default=serializers.CurrentUserDefault(),
+        required=False
+    )
+    document = serializers.PrimaryKeyRelatedField(
+        queryset=Document.objects.all(),
+        required=True)
+    document_data = DocumentSerializer(read_only=True, source='document')
+
+    class Meta:
+        model = dttotDoc
+        fields = [
+            'document',
+            'dttot_id',
+            'document_data',
+            'updated_at',
+            'user',
+        ]
