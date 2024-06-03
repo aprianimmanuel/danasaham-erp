@@ -1,11 +1,10 @@
 import io
 import shutil
-from tempfile import TemporaryDirectory
+import os
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 from rest_framework.test import APITestCase
-from django.contrib.auth import get_user_model
 from core.models import Document, dttotDoc, User
 from django.conf import settings
 from openpyxl import Workbook
@@ -30,12 +29,30 @@ def document_create_url():
 class DocumentAPITests(APITestCase):
 
     def setUp(self):
-        self.user = get_user_model().objects.create_user(
+        self.user = User.objects.create_user(
             'test@example.com', 'password123')
+        self.client.force_authenticate(user=self.user)
+
+        # Create 'test_media' subdirectory within MEDIA_ROOT for test files
+        self.test_media_path = os.path.join(settings.MEDIA_ROOT, 'test_media')
+        os.makedirs(self.test_media_path, exist_ok=True)
+
+        # Override MEDIA_ROOT to the test directory
+        self.old_media_root = settings.MEDIA_ROOT
+        settings.MEDIA_ROOT = self.test_media_path
 
     def tearDown(self):
-        # Cleanup the MEDIA_ROOT directory after each test
-        shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+        # Clean up the test media directory content
+        for item in os.listdir(self.test_media_path):
+            path = os.path.join(self.test_media_path, item)
+            if os.path.isfile(path) or os.path.islink(path):
+                os.unlink(path)
+            elif os.path.isdir(path):
+                shutil.rmtree(path)
+
+        # Restore the original MEDIA_ROOT
+        settings.MEDIA_ROOT = self.old_media_root
+        super().tearDown()
 
     def test_create_document(self):
         """Test creating a document."""
@@ -143,11 +160,22 @@ class DTTOTDocumentUploadTests(APITestCase):
         # Authenticate user
         self.client.force_authenticate(user=self.user)
 
-        # Set up a temporary directory for MEDIA_ROOT
-        self.temp_media_dir = TemporaryDirectory()
+        # Create 'test_media' subdirectory within MEDIA_ROOT for test files
+        self.test_media_subdir = 'test_media'
+        self.test_media_path = os.path.join(settings.MEDIA_ROOT, 'test_media')
+        os.makedirs(self.test_media_path, exist_ok=True)
 
-        # Set up a document to be uploaded
-        self.document_file = self.create_test_document_file()
+        # Override MEDIA_ROOT to the test directory
+        self.old_media_root = settings.MEDIA_ROOT
+        settings.MEDIA_ROOT = self.test_media_path
+
+    def tearDown(self):
+        # Restore the original MEDIA_ROOT
+        settings.MEDIA_ROOT = self.old_media_root
+
+        # Clean up the test media directory content
+        shutil.rmtree(self.test_media_path, ignore_errors=True)
+        super().tearDown()
 
     @staticmethod
     def create_test_document_file():
@@ -176,12 +204,14 @@ class DTTOTDocumentUploadTests(APITestCase):
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")  # noqa
 
     def test_upload_dttot_document_and_process(self):
-        """Test the upload and processing of a DTTOT Document and its saving into the dttotDoc model."""  # noqa
-        with self.settings(MEDIA_ROOT=self.temp_media_dir.name):
+        """Test the upload and processing of a DTTOT Document
+        and its saving into the dttotDoc model."""
+        document_file = self.create_test_document_file()
+        with self.settings(MEDIA_ROOT=self.test_media_path):
             response = self.client.post(
                 self.document_url,
                 {
-                    'document_file': self.document_file,
+                    'document_file': document_file,
                     'document_name': 'Test Document',
                     'document_type': 'DTTOT Document',
                     'document_file_type': 'XLSX'
@@ -194,11 +224,7 @@ class DTTOTDocumentUploadTests(APITestCase):
                 "Document upload failed")
 
             # Get document ID from response
-            document_id = response.data[
-                'document'
-            ][
-                'document_id'
-            ]
+            document_id = response.data['document']['document_id']
             self.assertIsNotNone(document_id, "Document ID was not returned")
 
             # Check the document_file URL if provided by serializer
@@ -215,8 +241,6 @@ class DTTOTDocumentUploadTests(APITestCase):
                 "Document was not created in the database.")
             self.assertTrue(
                 dttotDoc.objects.filter(
-                    document__document_id=document_id).exists(),
+                    document__document_id=document_id
+                ).exists(),
                 "DTTOT Doc entry was not created.")
-
-        # Perform cleanup after all assertions are done
-        self.temp_media_dir.cleanup()
