@@ -1,0 +1,55 @@
+# Ignore Python cache files
+__pycache__
+*.py[cod]
+*$py.class
+
+# Ignore the virtual environment directory
+venv
+env
+
+# Ignore environment variables file
+.env
+
+# Ignore development and build artifacts
+build/
+dist/
+*.log
+
+# Ignore local configuration files
+*.local
+*.settings
+
+# Ignore test artifacts
+.coverage
+*.cover
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.coveragerc
+.tox/
+.pytest_cache/
+junit-xml/
+
+# Ignore database files
+*.sqlite3
+
+# Ignore media/uploads
+media/
+
+# Ignore static files
+staticfiles/
+static/
+
+# Ignore source control files
+.git/
+.gitignore
+
+# Ignore editor swap files
+*~
+
+# Ignore node modules
+node_modules/
+
+# Ignore Docker-related files
+docker-compose.override.yml

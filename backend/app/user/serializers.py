@@ -1,6 +1,6 @@
 from dj_rest_auth.serializers import UserDetailsSerializer
 from rest_framework import serializers
-from core.models import UserProfile
+from app.user.models import UserProfile
 from dj_rest_auth.registration.serializers import RegisterSerializer as DefaultRegisterSerializer  # noqa
 from django.contrib.auth import get_user_model
 

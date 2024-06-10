@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+import logging
+from typing import TYPE_CHECKING
+
 from dj_rest_auth.views import UserDetailsView as BaseUserDetailsView
 from user.serializers import (
     CustomUserDetailsSerializer,
@@ -12,6 +17,11 @@ from dj_rest_auth.app_settings import api_settings
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from drf_spectacular.utils import extend_schema, OpenApiExample
+
+from app.common.routers import CustomViewRouter
+from app.user import serializers
+from app.user.models import User
+from app.user.permissions import IsStaffPermission
 
 
 class CustomUserDetailsView(BaseUserDetailsView):
@@ -71,3 +81,13 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     )
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
+
+router = CustomViewRouter()
+router.register("details", CustomUserDetailsView, name="user-details")
+router.register("register", CustomRegisterView, name="user-register")
+router.register("password/reset", CustomPasswordResetView, name="password-reset")
+router.register(
+    "password/reset/confirm/<uuid:user_id>/<str:token>/",
+    CustomPasswordResetConfirmView,
+    name="password-reset-confirm"
+)

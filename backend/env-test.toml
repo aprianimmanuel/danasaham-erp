@@ -1,4 +1,0 @@
-[database]
-ENGINE = "django.db.backends.postgresql"
-NAME = "django-otp"
-USER = "postgres"
