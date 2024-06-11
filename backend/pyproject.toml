@@ -49,15 +49,21 @@ warn_unused_configs = true
 strict = false
 implicit_reexport = true
 exclude = [
-    "venv",
+    ".venv",
     "migrations",
 ]
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-DJANGO_SETTINGS_MODULE = "app.settings"
-addopts = "--exitfirst -vv --cov --cov-report=html --cov-fail-under=80"
+DJANGO_SETTINGS_MODULE = "app.config.settings"
+addopts = "--exitfirst -vv --cov=backend --cov-report=html --cov-fail-under=80"
 testpaths = [
-    "tests",
+    "backend/tests",
 ]
-python_files = tests.py test_*.py *_tests.py
+python_files = "test_*.py *_tests.py"
+
+[tool.coverage.run]
+omit = [
+    "*/tests/*",
+    "*/migrations/*"
+]

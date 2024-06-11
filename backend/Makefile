@@ -57,7 +57,7 @@ ruff-fmt:
 	python -m ruff --fix-only --unsafe-fixes .
 
 test:
-	python -m pytest
+	python -m pytest --cov=/apps
 
 mypy:
 	python -m mypy .

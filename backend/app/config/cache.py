@@ -12,11 +12,16 @@ logger = logging.getLogger(__name__)
 USE_REDIS_FOR_CACHE = getenv(
     "USE_REDIS_FOR_CACHE",
     default="true").lower() == "true"
-REDIS_URL = getenv("REDIS_URL", default="redis://localhost:6379/0")
+REDIS_HOST = getenv("REDIS_HOST", default="localhost")
+REDIS_PORT = getenv("REDIS_PORT", default="6379")
+REDIS_URL = getenv("REDIS_URL", default=f"redis://{REDIS_HOST}:{REDIS_PORT}/0")
 
 CACHES: dict[str, Any] = {}
 
-if USE_REDIS_FOR_CACHE:
+# Check if we are running tests
+IS_TESTING = getenv("DJANGO_TESTING", default="false").lower() == "true"
+
+if USE_REDIS_FOR_CACHE and not IS_TESTING:
     logger.info("Using Redis for cache")
     CACHES["default"] = {
         "BACKEND": "django_redis.cache.RedisCache",

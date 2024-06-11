@@ -11,7 +11,6 @@ include(
     "security.py",
     "storage.py",
     "rest.py",
-    "rest_auth.pyrest.py",
     "sentry.py",
     "silk.py",
     "spectacular.py",

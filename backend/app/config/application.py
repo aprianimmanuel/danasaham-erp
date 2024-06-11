@@ -33,10 +33,11 @@ INSTALLED_APPS = [
     'dj_rest_auth.registration',
     'allauth.socialaccount',
     'drf_spectacular',
+    'app',
     'app.config.core',
-    'app.user',
-    'app.documents',
-    'app.documents.dttotDoc',
+    'app.config.user',
+    'app.config.documents',
+    'app.config.dttotDoc',
 ]
 
 SITE_ID = 1
@@ -76,7 +77,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'app.wsgi.application'
+WSGI_APPLICATION = 'app.web.wsgi.application'
+ROOT_URLCONF = 'app.web.urls'
 
 LANGUAGE_CODE = getenv("LANGUAGE_CODE", "en-us")
 

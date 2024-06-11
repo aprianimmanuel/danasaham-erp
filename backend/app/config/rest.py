@@ -36,7 +36,7 @@ REST_AUTH = {
     'dj_rest_auth.serializers.PasswordChangeSerializer',
 
     'REGISTER_SERIALIZER':
-    'user.serializers.CustomRegisterSerializer',
+    'app.config.user.serializers.CustomRegisterSerializer',
 
     'REGISTER_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',),

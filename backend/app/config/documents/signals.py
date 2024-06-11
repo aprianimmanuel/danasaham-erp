@@ -1,6 +1,9 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver, Signal
+from django.db import transaction
 from app.config.core.models import Document
+from app.config.dttotDoc.tasks import process_dttot_document_workflow
+
 
 # This signal is sent after a DTTOT Document has been created.
 dttot_document_created = Signal(
@@ -11,15 +14,17 @@ dttot_document_created = Signal(
     ]
 )
 
-
 @receiver(post_save, sender=Document)
 def trigger_dttot_processing(sender, instance, created, **kwargs):
     if created and instance.document_type == 'DTTOT Document':
-        # Emit custom signal for DTTOT document processing
         context = kwargs.get('context', {})
-        dttot_document_created.send(
-            sender=instance.__class__,
-            instance=instance,
-            created=created,
-            context=context
+        user_id = instance.created_by
+        transaction.on_commit(
+            lambda: dttot_document_created.send(
+                sender=instance.__class__,
+                instance=instance,
+                created=created,
+                context=context,
+                user_id=user_id
+            )
         )

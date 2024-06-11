@@ -1,0 +1,163 @@
+.
+├── Dockerfile
+├── README.md
+├── automating_improvement_regex_pattern.md
+├── backend
+│   ├── Makefile
+│   ├── app
+│   │   ├── __init__.py
+│   │   ├── __pycache__
+│   │   │   └── __init__.cpython-39.pyc
+│   │   ├── common
+│   │   │   ├── __init__.py
+│   │   │   └── routers.py
+│   │   ├── config
+│   │   │   ├── __app_template__
+│   │   │   │   ├── __init__.py-tpl
+│   │   │   │   ├── admin.py-tpl
+│   │   │   │   ├── apps.py-tpl
+│   │   │   │   ├── migrations
+│   │   │   │   │   └── __init__.py-tpl
+│   │   │   │   ├── models.py-tpl
+│   │   │   │   ├── serializers.py-tpl
+│   │   │   │   ├── urls.py-tpl
+│   │   │   │   └── views.py-tpl
+│   │   │   ├── __init__.py
+│   │   │   ├── application.py
+│   │   │   ├── auth.py
+│   │   │   ├── axes.py
+│   │   │   ├── base.py
+│   │   │   ├── cache.py
+│   │   │   ├── celery.py
+│   │   │   ├── core
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── __pycache__
+│   │   │   │   │   ├── __init__.cpython-39.pyc
+│   │   │   │   │   ├── admin.cpython-39.pyc
+│   │   │   │   │   ├── apps.cpython-39.pyc
+│   │   │   │   │   └── models.cpython-39.pyc
+│   │   │   │   ├── admin.py
+│   │   │   │   ├── apps.py
+│   │   │   │   ├── management
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── __pycache__
+│   │   │   │   │   │   └── __init__.cpython-39.pyc
+│   │   │   │   │   └── commands
+│   │   │   │   │       ├── __init__.py
+│   │   │   │   │       ├── __pycache__
+│   │   │   │   │       │   └── __init__.cpython-39.pyc
+│   │   │   │   │       └── wait_for_db.py
+│   │   │   │   ├── migrations
+│   │   │   │   │   ├── 0001_initial.py
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   └── __pycache__
+│   │   │   │   │       └── __init__.cpython-39.pyc
+│   │   │   │   ├── models.py
+│   │   │   │   └── tests
+│   │   │   │       ├── __init__.py
+│   │   │   │       ├── __pycache__
+│   │   │   │       │   └── __init__.cpython-39.pyc
+│   │   │   │       ├── test_admin.py
+│   │   │   │       ├── test_commands.py
+│   │   │   │       └── test_models.py
+│   │   │   ├── database.py
+│   │   │   ├── documents
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── __pycache__
+│   │   │   │   │   ├── __init__.cpython-39.pyc
+│   │   │   │   │   ├── apps.cpython-39.pyc
+│   │   │   │   │   ├── serializers.cpython-39.pyc
+│   │   │   │   │   └── signals.cpython-39.pyc
+│   │   │   │   ├── apps.py
+│   │   │   │   ├── dttotDoc
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── __pycache__
+│   │   │   │   │   │   ├── __init__.cpython-39.pyc
+│   │   │   │   │   │   ├── apps.cpython-39.pyc
+│   │   │   │   │   │   ├── serializers.cpython-39.pyc
+│   │   │   │   │   │   ├── signals.cpython-39.pyc
+│   │   │   │   │   │   ├── tasks.cpython-39.pyc
+│   │   │   │   │   │   └── utils.cpython-39.pyc
+│   │   │   │   │   ├── apps.py
+│   │   │   │   │   ├── serializers.py
+│   │   │   │   │   ├── signals.py
+│   │   │   │   │   ├── tasks.py
+│   │   │   │   │   ├── tests
+│   │   │   │   │   │   ├── __init__.py
+│   │   │   │   │   │   ├── __pycache__
+│   │   │   │   │   │   │   └── __init__.cpython-39.pyc
+│   │   │   │   │   │   └── test_dttotDoc_api.py
+│   │   │   │   │   ├── urls.py
+│   │   │   │   │   ├── utils.py
+│   │   │   │   │   └── views.py
+│   │   │   │   ├── serializers.py
+│   │   │   │   ├── signals.py
+│   │   │   │   ├── tasks.py
+│   │   │   │   ├── tests
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── __pycache__
+│   │   │   │   │   │   └── __init__.cpython-39.pyc
+│   │   │   │   │   └── test_document_api.py
+│   │   │   │   ├── urls.py
+│   │   │   │   ├── utils
+│   │   │   │   │   ├── __init__.py
+│   │   │   │   │   ├── __pycache__
+│   │   │   │   │   │   ├── __init__.cpython-39.pyc
+│   │   │   │   │   │   └── data_preparation.cpython-39.pyc
+│   │   │   │   │   ├── data_preparation.py
+│   │   │   │   │   └── tests
+│   │   │   │   │       ├── __init__.py
+│   │   │   │   │       ├── __pycache__
+│   │   │   │   │       │   └── __init__.cpython-39.pyc
+│   │   │   │   │       └── test_data_preparation.py
+│   │   │   │   └── views.py
+│   │   │   ├── email.py
+│   │   │   ├── jwt.py
+│   │   │   ├── logging.py
+│   │   │   ├── rest.py
+│   │   │   ├── security.py
+│   │   │   ├── sentry.py
+│   │   │   ├── settings.py
+│   │   │   ├── silk.py
+│   │   │   ├── spectacular.py
+│   │   │   ├── storage.py
+│   │   │   └── user
+│   │   │       ├── __init__.py
+│   │   │       ├── __pycache__
+│   │   │       │   ├── __init__.cpython-39.pyc
+│   │   │       │   ├── admin.cpython-39.pyc
+│   │   │       │   ├── apps.cpython-39.pyc
+│   │   │       │   └── models.cpython-39.pyc
+│   │   │       ├── apps.py
+│   │   │       ├── permissions.py
+│   │   │       ├── serializers.py
+│   │   │       ├── signals.py
+│   │   │       ├── tests
+│   │   │       │   ├── __init__.py
+│   │   │       │   ├── __pycache__
+│   │   │       │   │   ├── __init__.cpython-39.pyc
+│   │   │       │   │   └── test_user_api.cpython-39.pyc
+│   │   │       │   └── test_user_api.py
+│   │   │       ├── urls.py
+│   │   │       └── views.py
+│   │   └── web
+│   │       ├── __init__.py
+│   │       ├── asgi.py
+│   │       ├── urls.py
+│   │       └── wsgi.py
+│   ├── logs
+│   ├── manage.py
+│   ├── media
+│   │   ├── documents
+│   │   └── test_media
+│   ├── pyproject.toml
+│   ├── run-local.sh
+│   └── tasks
+│       ├── __init__.py
+│       └── app.py
+├── docker-compose.yml
+├── requirements.dev.txt
+├── requirements.txt
+└── tree.txt
+
+39 directories, 121 files

@@ -3,7 +3,7 @@ import tempfile
 import shutil
 from django.test import TestCase
 import pandas as pd
-from documents.utils.data_preparation import (
+from app.config.documents.utils.data_preparation import (
     DTTOTDocumentProcessing,
     ExtractNIKandPassportNumber,
     CleaningSeparatingDeskripsi,

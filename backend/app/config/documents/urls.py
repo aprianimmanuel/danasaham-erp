@@ -1,19 +1,19 @@
-from django.urls import path, include
-from .views import (
-    DocumentAPIView,
-    DocumentDetailAPIView
+from django.urls import path
+from .views import DocumentAPIView, DocumentDetailAPIView
+from app.common.routers import CustomViewRouter
+
+router = CustomViewRouter(url_prefix="api/")
+
+router.register(
+    route='documents/',
+    view=DocumentAPIView,
+    name='document-create'
 )
 
-urlpatterns = [
-    path(
-        'documents/',
-        DocumentAPIView.as_view(),
-        name='document-create'),
-    path(
-        'documents/<uuid:pk>/',
-        DocumentDetailAPIView.as_view(),
-        name='document-detail'),
+router.register(
+    route='documents/<uuid:pk>/',
+    view=DocumentDetailAPIView,
+    name='document-detail'
+)
 
-    # DTTOT Document API and any other app-specific URLs
-    path('documents/', include('dttotDoc.urls')),
-]
+urlpatterns = router.urls

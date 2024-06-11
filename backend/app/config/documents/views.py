@@ -2,7 +2,7 @@ import logging
 from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.response import Response
 from rest_framework import status, permissions
-from documents.serializers import DocumentSerializer
+from app.config.documents.serializers import DocumentSerializer
 from app.config.core.models import Document
 from rest_framework.generics import (
     ListCreateAPIView,

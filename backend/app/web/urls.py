@@ -7,8 +7,12 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.shortcuts import redirect
 from django.urls import include, path
-from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from drf_spectacular.utils import extend_schema
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView
+)
 
 from dj_rest_auth.registration.views import VerifyEmailView, ResendEmailVerificationView
 from dj_rest_auth.views import LoginView, LogoutView, PasswordChangeView
@@ -18,7 +22,7 @@ from rest_framework_simplejwt.views import TokenVerifyView, TokenObtainPairView,
 from app.config.silk import USE_SILK
 from app.config.storage import USE_S3_FOR_MEDIA, USE_S3_FOR_STATIC
 
-from app.user.views import (
+from app.config.user.views import (
     CustomRegisterView,
     CustomPasswordResetView
 )
@@ -26,16 +30,29 @@ from app.user.views import (
 logger = logging.getLogger(__name__)
 
 # Swagger and Redoc URL patterns
-swagger_urlpatterns = [
-    path("api/v1/schema/", extend_schema(exclude=True)(SpectacularAPIView).as_view(), name="schema"),
-    path("docs/", extend_schema(exclude=True)(SpectacularSwaggerView).as_view(url_name="schema"), name="swagger-ui"),
-    path("redoc/", extend_schema(exclude=True)(SpectacularRedocView).as_view(url_name="schema"), name="redoc"),
+_swagger_urlpatterns = [
+    path(
+        "api/v1/schema/",
+        extend_schema(exclude=True)(SpectacularAPIView).as_view(),
+        name="schema"),
+    path(
+        "docs/",
+        extend_schema(exclude=True)(SpectacularSwaggerView).as_view(url_name="schema"),
+        name="swagger-ui"),
+    path(
+        "redoc/",
+        extend_schema(exclude=True)(SpectacularRedocView).as_view(url_name="schema"),
+        name="redoc"),
 ]
+
+def trigger_error(request):
+    division_by_zero = 1 / 0
 
 # Main URL patterns
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    *_swagger_urlpatterns,
     path('', lambda _request: redirect("docs/"), name="home"),
+    path('admin/', admin.site.urls),
 
     # Auth URLs
     path('api/user/login/', LoginView.as_view(), name='rest_login'),
@@ -47,7 +64,7 @@ urlpatterns = [
     path('api/user/password/reset/', CustomPasswordResetView.as_view(), name='rest_password_reset'),
 
     # User-specific URLs
-    path('api/user/', include('app.user.urls')),
+    path('api/user/', include('app.config.user.urls')),
 
     # JWT URLs
     path('api/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
@@ -60,12 +77,13 @@ urlpatterns = [
     path('api/redoc/', SpectacularRedocView.as_view(url_name='api-schema'), name='api-redoc'),
 
     # Include other app URLs
-    path('api/', include('documents.urls')),
+    path('api/', include('app.config.documents.urls')),
+    path('api/', include('app.config.dttotDoc.urls')),
     path('accounts/', include('allauth.urls')),
 
-    # Include additional urlpatterns
-    *swagger_urlpatterns,
+    path('sentry-debug/', trigger_error),
 ]
+
 
 # Conditional inclusion of Silk URLs
 if USE_SILK:

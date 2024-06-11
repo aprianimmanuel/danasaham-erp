@@ -2,7 +2,7 @@ import uuid
 from rest_framework import serializers
 from app.config.core.models import Document
 from django.utils import timezone
-
+from django.db.models.signals import post_save
 
 class DocumentSerializer(serializers.ModelSerializer):
     document_name = serializers.CharField(required=True)
@@ -44,6 +44,7 @@ class DocumentSerializer(serializers.ModelSerializer):
         request = self.context.get('request', None)
         if request and request.user.is_authenticated:
             validated_data['created_by'] = request.user
+        validated_data.pop('updated_by', None)
         return super().create(validated_data)
 
     def update(self, instance, validated_data):

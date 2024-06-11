@@ -18,24 +18,29 @@ services:
       context: .
       args:
         - DEV=true
+    environment:
+      WORKERS: ${WORKERS:-2}
+      THREADS: ${THREADS:-2}
     ports:
       - "${API_PORT}:8000"
     volumes:
-      - ./backend:/apps  # Mount the local backend directory to /apps in the container
-    command: make run.server.prod
+      - ./backend:/apps
+    command: make migrate run.server.prod
     depends_on:
       - pgbouncer
       - redis
       - rabbitmq
+      - collectstatic
+      - migrations
 
   db:
     <<: *common
     image: postgres:13-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_INITDB_ARGS: --auth=md5
     volumes:
       - dev-db-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    command: ["postgres", "-c", "shared_preload_libraries=pg_trgm"]
 
   pgbouncer:
     <<: *common
@@ -44,8 +49,8 @@ services:
     depends_on:
       - db
     environment:
-      - POSTGRESQL_PASSWORD=${POSTGRES_PASSWORD}
-      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
+      - DATABASE_URL=postgresql://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${POSTGRESQL_HOST}:${POSTGRESQL_PORT}/${POSTGRESQL_DATABASE}
       - POOL_MODE=transaction
       - MAX_CLIENT_CONN=1000
       - DEFAULT_POOL_SIZE=20
@@ -68,7 +73,7 @@ services:
     restart: unless-stopped
     volumes:
       - redis-data:/data
-    command: redis-server --maxmemory 512mb --maxmemory-policy allkeys-lru
+    command: redis-server --maxmemory 2gb --maxmemory-policy allkeys-lru
 
   rabbitmq:
     <<: *common
@@ -81,31 +86,66 @@ services:
 
   celery:
     <<: *common
-    build: .
+    build:
+      context: .
+      args:
+        - DEV=true
     command: make run.celery.prod
     restart: unless-stopped
     depends_on:
       - app
     volumes:
-      - .:/application
+      - ./backend:/apps
 
   migrations:
     <<: *common
-    build: .
+    build:
+      context: .
+      args:
+        - DEV=true
     command: make migrate
     depends_on:
       - db
     volumes:
-      - .:/application
+      - ./backend:/apps
 
   collectstatic:
     <<: *common
-    build: .
+    build:
+      context: .
+      args:
+        - DEV=true
     command: make collectstatic
     depends_on:
       - db
     volumes:
-      - .:/application
+      - ./backend:/apps
+
+  lint:
+    <<: *common
+    build:
+      context: .
+      args:
+        - DEV=true
+    command: make lint
+    depends_on:
+      - app
+    volumes:
+      - ./backend:/apps
+
+  tests:
+    <<: *common
+    build:
+      context: .
+      args:
+        - DEV=true
+    command: make test
+    depends_on:
+      - db
+      - redis
+      - rabbitmq
+    volumes:
+      - ./backend:/apps
 
   smtp:
     <<: *common
@@ -118,7 +158,7 @@ services:
     ports:
       - "8025:8025"
     volumes:
-      - ./app:/app
+      - ./backend:/apps
 
 networks:
   main:

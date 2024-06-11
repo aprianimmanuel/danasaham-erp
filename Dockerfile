@@ -13,6 +13,9 @@ COPY ./requirements.txt /tmp/requirements.txt
 COPY ./requirements.dev.txt /tmp/requirements.dev.txt
 
 # Install system dependencies and Python packages
+ARG DEV=false
+
+# Install system dependencies and Python packages
 RUN python -m venv $VENV_PATH && \
     $VENV_PATH/bin/pip install --upgrade pip && \
     apt-get update --fix-missing && \
@@ -79,6 +82,9 @@ RUN python -m venv $VENV_PATH && \
     find /usr/lib -type f -name '*.a' -delete && \
     find /usr/include -type f -name '*.h' -delete && \
     adduser --disabled-password --gecos '' django-user
+
+# Copy application files
+COPY ./backend /apps
 
 # Set permissions for application files
 RUN mkdir -p /apps/media/test_media && \

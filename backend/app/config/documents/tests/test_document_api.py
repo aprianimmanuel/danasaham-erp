@@ -5,7 +5,7 @@ from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
 from rest_framework.test import APITestCase
-from core.models import Document, dttotDoc, User
+from app.config.core.models import Document, dttotDoc, User
 from django.conf import settings
 from openpyxl import Workbook
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-AUTH_USER_MODEL = 'app.core.User'
+AUTH_USER_MODEL = 'core.User'
 
 AUTH_PASSWORD_VALIDATORS = [
     {

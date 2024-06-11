@@ -27,18 +27,24 @@ class CustomViewRouter:
         basename: str | None = None,
         as_view_kwargs: dict[str, Any] | None = None,
         **kwargs: Any,
-    ) -> None:
+    ) -> Callable[[T], T]:
         route = f"{self.url_prefix}{route}"
-        if issubclass(view, (ViewSet, GenericViewSet)):
-            kwargs.setdefault("basename", basename or name)
-            self._drf_router.register(route, view, **kwargs)
-        else:
-            kwargs.setdefault("name", name or basename)
-            self._paths.append(
-                path(
-                    route,
-                    view.as_view(**(as_view_kwargs or {})), **kwargs),
-            )
+
+        def decorator(view: T) -> T:
+            if issubclass(view, (ViewSet, GenericViewSet)):
+                kwargs.setdefault("basename", basename or name)
+                self._drf_router.register(route, view, **kwargs)
+            else:
+                kwargs.setdefault("name", name or basename)
+                self._paths.append(
+                    path(
+                        route,
+                        view.as_view(**(as_view_kwargs or {})), **kwargs),
+                )
+
+            return cast(T, view)
+
+        return decorator
 
     @property
     def urls(self) -> list[Any]:

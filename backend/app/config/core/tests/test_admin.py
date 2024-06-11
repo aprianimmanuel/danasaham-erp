@@ -5,7 +5,7 @@ Test for the Django admin modifications
 from django.test import TestCase, Client, override_settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse
-from core.models import UserProfile, dttotDoc, Document
+from app.config.core.models import dttotDoc, Document, UserProfile, User
 from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -22,7 +22,7 @@ class AdminSiteTests(TestCase):
         cls.user = get_user_model().objects.create_user(
             email='test@example.com',
             username='testuser',
-            password='Testp@ss!23',
+            password='Testp@ss!23'
         )
 
         cls.admin_user = get_user_model().objects.create_superuser(

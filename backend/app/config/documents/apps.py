@@ -3,7 +3,8 @@ from django.apps import AppConfig
 
 class DocumentsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'documents'
+    name = 'app.config.documents'
+    verbose_name = "Documents"
 
     def ready(self):
-        import documents.signals  # noqa
+        import app.config.documents.signals  # noqa
