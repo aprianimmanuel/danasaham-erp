@@ -5,3 +5,5 @@ from app.config.user.views import router
 urlpatterns = [
     *router.urls,
 ]
+
+app_name = 'user'

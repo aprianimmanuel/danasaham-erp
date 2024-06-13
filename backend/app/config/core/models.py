@@ -164,7 +164,8 @@ class dttotDoc(models.Model):
     )
     dttot_first_name = models.TextField(
         _("DTTOT First Name"),
-        blank=True)
+        blank=True,
+        null=True)
     dttot_middle_name = models.TextField(
         _("DTTOT Middle Name"),
         blank=True,

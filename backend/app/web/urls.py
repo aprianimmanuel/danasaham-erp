@@ -27,6 +27,8 @@ from app.config.user.views import (
     CustomPasswordResetView
 )
 
+
+
 logger = logging.getLogger(__name__)
 
 # Swagger and Redoc URL patterns
@@ -77,8 +79,8 @@ urlpatterns = [
     path('api/redoc/', SpectacularRedocView.as_view(url_name='api-schema'), name='api-redoc'),
 
     # Include other app URLs
-    path('api/', include('app.config.documents.urls')),
-    path('api/', include('app.config.dttotDoc.urls')),
+    path('', include('app.config.documents.urls')),
+    path('', include('app.config.dttotDoc.urls')),
     path('accounts/', include('allauth.urls')),
 
     path('sentry-debug/', trigger_error),

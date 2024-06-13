@@ -82,6 +82,7 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
 
+
 router = CustomViewRouter()
 router.register("details", CustomUserDetailsView, name="user-details")
 router.register("register", CustomRegisterView, name="user-register")

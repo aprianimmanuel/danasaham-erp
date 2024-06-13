@@ -1,19 +1,9 @@
 from django.urls import path
-from .views import DttotDocDetailView, DttotDocListView
-from app.common.routers import CustomViewRouter
+from app.config.dttotDoc.views import DttotDocDetailView, DttotDocListView
 
-router = CustomViewRouter(url_prefix="api/")
+app_name = 'dttotdocs'
 
-router.register(
-    route='dttotdocs/<uuid:document_id>/',
-    view=DttotDocListView,
-    name='dttot-doc-list'
-)
-
-router.register(
-    route='dttotdocs/detail/<uuid:pk>/',
-    view=DttotDocDetailView,
-    name='dttot-doc-detail'
-)
-
-urlpatterns = router.urls
+urlpatterns = [
+    path('api/documents/dttotdocs/<uuid:document_id>/', DttotDocListView.as_view(), name='dttot-doc-list'),
+    path('api/documents/dttotdocs/<uuid:pk>/', DttotDocDetailView.as_view(), name='dttot-doc-detail'),
+]

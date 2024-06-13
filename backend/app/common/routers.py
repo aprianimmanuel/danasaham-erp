@@ -35,15 +35,36 @@ class CustomViewRouter:
                 kwargs.setdefault("basename", basename or name)
                 self._drf_router.register(route, view, **kwargs)
             else:
-                kwargs.setdefault("name", name or basename)
-                self._paths.append(
-                    path(
-                        route,
-                        view.as_view(**(as_view_kwargs or {})), **kwargs),
-                )
-
+                if name:
+                    self._paths.append(
+                        path(
+                            route,
+                            view.as_view(**(as_view_kwargs or {})),
+                            name=name
+                        ),
+                    )
+                else:
+                    self._paths.append(
+                        path(
+                            route,
+                            view.as_view(**(as_view_kwargs or {})),
+                            **kwargs
+                        ),
+                    )
             return cast(T, view)
 
+        return decorator
+
+    def register_decorator(
+            self,
+            route: str,
+            name: str | None = None,
+            basename: str | None = None,
+            as_view_kwargs: dict[str, Any] | None = None,
+            **kwargs: Any):
+        def decorator(view: T) -> T:
+            self.register(route, view, name=name, basename=basename, as_view_kwargs=as_view_kwargs, **kwargs)
+            return view
         return decorator
 
     @property

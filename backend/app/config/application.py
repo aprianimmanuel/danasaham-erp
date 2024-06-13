@@ -33,7 +33,6 @@ INSTALLED_APPS = [
     'dj_rest_auth.registration',
     'allauth.socialaccount',
     'drf_spectacular',
-    'app',
     'app.config.core',
     'app.config.user',
     'app.config.documents',
@@ -77,6 +76,7 @@ TEMPLATES = [
     },
 ]
 
+ASGI_APPLICATION = 'app.web.asgi.application'
 WSGI_APPLICATION = 'app.web.wsgi.application'
 ROOT_URLCONF = 'app.web.urls'
 

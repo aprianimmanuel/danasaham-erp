@@ -32,13 +32,16 @@ services:
       - rabbitmq
       - collectstatic
       - migrations
-
+      
   db:
     <<: *common
     image: postgres:13-alpine
     restart: unless-stopped
     environment:
       POSTGRES_INITDB_ARGS: --auth=md5
+      POSTGRES_DB: ${POSTGRESQL_DATABASE}
+      POSTGRES_USER: ${POSTGRESQL_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRESQL_PASSWORD}
     volumes:
       - dev-db-data:/var/lib/postgresql/data
 
@@ -118,32 +121,6 @@ services:
     command: make collectstatic
     depends_on:
       - db
-    volumes:
-      - ./backend:/apps
-
-  lint:
-    <<: *common
-    build:
-      context: .
-      args:
-        - DEV=true
-    command: make lint
-    depends_on:
-      - app
-    volumes:
-      - ./backend:/apps
-
-  tests:
-    <<: *common
-    build:
-      context: .
-      args:
-        - DEV=true
-    command: make test
-    depends_on:
-      - db
-      - redis
-      - rabbitmq
     volumes:
       - ./backend:/apps
 

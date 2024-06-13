@@ -80,7 +80,7 @@ class DttotDocAPITestCase(APITestCase):
     def test_create_and_update_dttotDoc(self):
         document_file = self.create_test_document_file()
         upload_response = self.client.post(
-            reverse('document-create'),
+            reverse('documents:document-list'),
             {
                 'document_file': document_file,
                 'document_name': 'Test Document',
@@ -99,7 +99,7 @@ class DttotDocAPITestCase(APITestCase):
         dttot_doc = None
         for _ in range(20):
             response = self.client.get(
-                reverse('dttot-doc-list', args=[document_id])
+                reverse('dttotdocs:dttot-doc-list', args=[document_id])
             )
             if response.status_code == status.HTTP_200_OK and response.data:
                 dttot_doc = response.data[0]
@@ -110,7 +110,7 @@ class DttotDocAPITestCase(APITestCase):
             self.fail(
                 "dttotDoc was not automatically created with the document")
 
-        update_url = reverse('dttot-doc-detail', args=[dttot_doc['dttot_id']])
+        update_url = reverse('dttotdocs:dttot-doc-detail', args=[dttot_doc['dttot_id']])
         update_data = {
             'dttot_type': 'Updated Type',
             'dttot_first_name': 'UpdatedFirst',
@@ -274,20 +274,20 @@ class DttotDocReportTestCase(APITestCase):
 
     def test_search_dttotDoc_by_name(self):
         response = self.client.get(
-            reverse('dttotdoc-search'), {'search': 'John'})
+            reverse('dttotdocs:dttotdoc-search'), {'search': 'John'})
         self.assertEqual(
             response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
 
     def test_search_dttotDoc_by_nik(self):
         response = self.client.get(
-            reverse('dttotdoc-search'), {'search': '1234'})
+            reverse('dttotdocs:dttotdoc-search'), {'search': '1234'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 3)
 
     def test_search_dttotDoc_by_phone(self):
         response = self.client.get(
-            reverse('dttotdoc-search'), {'search': '0801'})
+            reverse('dttotdocs:dttotdoc-search'), {'search': '0801'})
         self.assertEqual(
             response.status_code, status.HTTP_200_OK)
         self.assertEqual(

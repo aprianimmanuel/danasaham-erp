@@ -1,19 +1,9 @@
 from django.urls import path
-from .views import DocumentAPIView, DocumentDetailAPIView
-from app.common.routers import CustomViewRouter
+from app.config.documents.views import DocumentListView, DocumentDetailView
 
-router = CustomViewRouter(url_prefix="api/")
+app_name = 'documents'
 
-router.register(
-    route='documents/',
-    view=DocumentAPIView,
-    name='document-create'
-)
-
-router.register(
-    route='documents/<uuid:pk>/',
-    view=DocumentDetailAPIView,
-    name='document-detail'
-)
-
-urlpatterns = router.urls
+urlpatterns = [
+    path('api/documents/', DocumentListView.as_view(), name='document-list'),
+    path('api/documents/<uuid:pk>/', DocumentDetailView.as_view(), name='document-details'),
+]

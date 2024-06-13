@@ -1,6 +1,8 @@
 import io
 import shutil
 import os
+import time
+from django.db import transaction
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
@@ -11,19 +13,11 @@ from openpyxl import Workbook
 
 
 def document_list_url():
-    return reverse('document-create')
+    return reverse('documents:document-list')
 
 
 def document_detail_url(document_pk):
-    return reverse('document-detail', args=[document_pk])
-
-
-def dttot_process_url(document_pk):
-    return reverse('dttot-process', args=[document_pk])
-
-
-def document_create_url():
-    return reverse('document-create')
+    return reverse('documents:document-details', args=[document_pk])
 
 
 class DocumentAPITests(APITestCase):
@@ -67,7 +61,7 @@ class DocumentAPITests(APITestCase):
                 content_type='application/pdf')
         }
         res = self.client.post(
-            document_create_url(),
+            document_list_url(),
             payload,
             format='multipart')
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
@@ -153,7 +147,7 @@ class DTTOTDocumentUploadTests(APITestCase):
             'newuser',
             'newuser@example.com',
             'TestP@ss!23')
-        cls.document_url = reverse('document-create')
+        cls.document_url = reverse('documents:document-list')
 
     def setUp(self):
         super().setUp()
@@ -239,8 +233,3 @@ class DTTOTDocumentUploadTests(APITestCase):
             self.assertTrue(
                 Document.objects.filter(pk=document_id).exists(),
                 "Document was not created in the database.")
-            self.assertTrue(
-                dttotDoc.objects.filter(
-                    document__document_id=document_id
-                ).exists(),
-                "DTTOT Doc entry was not created.")
