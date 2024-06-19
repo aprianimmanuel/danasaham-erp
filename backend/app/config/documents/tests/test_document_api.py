@@ -237,4 +237,4 @@ class DTTOTDocumentUploadTests(APITestCase):
             # Check if document and its associated dttotDoc entry were created
             self.assertTrue(
                 Document.objects.filter(pk=document_id).exists(),
-                "Document was not created in the database.")
+                "Document was not created in the database."),
