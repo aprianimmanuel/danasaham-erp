@@ -11,7 +11,7 @@ class DTTOTDocumentProcessing:
 
         Args:
             file_path (str): The path to the document file.
-            document_format (str): The format of the document ('CSV' or 'XLS').
+            document_format (str): The format of the document ('CSV', 'XLS', or 'XLSX').
 
         Returns:
             DataFrame: The imported document as a pandas DataFrame.
@@ -25,57 +25,16 @@ class DTTOTDocumentProcessing:
 
     def retrieve_data_as_dataframe(self, file_path, document_format):
         """
-        Wrapper function to retrieve all data from a document into a pandas DataFrame.  # noqa
+        Wrapper function to retrieve all data from a document into a pandas DataFrame.
 
         Args:
             file_path (str): The path to the document file.
-            document_format (str): The format of the document ('CSV' or 'XLS').
+            document_format (str): The format of the document ('CSV', 'XLS', or 'XLSX').
 
         Returns:
             DataFrame: The document data as a pandas DataFrame.
         """
         return self.import_document(file_path, document_format)
-
-    def extract_and_split_names(self, df, name_column='Nama'):
-        """
-        Extracts full names and aliases from a specified column in a DataFrame,
-        then splits these names into first, middle, and last names.
-        Adds new columns for each component of the name and its aliases.
-
-        Args:
-            df (DataFrame): The DataFrame containing the names.
-            name_column (str): The column containing the names from which to extract aliases.
-
-        Returns:
-            DataFrame: The DataFrame with additional columns for name components.
-        """  # noqa
-        # Initialize the full name and aliases.
-        # Use case-insensitive regex to split on ' Alias ' or ' alias '
-        df[
-            'full_name'
-        ] = df[
-            name_column
-        ].apply(
-            lambda x: re.split(
-                ' (?i)alias ', x, 1
-            )[0] if isinstance(
-                x, str
-            ) else ''
-        )
-
-        # Extract first, middle, and last names from the full_name
-        df[
-            [
-                'first_name',
-                'middle_name',
-                'last_name'
-            ]
-        ] = df['full_name'].apply(self.split_name).tolist()
-
-        # Extract aliases and split each alias into name components
-        df = self.extract_aliases(df, name_column)
-
-        return df
 
     @staticmethod
     def split_name(name):
@@ -91,41 +50,79 @@ class DTTOTDocumentProcessing:
             return parts[0], '', ''
         return '', '', ''
 
-    def extract_aliases(self, df, name_column):
+    def split_aliases(self, name, case_insensitive=True):
+        if case_insensitive:
+            name = name.lower()
+            return name.split(' alias ')[1:] if ' alias ' in name else []
+        else:
+            parts = name.split(' Alias ')
+            aliases = parts[1:] if len(parts) > 1 else []
+            if not aliases:
+                parts = name.split(' alias ')
+                aliases = parts[1:] if len(parts) > 1 else []
+            return aliases
+
+    def extract_and_split_names(self, df, name_column, case_insensitive=True):
         """
-        Identifies and processes alias names
-        from a name column, creating multiple columns
-        for each alias name component.
+        Extracts full names and aliases from a specified column in a DataFrame,
+        then splits these names into first, middle, and last names.
+        Adds new columns for each component of the name and its aliases.
 
         Args:
-            df (DataFrame): DataFrame with a column
-            containing names with aliases.
-            name_column (str): Column name containing the names and aliases.
+            df (DataFrame): The DataFrame containing the names.
+            name_column (str): The column containing the names from which to extract aliases.
+            case_insensitive (bool): Whether to process names in a case-insensitive manner.
 
         Returns:
-            DataFrame: Updated DataFrame
-            with alias name components added as columns.
+            DataFrame: The DataFrame with additional columns for name components.
         """
-        # Extract all aliases from the name column
-        df['aliases'] = df[name_column].apply(
-            lambda x: x.split(' Alias ')[1:] if ' Alias ' in x else [])
+        def split_name(name):
+            if not isinstance(name, str):
+                return '', '', ''
+            parts = name.strip().split()
+            if len(parts) >= 3:
+                return parts[0], ' '.join(parts[1:-1]), parts[-1]
+            elif len(parts) == 2:
+                return parts[0], '', parts[1]
+            elif len(parts) == 1:
+                return parts[0], '', ''
+            return '', '', ''
 
-        # Find the maximum number of aliases in any row
-        # to determine the number of columns
+        def split_aliases(name):
+            if case_insensitive:
+                name = name.lower()
+                return name.split(' alias ')[1:] if ' alias ' in name else []
+            else:
+                parts = name.split(' Alias ')
+                aliases = parts[1:] if len(parts) > 1 else []
+                if not aliases:
+                    parts = name.split(' alias ')
+                    aliases = parts[1:] if len(parts) > 1 else []
+                return aliases
+
+        # Initialize the full name column
+        df['full_name'] = df[name_column].apply(lambda x: re.split(' (?i)alias ', x, 1)[0] if isinstance(x, str) else '')
+
+        # Extract first, middle, and last names from the full_name
+        df[['first_name', 'middle_name', 'last_name']] = df['full_name'].apply(split_name).tolist()
+
+        # Extract all aliases from the name column
+        df['aliases'] = df[name_column].apply(split_aliases)
+
+        # Find the maximum number of aliases in any row to determine the number of fields
         max_aliases = df['aliases'].str.len().max()
 
         # Process each alias and split into name components
         for i in range(max_aliases):
             alias_col = f'Alias_name_{i+1}'
-            df[alias_col] = df['aliases'].apply(
-                lambda aliases: aliases[i] if len(aliases) > i else '')
+            df[alias_col] = df['aliases'].apply(lambda aliases: aliases[i] if len(aliases) > i else '')
             df[
                 [
                     f'first_name_alias_{i+1}',
                     f'middle_name_alias_{i+1}',
                     f'last_name_alias_{i+1}'
                 ]
-            ] = df[alias_col].apply(self.split_name).tolist()
+            ] = df[alias_col].apply(split_name).tolist()
 
         return df
 

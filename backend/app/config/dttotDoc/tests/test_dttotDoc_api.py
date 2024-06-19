@@ -1,6 +1,7 @@
 import os
 import io
 import shutil
+import pytest
 from time import sleep
 from django.urls import reverse
 from django.conf import settings
@@ -11,19 +12,25 @@ from rest_framework.authtoken.models import Token
 from app.config.core.models import dttotDoc
 from django.core.files.uploadedfile import SimpleUploadedFile
 from openpyxl import Workbook
-
+from django.test import override_settings
+from app.config.dttotDoc.tasks import process_dttot_document
 
 User = get_user_model()
 
-
+@pytest.mark.django_db
+@override_settings(CELERY_TASK_ALWAYS_EAGER=True)
 class DttotDocAPITestCase(APITestCase):
+
+    @pytest.fixture(autouse=True, scope='class')
+    def setup_celery_worker(self, celery_session_worker):
+        self.celery_worker = celery_session_worker
+
     def setUp(self):
         self.client = APIClient()
         self.user = User.objects.create_user(
             email='test@example.com',
             username='testuser',
-            password='Testp@ss!23',
-            email_verified=True
+            password='Testp@ss!23'
         )
         self.token, _ = Token.objects.get_or_create(user=self.user)
 
@@ -79,65 +86,81 @@ class DttotDocAPITestCase(APITestCase):
 
     def test_create_and_update_dttotDoc(self):
         document_file = self.create_test_document_file()
-        upload_response = self.client.post(
-            reverse('documents:document-list'),
-            {
-                'document_file': document_file,
-                'document_name': 'Test Document',
-                'document_type': 'DTTOT Document',
-                'document_file_type': 'XLSX'
-            },
-            format='multipart'
-        )
-        self.assertEqual(
-            upload_response.status_code,
-            status.HTTP_201_CREATED,
-            "Document upload failed")
-        document_id = upload_response.data['document']['document_id']
-
-        # Wait for up to 20 seconds for the dttotDoc to be created
-        dttot_doc = None
-        for _ in range(20):
-            response = self.client.get(
-                reverse('dttotdocs:dttot-doc-list', args=[document_id])
+        with self.settings(MEDIA_ROOT=self.test_media_path):
+            upload_response = self.client.post(
+                reverse('documents:document-list'),
+                {
+                    'document_file': document_file,
+                    'document_name': 'Test Document',
+                    'document_type': 'DTTOT Document',
+                    'document_file_type': 'XLSX'
+                },
+                format='multipart'
             )
-            if response.status_code == status.HTTP_200_OK and response.data:
-                dttot_doc = response.data[0]
-                break
-            sleep(1)
+            self.assertEqual(
+                upload_response.status_code,
+                status.HTTP_201_CREATED,
+                "Document upload failed")
+            document_id = upload_response.data['document_id']
 
-        if dttot_doc is None:
-            self.fail(
+            # Trigger the Celery task
+            user_data = {'user_id': str(self.user.id)}
+            process_dttot_document.delay(document_id, user_data)
+
+            # Wait for the Celery task to complete
+            response_status = None
+            for _ in range(5):
+                response = self.client.get(
+                    reverse('dttotdocs:dttot-doc-list', kwargs={'document_id': document_id})
+                )
+                response_status = response.status_code
+                if response_status == status.HTTP_200_OK and response.data:
+                    break
+                sleep(1)
+
+            self.assertEqual(
+                response_status,
+                status.HTTP_200_OK,
                 "dttotDoc was not automatically created with the document")
 
-        update_url = reverse('dttotdocs:dttot-doc-detail', args=[dttot_doc['dttot_id']])
-        update_data = {
-            'dttot_type': 'Updated Type',
-            'dttot_first_name': 'UpdatedFirst',
-            'dttot_last_name': 'UpdatedSecond',
-            'dttot_domicile_address': 'Updated Address',
-            'dttot_description_1': 'Updated Description'
-        }
-        update_response = self.client.patch(
-            update_url,
-            update_data,
-            format='json')
-        self.assertEqual(
-            update_response.status_code,
-            status.HTTP_200_OK,
-            "Should return HTTP 200 OK")
+            dttot_docs = response.data
+            self.assertTrue(dttot_docs, "dttotDoc was not found in the response")
 
-        # Verify the updates
-        dttot_doc = self.client.get(update_url).data
-        self.assertEqual(
-            dttot_doc['dttot_type'],
-            'Updated Type',
-            "Check the type of the updated document")
-        self.assertEqual(
-            dttot_doc['dttot_first_name'],
-            'UpdatedFirst',
-            "Check the updated first name")
+            # Check the content of the first dttotDoc in the list
+            dttot_doc = dttot_docs[0]
+            self.assertEqual(dttot_doc['document'], document_id, "Document ID does not match")
+            self.assertIn('dttot_id', dttot_doc, "dttot_id not found in the response")
+            self.assertIn('document_data', dttot_doc, "document_data not found in the response")
+            self.assertIn('updated_at', dttot_doc, "updated_at not found in the response")
+            self.assertIn('user', dttot_doc, "user not found in the response")
 
+            update_url = reverse('dttotdocs:dttot-doc-detail', kwargs={'dttot_id': dttot_doc['dttot_id']})
+            update_data = {
+                'dttot_type': 'Updated Type',
+                'dttot_first_name': 'UpdatedFirst',
+                'dttot_last_name': 'UpdatedSecond',
+                'dttot_domicile_address': 'Updated Address',
+                'dttot_description_1': 'Updated Description'
+            }
+            update_response = self.client.patch(
+                update_url,
+                update_data,
+                format='json')
+            self.assertEqual(
+                update_response.status_code,
+                status.HTTP_200_OK,
+                "Should return HTTP 200 OK")
+
+            # Verify the updates
+            dttot_doc = self.client.get(update_url).data
+            self.assertEqual(
+                dttot_doc['dttot_type'],
+                'Updated Type',
+                "Check the type of the updated document")
+            self.assertEqual(
+                dttot_doc['dttot_first_name'],
+                'UpdatedFirst',
+                "Check the updated first name")
 
 class DttotDocReportTestCase(APITestCase):
 

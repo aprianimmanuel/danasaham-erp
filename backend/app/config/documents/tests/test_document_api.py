@@ -1,7 +1,9 @@
 import io
 import shutil
 import os
-import time
+import
+from urllib.parse import quote
+from django.utils.timezone import now
 from django.db import transaction
 from django.urls import reverse
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -10,7 +12,7 @@ from rest_framework.test import APITestCase
 from app.config.core.models import Document, dttotDoc, User
 from django.conf import settings
 from openpyxl import Workbook
-
+from app.config.core.models import document_directory_path
 
 def document_list_url():
     return reverse('documents:document-list')
@@ -218,18 +220,21 @@ class DTTOTDocumentUploadTests(APITestCase):
                 "Document upload failed")
 
             # Get document ID from response
-            document_id = response.data['document']['document_id']
+            document_id = response.data['document_id']
             self.assertIsNotNone(document_id, "Document ID was not returned")
 
             # Check the document_file URL if provided by serializer
             if 'document_file' in response.data:
-                self.assertIn(
-                    'url',
-                    response.data[
-                        'document_file'
-                    ], "Document file URL not included in the response")
+                # Reconstruct instance to calculate the expected path
+                instance = Document.objects.get(pk=document_id)
+                expected_path = os.path.join(settings.MEDIA_URL, document_directory_path(instance, document_file.name))
+                encoded_expected_path = quote(expected_path)
+                self.assertEqual(
+                    response.data['document_file'],
+                    encoded_expected_path,
+                    "Document file URL is not correct in the response")
 
-            # Check if document and its associated dttotDoc entry was created
+            # Check if document and its associated dttotDoc entry were created
             self.assertTrue(
                 Document.objects.filter(pk=document_id).exists(),
                 "Document was not created in the database.")

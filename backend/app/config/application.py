@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'app.config.user',
     'app.config.documents',
     'app.config.dttotDoc',
+    'app.config.dsb_user_personal',
 ]
 
 SITE_ID = 1

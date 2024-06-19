@@ -55,6 +55,12 @@ class DocumentListView(GenericAPIView):
                 'document': serializer.data,
                 'dttot_doc': "Processing started"
             }
+
+        if document.document_type == 'DSB User Personal List Document':
+            response_data = {
+                'document': serializer.data,
+                'dsb_user_personal': "Processing started"
+            }
             logger.info(f"Response data: {response_data}")
             return Response(response_data, status=status.HTTP_201_CREATED)
         else:

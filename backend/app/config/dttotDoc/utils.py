@@ -1,3 +1,4 @@
+# dttotDoc.utils
 import difflib
 import logging
 from rest_framework.exceptions import ValidationError
@@ -6,18 +7,8 @@ from app.config.core.models import dttotDoc
 
 logger = logging.getLogger(__name__)
 
+
 def handle_dttot_document(document, row_data, user_id):
-    """
-    Processes a given Document object to extract and save detailed data to the dttotDoc model.
-
-    Args:
-    document (Document): The document to be processed.
-    user_data (dict): Dictionary containing user information.
-    df (DataFrame): Processed data as DataFrame
-
-    Raises:
-    ValidationError: If there are issues with the data processing that prevent saving.
-    """
     try:
         existing_kode_densus = set(
             dttotDoc.objects.values_list(
@@ -31,7 +22,7 @@ def handle_dttot_document(document, row_data, user_id):
                     None,
                     kode_densus,
                     existing
-                ).ratio() > 0.95 for existing in existing_kode_densus):
+                ).ratio() > 0.90 for existing in existing_kode_densus):
             row_data.update({
                 'user': user_id,
                 'document': document.document_id,
@@ -77,8 +68,9 @@ def handle_dttot_document(document, row_data, user_id):
             })
             dttot_serializer = DttotDocSerializer(data=row_data)
             if dttot_serializer.is_valid():
-                dttot_serializer.save()
-                logger.info(f"Successfully saved row data for document ID {document.document_id}")
+                instance = dttot_serializer.save()
+                logger.info(f"Successfully saved row data for document ID {document.document_id}, dttot ID {instance.dttot_id}")
+                return instance.dttot_id
             else:
                 # Log serializer errors
                 errors = dttot_serializer.errors

@@ -5,5 +5,5 @@ app_name = 'dttotdocs'
 
 urlpatterns = [
     path('api/documents/dttotdocs/<uuid:document_id>/', DttotDocListView.as_view(), name='dttot-doc-list'),
-    path('api/documents/dttotdocs/<uuid:pk>/', DttotDocDetailView.as_view(), name='dttot-doc-detail'),
+    path('api/documents/dttotdocs/<uuid:dttot_id>/', DttotDocDetailView.as_view(), name='dttot-doc-detail'),
 ]
