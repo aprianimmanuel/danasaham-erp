@@ -1,4 +1,4 @@
-FROM python:3.9.18-bookworm
+FROM python:3.8.17-bookworm
 LABEL maintainer="aprian.immanuel@danasaham.co.id"
 
 ENV PYTHONUNBUFFERED=1 \
@@ -62,12 +62,12 @@ RUN python -m venv $VENV_PATH && \
         libxvidcore-dev \
         libx264-dev \
         python3-dev \
+        python3-setuptools \
         python3-numpy \
         python3-pip \
         python3-sklearn \
         python3-sklearn-lib \
         python3-joblib \
-        python-sklearn-doc \
         python3-matplotlib \
         python3-threadpoolctl \
         python3-mdp \
