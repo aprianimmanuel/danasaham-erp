@@ -71,6 +71,7 @@ RUN python -m venv $VENV_PATH && \
         python3-matplotlib \
         python3-threadpoolctl \
         python3-mdp \
+        python3-openpyxl \
         wget \
         unzip && \
     $VENV_PATH/bin/pip install -r /tmp/requirements.txt && \

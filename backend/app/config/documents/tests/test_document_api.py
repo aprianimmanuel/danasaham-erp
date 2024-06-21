@@ -1,7 +1,6 @@
 import io
 import shutil
 import os
-import
 from urllib.parse import quote
 from django.utils.timezone import now
 from django.db import transaction

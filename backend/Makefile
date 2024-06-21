@@ -9,7 +9,7 @@ endif
 run.server.local:
 	sh ./run-local.sh
 
-run.server.prod: wait_for_db migrate
+run.server.prod: wait_for_services migrate
 	python -m gunicorn app.web.wsgi:application \
 		--bind 0.0.0.0:8000 \
 		--workers ${WORKERS} \
@@ -21,6 +21,9 @@ run.celery.local:
 
 run.celery.prod:
 	celery -A tasks.app worker --loglevel=INFO
+
+run.celery.beat.prod:
+	celery -A tasks.app beat -l INFO
 
 wait_for_services:
 	python manage.py wait_for_db

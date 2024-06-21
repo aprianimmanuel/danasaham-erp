@@ -59,8 +59,7 @@ Jane Smith,Guru Honorer,Orang"""
 
         # Process the DataFrame to extract aliases
         processed_df = processing.extract_and_split_names(
-            df,
-            name_column='Nama')
+            df, 'Nama')
 
         # Define the expected DataFrame after alias extraction
         expected_df = pd.DataFrame({
@@ -190,7 +189,7 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
 
         # Processing input DataFrame to separate names and aliases
         processed_df = self.processing.extract_and_split_names(
-            input_df)
+            input_df, 'Nama')
 
         # Constructing the expected DataFrame
         expected_data = {

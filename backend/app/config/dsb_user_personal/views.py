@@ -7,10 +7,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from app.common.routers import CustomViewRouter
 
-router = CustomViewRouter()
+router = CustomViewRouter(url_prefix="api/")
 
 
-@router.register_decorator(r"dsb_user_personal/", name="dsb_user_personal-list")
+@router.register_decorator(r"dsb-user-personal/list/", name="dsb-user-personal-list")
 class DsbUserPersonalListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -34,16 +34,16 @@ class DsbUserPersonalListView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@router.register_decorator(r"dsb_user_personal/<uuid:pk>/", name="dsb_user_personal-details")
+@router.register_decorator(r"dsb-user-personal/details/<uuid:dsb_user_personal_id>/", name="dsb-user-personal-details")
 class DsbUserPersonalDetailView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @extend_schema(
         responses={200: DsbUserPersonalSerializer}
     )
-    def get(self, request, pk, *args, **kwargs):
+    def get(self, request, dsb_user_personal_id, *args, **kwargs):
         try:
-            instance = dsb_user_personal.objects.get(pk=pk)
+            instance = dsb_user_personal.objects.get(dsb_user_personal_id=dsb_user_personal_id)
         except dsb_user_personal.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         serializer = DsbUserPersonalSerializer(instance)
@@ -53,9 +53,9 @@ class DsbUserPersonalDetailView(APIView):
         request=DsbUserPersonalSerializer,
         responses={200: DsbUserPersonalSerializer}
     )
-    def put(self, request, pk, *args, **kwargs):
+    def put(self, request, dsb_user_personal_id, *args, **kwargs):
         try:
-            instance = dsb_user_personal.objects.get(pk=pk)
+            instance = dsb_user_personal.objects.get(dsb_user_personal_id=dsb_user_personal_id)
         except dsb_user_personal.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         serializer = DsbUserPersonalSerializer(instance, data=request.data)
@@ -68,9 +68,9 @@ class DsbUserPersonalDetailView(APIView):
         request=DsbUserPersonalSerializer,
         responses={200: DsbUserPersonalSerializer}
     )
-    def patch(self, request, pk, *args, **kwargs):
+    def patch(self, request, dsb_user_personal_id, *args, **kwargs):
         try:
-            instance = dsb_user_personal.objects.get(pk=pk)
+            instance = dsb_user_personal.objects.get(dsb_user_personal_id=dsb_user_personal_id)
         except dsb_user_personal.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         serializer = DsbUserPersonalSerializer(instance, data=request.data, partial=True)
@@ -82,9 +82,9 @@ class DsbUserPersonalDetailView(APIView):
     @extend_schema(
         responses={204: None}
     )
-    def delete(self, request, pk, *args, **kwargs):
+    def delete(self, request, dsb_user_personal_id, *args, **kwargs):
         try:
-            instance = dsb_user_personal.objects.get(pk=pk)
+            instance = dsb_user_personal.objects.get(dsb_user_personal_id=dsb_user_personal_id)
         except dsb_user_personal.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
         instance.delete()

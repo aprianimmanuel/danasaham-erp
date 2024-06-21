@@ -25,14 +25,13 @@ services:
       - "${API_PORT}:8000"
     volumes:
       - ./backend:/apps
-    command: make migrate run.server.prod
+    command: make run.server.prod
     depends_on:
       - pgbouncer
       - redis
       - rabbitmq
       - collectstatic
-      - migrations
-      
+
   db:
     <<: *common
     image: postgres:13-alpine
@@ -97,18 +96,23 @@ services:
     restart: unless-stopped
     depends_on:
       - app
+      - redis
+      - rabbitmq
     volumes:
       - ./backend:/apps
 
-  migrations:
+  celery-beat:
     <<: *common
     build:
       context: .
       args:
         - DEV=true
-    command: make migrate
+    command: make run.celery.beat.prod
+    restart: unless-stopped
     depends_on:
-      - db
+      - app
+      - redis
+      - rabbitmq
     volumes:
       - ./backend:/apps
 

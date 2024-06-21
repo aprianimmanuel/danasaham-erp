@@ -20,15 +20,15 @@ class DsbUserPersonalTests(APITestCase):
         )
 
     def test_list_dsb_user_personal(self):
-        url = reverse('dsb_user_personal:dsb_user_personal-list')
+        url = reverse('dsb_user_personal:dsb-user-personal-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(response.data), 1)
 
     def test_create_dsb_user_personal(self):
-        url = reverse('dsb_user_personal:dsb_user_personal-list')
+        url = reverse('dsb_user_personal:dsb-user-personal-list')
         data = {
-            'user_id': self.user.user_id,
+            'user': self.user.user_id,
             'personal_nik': '2345678901234567',
             'user_name': 'New Test User'
         }
@@ -38,13 +38,13 @@ class DsbUserPersonalTests(APITestCase):
         self.assertEqual(dsb_user_personal.objects.get(personal_nik='2345678901234567').user_name, 'New Test User')
 
     def test_retrieve_dsb_user_personal(self):
-        url = reverse('dsb_user_personal:dsb_user_personal-details', args=[self.dsb_user_personal.user_id])
+        url = reverse('dsb_user_personal:dsb-user-personal-details', args=[self.dsb_user_personal.dsb_user_personal_id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['personal_nik'], self.dsb_user_personal.personal_nik)
 
     def test_update_dsb_user_personal(self):
-        url = reverse('dsb_user_personal:dsb_user_personal-details', args=[self.dsb_user_personal.user_id])
+        url = reverse('dsb_user_personal:dsb-user-personal-details', args=[self.dsb_user_personal.dsb_user_personal_id])
         data = {
             'user_id': self.user.user_id,
             'personal_nik': '1234567890123456',
@@ -56,7 +56,7 @@ class DsbUserPersonalTests(APITestCase):
         self.assertEqual(self.dsb_user_personal.user_name, 'Updated Test User')
 
     def test_partial_update_dsb_user_personal(self):
-        url = reverse('dsb_user_personal:dsb_user_personal-details', args=[self.dsb_user_personal.user_id])
+        url = reverse('dsb_user_personal:dsb-user-personal-details', args=[self.dsb_user_personal.dsb_user_personal_id])
         data = {
             'user_name': 'Partially Updated Test User'
         }
@@ -66,7 +66,7 @@ class DsbUserPersonalTests(APITestCase):
         self.assertEqual(self.dsb_user_personal.user_name, 'Partially Updated Test User')
 
     def test_delete_dsb_user_personal(self):
-        url = reverse('dsb_user_personal:dsb_user_personal-details', args=[self.dsb_user_personal.user_id])
+        url = reverse('dsb_user_personal:dsb-user-personal-details', args=[self.dsb_user_personal.dsb_user_personal_id])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(dsb_user_personal.objects.count(), 0)

@@ -62,7 +62,7 @@ class DTTOTDocumentProcessing:
                 aliases = parts[1:] if len(parts) > 1 else []
             return aliases
 
-    def extract_and_split_names(self, df, name_column, case_insensitive=True):
+    def extract_and_split_names(self, df, name_column, case_insensitive=False):
         """
         Extracts full names and aliases from a specified column in a DataFrame,
         then splits these names into first, middle, and last names.

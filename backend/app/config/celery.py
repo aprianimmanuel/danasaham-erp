@@ -20,6 +20,7 @@ CELERY_TASK_EAGER_PROPAGATES = getenv("CELERY_TASK_EAGER_PROPAGATES", "false").l
 CELERY_TASK_IGNORE_RESULT = getenv("CELERY_TASK_IGNORE_RESULT", "false").lower() == "true"
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_ENABLE_UTC = True
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 # Serializer configurations
 CELERY_TASK_SERIALIZER = "json"

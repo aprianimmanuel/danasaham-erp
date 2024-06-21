@@ -1,17 +1,15 @@
 from django.db.models.signals import post_save
-from django.dispatch import receiver, Signal
+from django.dispatch import Signal, receiver
 from django.db import transaction
 from app.config.core.models import Document
 from app.config.dttotDoc.tasks import process_dttot_document
 
 # Signal is sent after a DTTOT Document has been created.
 dttot_document_created = Signal(
-    providing_args=[
-        "instance",
-        "created",
-        "context",
-        "user_data"
-    ]
+    "instance",
+    "created",
+    "context",
+    "user_data"
 )
 
 @receiver(post_save, sender=Document)
@@ -23,7 +21,7 @@ def trigger_dttot_processing(sender, instance, created, **kwargs):
             'user_id': user.pk,
         }
         transaction.on_commit(
-            lambda: dttot_document_created.send(
+            lambda: dttot_document_created.asend_robust(
                 sender=instance.__class__,
                 instance=instance,
                 created=created,
@@ -33,19 +31,17 @@ def trigger_dttot_processing(sender, instance, created, **kwargs):
         )
 
 @receiver(dttot_document_created)
-def handle_dttot_document_created(sender, instance, created, context, user_data, **kwargs):
+async def handle_dttot_document_created(sender, instance, created, context, user_data, **kwargs):
     if created:
         process_dttot_document.delay(instance.document_id, user_data)
 
 
 # Signal is sent after a DSB User Personal Document has been created.
 dsb_user_personal_document_created = Signal(
-    providing_args=[
-        "instance",
-        "created",
-        "context",
-        "user_data"
-    ]
+    "instance",
+    "created",
+    "context",
+    "user_data"
 )
 
 @receiver(post_save, sender=Document)
@@ -57,7 +53,7 @@ def trigger_dsb_user_personal_processing(sender, instance, created, **kwargs):
             'user_id': user.pk,
         }
         transaction.on_commit(
-            lambda: dsb_user_personal_document_created.send(
+            lambda: dsb_user_personal_document_created.asend_robust(
                 sender=instance.__class__,
                 instance=instance,
                 created=created,
