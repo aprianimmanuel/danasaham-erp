@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 router = CustomViewRouter()
 
-@router.register_decorator(r"documents/", name="document-list")
+@router.register_decorator(r"documents/list/", name="document-list")
 class DocumentListView(GenericAPIView):
     serializer_class = DocumentSerializer
     parser_classes = [JSONParser, MultiPartParser]
@@ -67,7 +67,7 @@ class DocumentListView(GenericAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-@router.register_decorator(r"documents/<uuid:pk>/", name="document-details")
+@router.register_decorator(r"documents/details/<uuid:document_id>/", name="document-details")
 class DocumentDetailView(GenericAPIView):
     serializer_class = DocumentSerializer
     parser_classes = [JSONParser, MultiPartParser]
@@ -78,27 +78,27 @@ class DocumentDetailView(GenericAPIView):
         request=DocumentSerializer,
         responses={200: DocumentSerializer}
     )
-    def get(self, request: Request, pk: str) -> Response:
-        document = Document.objects.get(pk=pk)
+    def get(self, request: Request, document_id: str) -> Response:
+        document = Document.objects.get(document_id=document_id)
         serializer = self.get_serializer(document)
         return Response(serializer.data)
 
-    def put(self, request: Request, pk: str) -> Response:
-        document = Document.objects.get(pk=pk)
+    def put(self, request: Request, document_id: str) -> Response:
+        document = Document.objects.get(document_id=document_id)
         serializer = self.get_serializer(document, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
 
-    def patch(self, request: Request, pk: str) -> Response:
-        document = Document.objects.get(pk=pk)
+    def patch(self, request: Request, document_id: str) -> Response:
+        document = Document.objects.get(document_id=document_id)
         serializer = self.get_serializer(document, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
 
-    def delete(self, request: Request, pk: str) -> Response:
-        document = Document.objects.get(pk=pk)
+    def delete(self, request: Request, document_id: str) -> Response:
+        document = Document.objects.get(document_id=document_id)
         document.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

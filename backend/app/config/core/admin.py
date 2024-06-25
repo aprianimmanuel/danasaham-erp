@@ -5,6 +5,8 @@ Django admin customization
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext as _
+from django.utils.html import format_html
+import pytz
 from .models import dttotDoc, Document, User, UserProfile
 from django.utils import timezone
 
@@ -78,7 +80,7 @@ class DttotDocAdmin(admin.ModelAdmin):
         'dttot_id',
         'dttot_type',
         'display_username',
-        'updated_at'
+        'formatted_updated_at'
     ]
     search_fields = [
         'dttot_id',
@@ -96,6 +98,12 @@ class DttotDocAdmin(admin.ModelAdmin):
     def display_username(self, obj):
         return obj.user.username
     display_username.short_description = 'username'
+
+    def formatted_updated_at(self, obj):
+        local_tz = pytz.timezone('Asia/Jakarta')  # GMT+7 timezone
+        local_time = timezone.localtime(obj.updated_at, local_tz)
+        return format_html("<span>{} (GMT+7)</span>", local_time.strftime('%Y-%m-%d %H:%M:%S'))
+    formatted_updated_at.short_description = 'Updated At (GMT+7)'
 
 
 class DocumentAdmin(admin.ModelAdmin):

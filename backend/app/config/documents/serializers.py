@@ -2,7 +2,7 @@ import uuid
 from rest_framework import serializers
 from app.config.core.models import Document
 from django.utils import timezone
-from django.db.models.signals import post_save
+from app.config.core.models import save_file_to_instance
 
 class DocumentSerializer(serializers.ModelSerializer):
     document_name = serializers.CharField(required=True)
@@ -37,31 +37,33 @@ class DocumentSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        """
-        Create and return a new `Document` instance,
-        given the validated data.
-        """
         request = self.context.get('request', None)
         if request and request.user.is_authenticated:
             validated_data['created_by'] = request.user
         validated_data.pop('updated_by', None)
-        return super().create(validated_data)
+
+        document_file = validated_data.pop('document_file', None)
+        document = super().create(validated_data)
+        if document_file:
+            save_file_to_instance(document, document_file)
+            document.save()
+
+        return document
 
     def update(self, instance, validated_data):
-        """
-        Update and return an existing `Document` instance,
-        given the validated data.
-        """
         request = self.context.get('request', None)
         if request and request.user.is_authenticated:
             validated_data['updated_by'] = request.user
-        return super().update(instance, validated_data)
+
+        document_file = validated_data.pop('document_file', None)
+        instance = super().update(instance, validated_data)
+        if document_file:
+            save_file_to_instance(instance, document_file)
+            instance.save()
+
+        return instance
 
     def to_representation(self, instance):
-        """
-        Modify the way data is presented,
-        including URLs for files and handling any custom representations.
-        """
         representation = super().to_representation(instance)
         if instance.document_file:
             representation['document_file'] = instance.document_file.url

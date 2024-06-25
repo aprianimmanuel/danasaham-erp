@@ -10,8 +10,11 @@ from rest_framework.test import APIClient
 from rest_framework.authtoken.models import Token
 from django.core.files.uploadedfile import SimpleUploadedFile
 import shutil
+import pytz
+from django.utils import timezone
 from tempfile import mkdtemp
-
+from app.config.core.models import save_file_to_instance
+from django.core.files import File as FileWrapper
 
 class AdminSiteTests(TestCase):
     """Test for Django admin"""
@@ -100,38 +103,56 @@ class AdminSiteTests(TestCase):
 class DttotDocAdminTest(TestCase):
 
     def setUp(self):
-        """Set up for the tests"""
-        # Create a superuser and log them in
+        # Create a temporary directory to serve as MEDIA_ROOT
+        self.temp_media_dir = mkdtemp()
+
+        # Apply override_settings decorator dynamically
+        self.override_media_root = override_settings(
+            MEDIA_ROOT=self.temp_media_dir)
+        self.override_media_root.enable()
+
+        self.client = Client()
         self.admin_user = get_user_model().objects.create_superuser(
             email='admin@example.com',
             username='adminuser',
-            password='adminpass123',
+            password='adminpass123'
         )
-        self.client = Client()
         self.client.force_login(self.admin_user)
 
-        # Create a normal user
         self.normal_user = get_user_model().objects.create_user(
-            email='test@example.com',
-            username='testuser',
-            password='Testp@ss!23',
-            email_verified=True
-        )
-        self.api_client = APIClient()
-        self.token, _ = Token.objects.get_or_create(
-            user=self.normal_user)
-        self.api_client.force_authenticate(
-            user=self.normal_user,
-            token=self.token.key
+            email='user@example.com',
+            username='normaluser',
+            password='password123'
         )
 
-        # Create a DttotDoc instance
+        self.document_file = SimpleUploadedFile(
+            name='test_document.pdf',
+            content=b'PDF file content',
+            content_type='application/pdf'
+        )
+
+        self.document = Document.objects.create(
+            document_name='Test Document',
+            description='A test document description.',
+            document_file=self.document_file,
+            document_type='PDF',
+            created_by=self.normal_user,
+            updated_by=self.normal_user
+        )
+
         self.dttot_doc = dttotDoc.objects.create(
             user=self.normal_user,
-            dttot_type="Personal",
-            dttot_first_name="John",
-            dttot_last_name="Doe"
+            document=self.document,
+            dttot_type='Test Type'
         )
+
+    def tearDown(self):
+        # Restore the original MEDIA_ROOT
+        self.override_media_root.disable()
+
+        # Clean up the test media directory content
+        shutil.rmtree(self.temp_media_dir, ignore_errors=True)
+        super().tearDown()
 
     def test_list_display(self):
         """Test that dttotDoc list display includes specific fields"""
@@ -139,7 +160,12 @@ class DttotDocAdminTest(TestCase):
         response = self.client.get(url)
         self.assertContains(response, self.dttot_doc.dttot_type)
         self.assertContains(response, self.normal_user.username)
-        self.assertContains(response, self.dttot_doc.updated_at.date())
+
+        # Format the date correctly to match the format in the response
+        local_tz = pytz.timezone('Asia/Jakarta')  # GMT+7 timezone
+        local_time = timezone.localtime(self.dttot_doc.updated_at, local_tz)
+        updated_at_date = local_time.strftime('%Y-%m-%d %H:%M:%S')
+        self.assertContains(response, f"{updated_at_date} (GMT+7)")
 
     def test_search_fields(self):
         """Test the search functionality for dttotDoc in the Django admin."""
@@ -198,17 +224,31 @@ class DocumentAdminTest(TestCase):
             password='password123'
         )
 
+        # Add a document_file for the document
+        self.document_file = SimpleUploadedFile(
+            name='test_document.pdf',
+            content=b'',
+            content_type='application/pdf'
+        )
+
+
         self.document = Document.objects.create(
             document_name='Test Document',
             description='A test document description.',
-            document_file=SimpleUploadedFile(
-                name='test_document.pdf',
-                content=b'',
-                content_type='application/pdf'),
+            document_file=self.document_file,
             document_type='PDF',
             created_by=self.user,
             updated_by=self.user
         )
+
+        # Save the document file using save_file_to_instance
+        uploaded_file = SimpleUploadedFile(
+            name='test_document.pdf',
+            content=b'This is a test document content.',
+            content_type='application/pdf'
+        )
+        save_file_to_instance(self.document, uploaded_file)
+        self.document.save()
 
     def test_documents_list_display(self):
         """Test that documents are listed with the correct fields in admin."""

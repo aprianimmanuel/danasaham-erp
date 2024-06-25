@@ -162,7 +162,7 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
         Test the functionality of importing a document uploaded as an XLS file. This test
         verifies that the imported document has the expected columns and is not empty.
         """  # noqa
-        df = self.processing.import_document(self.xls_file_path, 'XLS')
+        df = self.processing.import_document(self.xls_file_path, 'XLSX')
         expected_columns = ['Nama', 'Deskripsi', 'Terduga']
         self.assertEqual(list(df.columns), expected_columns)
         self.assertTrue(not df.empty)

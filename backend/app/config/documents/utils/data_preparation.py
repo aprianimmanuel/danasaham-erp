@@ -1,8 +1,8 @@
 import re
 import pandas as pd  # noqa
-from sklearn.metrics.pairwise import cosine_similarity  # noqa
-from sklearn.feature_extraction.text import CountVectorizer  # noqa
-
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import CountVectorizer
+from zipfile import BadZipFile
 
 class DTTOTDocumentProcessing:
     def import_document(self, file_path, document_format):
@@ -16,12 +16,17 @@ class DTTOTDocumentProcessing:
         Returns:
             DataFrame: The imported document as a pandas DataFrame.
         """
-        if document_format == 'CSV':
-            return pd.read_csv(file_path)
-        elif document_format in ['XLS', 'XLSX']:
-            return pd.read_excel(file_path)
-        else:
-            raise ValueError(f"Unsupported document format: {document_format}")
+        try:
+            if document_format == 'CSV':
+                return pd.read_csv(file_path)
+            elif document_format == 'XLS':
+                return pd.read_excel(file_path, engine='xlrd')
+            elif document_format == 'XLSX':
+                return pd.read_excel(file_path, engine='openpyxl')
+            else:
+                raise ValueError(f"Unsupported document format: {document_format}")
+        except BadZipFile as e:
+            raise ValueError("File is not a zip file") from e
 
     def retrieve_data_as_dataframe(self, file_path, document_format):
         """

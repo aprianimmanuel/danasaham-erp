@@ -1,9 +1,15 @@
 import uuid
+import os
+import hashlib
+from django.core.files.base import ContentFile
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.utils.timezone import now
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from app.config.base import BASE_DIR
+from django.core.files.base import ContentFile
+
 
 class UserManager(BaseUserManager):
     """Manager for user profiles."""
@@ -58,10 +64,34 @@ class UserProfile(models.Model):
         return self.user.username
 
 
+def encrypt_filename(filename):
+    """
+    Use SHA-256 to hash the filename and preserve the original file extension.
+    """
+    sha256_hash = hashlib.sha256()
+    sha256_hash.update(filename.encode('utf-8'))
+    encrypted_filename = sha256_hash.hexdigest()
+    file_extension = os.path.splitext(filename)[1]
+    return encrypted_filename + file_extension
+
+
+def save_file_to_instance(instance, uploaded_file):
+    filename = uploaded_file.name
+    encrypted_filename = encrypt_filename(filename)
+    file_path = document_directory_path(instance, encrypted_filename)
+    file_content = uploaded_file.read()
+
+    content_file = ContentFile(file_content, name=os.path.basename(file_path))
+    instance.document_file.save(content_file.name, content_file, save=False)
+
+
 def document_directory_path(instance, filename):
     date_now = instance.created_date or now()
-    return 'documents/{document_type}/{year}/{month}/{day}/{created_by}/{filename}'.format(
+    app_name = instance._meta.app_label
+
+    return '{app_name}/{document_type}/{year}/{month}/{day}/{created_by}/{filename}'.format(
         document_type=instance.document_type,
+        app_name=app_name,
         year=date_now.year,
         month=date_now.strftime('%m'),
         day=date_now.strftime('%d'),
@@ -76,11 +106,19 @@ class Document(models.Model):
     document_file = models.FileField(upload_to=document_directory_path, blank=True, null=True)
     created_date = models.DateTimeField(auto_now_add=True)
     document_id = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
-    document_file_type = models.CharField(_("Document File Type (PDF, XLS, TEXT, or etc)"), max_length=50, null=True, blank=True)
-    document_type = models.CharField(_("Document Type"), max_length=50)
-    updated_date = models.DateTimeField(_("Date when Document modified"), auto_now=True)
+    document_file_type = models.CharField(max_length=50, null=True, blank=True)
+    document_type = models.CharField(max_length=50)
+    updated_date = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="created_documents")
     updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="updated_documents")
+
+    def save(self, *args, **kwargs):
+        if self.document_file and not self._state.adding and not kwargs.get('skip_file_save', False):
+            save_file_to_instance(self, self.document_file)
+        super().save(*args, **kwargs)
+
+    def document_file_required(self):
+        return self.document_type in ['PDF', 'DTTOT Document', 'DSB User Personal List Document']
 
     def __str__(self):
         return self.document_name

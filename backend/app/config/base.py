@@ -1,5 +1,4 @@
 from __future__ import annotations
+import os
 
-from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

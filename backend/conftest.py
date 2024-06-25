@@ -4,14 +4,21 @@ from tasks.app import celery_app
 from asyncio import new_event_loop
 from pytest_asyncio import fixture as async_fixture
 from unittest.mock import patch
+from os import getenv
 
 pytest_plugins = "celery.contrib.pytest"
 
 @pytest.fixture(scope='session')
 def celery_config():
     return {
-        'broker_url': 'memory://',
-        'result_backend': 'redis://',
+        'broker_url': getenv('CELERY_BROKER_URL'),
+        'result_backend': getenv('CELERY_RESULT_BACKEND'),
+        'task_always_eager': False,
+        'task_serializer': 'json',
+        'result_serializer': 'json',
+        'accept_content': ['json'],
+        'task_track_started': True,
+        'track_started': True,
     }
 
 @pytest.fixture(scope='session')
@@ -39,8 +46,8 @@ def celery_worker_parameters():
 @pytest.fixture(scope='session')
 def celery_parameters():
     return {
-        'broker_url': 'memory://',
-        'result_backend': 'redis://',
+        'broker_url': getenv('CELERY_BROKER_URL'),
+        'result_backend': getenv('CELERY_RESULT_BACKEND'),
         'task_always_eager': False,
         'worker_max_tasks_per_child': 1,
     }

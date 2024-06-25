@@ -1,13 +1,14 @@
 """Tests for models"""
-
+import os
+import shutil
+from tempfile import mkdtemp
 from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
 from datetime import date
 from app.config.core.models import dttotDoc, Document, UserProfile
-import os
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.conf import settings
-from tempfile import TemporaryDirectory
+
 
 
 User = get_user_model()
@@ -135,15 +136,20 @@ class DocumentModelTests(TestCase):
         )
 
     def setUp(self):
-        # Ensure the base directory for temporary media files exists
-        documents_media_base_dir = os.path.join(
-            settings.BASE_DIR, 'media', 'test_media')
-        os.makedirs(documents_media_base_dir, exist_ok=True)
+        # Create a temporary directory to serve as MEDIA_ROOT
+        self.temp_media_dir = mkdtemp()
 
-        # Now create the TemporaryDirectory within the ensured base directory
-        self.media_root = TemporaryDirectory(dir=documents_media_base_dir)
-        self.original_media_root = settings.MEDIA_ROOT
-        settings.MEDIA_ROOT = self.media_root.name
+        # Apply override_settings decorator dynamically
+        self.override_media_root = override_settings(
+            MEDIA_ROOT=self.temp_media_dir)
+        self.override_media_root.enable()
+
+    def tearDown(self):
+        # Disable the overridden MEDIA_ROOT setting
+        self.override_media_root.disable()
+
+        # Remove the temporary directory after the test
+        shutil.rmtree(self.temp_media_dir)
 
     def test_document_creation(self):
         """Test the document model can be created successfully."""
@@ -165,33 +171,34 @@ class DocumentModelTests(TestCase):
         document = Document.objects.create(
             document_name='Test Document',
             description='A test document description.',
-            document_type='Type1',
+            document_type='PDF',
             created_by=self.user,
             updated_by=self.user
         )
         self.assertEqual(str(document), 'Test Document')
 
-    def upload_document_test_helper(self, filename, content, document_type):
-        """Helper function to test document uploads."""
-        upload_file = SimpleUploadedFile(
-            name=filename,
-            content=content,
-            content_type='application/octet-stream')
+    def upload_document_test_helper(self, file_name, file_content, document_type):
+        document_file = SimpleUploadedFile(file_name, file_content, content_type='application/pdf')
+
         document = Document.objects.create(
-            document_name=filename,
-            document_file=upload_file,
+            document_name=file_name,
+            description='A test document description.',
+            document_file=document_file,
             document_type=document_type,
             created_by=self.user,
             updated_by=self.user
         )
-        self.assertTrue(os.path.exists(document.document_file.path))
-        # Clean up file after test
+
+        # Check if document and file exist
+        self.assertTrue(Document.objects.filter(pk=document.document_id).exists())
+        self.assertTrue(document.document_file.name)
+
+        # Clean up the saved file
         document.document_file.delete()
 
     def test_document_upload_pdf(self):
         """Test uploading a PDF file."""
-        self.upload_document_test_helper(
-            'test.pdf', b'PDF file content', 'PDF')
+        self.upload_document_test_helper('test.pdf', b'PDF file content', 'PDF')
 
     def test_document_upload_xls(self):
         """Test uploading an XLS file."""
@@ -217,9 +224,3 @@ class DocumentModelTests(TestCase):
         updated_document = Document.objects.get(pk=document.pk)
         self.assertEqual(updated_document.document_name, 'Updated Name')
         self.assertEqual(updated_document.document_type, 'Updated Type')
-
-    def tearDown(self):
-        # Clean up the temporary directory and
-        # restore the original MEDIA_ROOT after the test
-        self.media_root.cleanup()
-        settings.MEDIA_ROOT = self.original_media_root

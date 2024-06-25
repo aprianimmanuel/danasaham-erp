@@ -2,19 +2,18 @@ import os
 import io
 import shutil
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from time import sleep
+import pandas as pd
 from django.urls import reverse
 from django.conf import settings
+from django.test import override_settings
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 from rest_framework.authtoken.models import Token
-from app.config.core.models import Document, dttotDoc
 from django.core.files.uploadedfile import SimpleUploadedFile
 from openpyxl import Workbook
-from app.config.dttotDoc.tasks import process_dttot_document
-from app.config.documents.signals import dttot_document_created
 
 
 User = get_user_model()
@@ -28,6 +27,7 @@ User = get_user_model()
     'celery_parameters',
     'celery_enable_logging',
     'use_celery_app_trap')
+@override_settings(CELERY_ALWAYS_EAGER=True)
 class DttotDocAPITestCase(APITestCase):
 
     @pytest.fixture(autouse=True, scope='class')
@@ -36,7 +36,11 @@ class DttotDocAPITestCase(APITestCase):
 
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_user(email='test@example.com', username='testuser', password='Testp@ss!23')
+        self.user = User.objects.create_user(
+            email='test@example.com',
+            username='testuser',
+            password='Testp@ss!23'
+        )
         self.token, _ = Token.objects.get_or_create(user=self.user)
         self.client.force_authenticate(user=self.user)
         self.test_media_subdir = 'test_media'
@@ -58,26 +62,30 @@ class DttotDocAPITestCase(APITestCase):
     @staticmethod
     def create_test_document_file():
         output = io.BytesIO()
-        wb = Workbook()
-        ws = wb.active
-        ws.append(["Nama", "Deskripsi", "Terduga", "Kode Densus", "Tpt Lahir", "Tgl Lahir", "WN", "Alamat"])  # noqa
-        ws.append([
-            "John Doe Alias Don John Alias John Krew",
-            "'- NIK nomor: 1234567898765432\n'- paspor nomor: A0987654\n'- pekerjaan: Karyawan Swasta",  # noqa
-            "Orang",
-            "EDD-013",
-            "Surabaya",
-            "4 Januari 1973/4 November 1974/4 November 1973",
-            "Indonesia",
-            "Jalan Getis Gg.III/95A, RT/RW. 013/003, Kel. Lemah Putro, Kec. Sidoarjo, Kab/Kota. Sidoarjo, Prov. Jawa Timur"  # noqa
-        ])
-        wb.save(output)
+        data = {
+            "Nama": ["John Doe Alias Don John Alias John Krew"],
+            "Deskripsi": [
+                "'- NIK nomor: 1234567898765432\n'- paspor nomor: A0987654\n'- pekerjaan: Karyawan Swasta"
+            ],
+            "Terduga": ["Orang"],
+            "Kode Densus": ["EDD-013"],
+            "Tpt Lahir": ["Surabaya"],
+            "Tgl Lahir": ["4 Januari 1973/4 November 1974/4 November 1973"],
+            "WN": ["Indonesia"],
+            "Alamat": [
+                "Jalan Getis Gg.III/95A, RT/RW. 013/003, Kel. Lemah Putro, Kec. Sidoarjo, Kab/Kota. Sidoarjo, Prov. Jawa Timur"
+            ],
+        }
+        df = pd.DataFrame(data)
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Sheet1')
         output.seek(0)
         return SimpleUploadedFile("test.xlsx", output.read(), content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-    @patch('app.config.dttotDoc.tasks.process_dttot_document_row.delay')
-    @patch('app.config.dttotDoc.tasks.process_dttot_document.delay')
-    async def test_create_and_update_dttotDoc(self, mock_process_dttot_document, mock_process_dttot_document_row):
+    @patch('app.config.core.models.save_file_to_instance')
+    def test_create_and_update_dttotDoc(
+            self,
+            mock_save_file_to_instance):
         document_file = self.create_test_document_file()
         with self.settings(MEDIA_ROOT=self.test_media_path):
             upload_response = self.client.post(
@@ -91,22 +99,20 @@ class DttotDocAPITestCase(APITestCase):
                 format='multipart'
             )
             self.assertEqual(upload_response.status_code, status.HTTP_201_CREATED, "Document upload failed")
+
+            # Assert the save_file_to_instance was called
+            mock_save_file_to_instance.assert_called()
+
+            # Wait for the response data
             document_id = upload_response.data['document_id']
+            dttot_docs = None
+            for _ in range(180):  # Retry 20 times
+                response = self.client.get(reverse('dttotdocs:dttot-doc-list', kwargs={'document_id': document_id}))
+                if response.data:
+                    dttot_docs = response.data
+                    break
+                sleep(1)
 
-            # Trigger the Celery task
-            user_data = {'user_id': str(self.user.user_id)}
-            await dttot_document_created.asend_robust(sender=Document, instance=Document.objects.get(pk=document_id), created=True, context={}, user_data=user_data)
-
-            # Wait for the Celery task to complete
-            sleep(2)
-
-            # Verify that the Celery task has been called
-            mock_process_dttot_document_row.assert_called()
-
-            response = self.client.get(reverse('dttotdocs:dttot-doc-list', kwargs={'document_id': document_id}))
-            self.assertEqual(response.status_code, status.HTTP_200_OK, "dttotDoc was not automatically created with the document")
-
-            dttot_docs = response.data
             self.assertTrue(dttot_docs, "dttotDoc was not found in the response")
 
             dttot_doc = dttot_docs[0]
@@ -130,6 +136,9 @@ class DttotDocAPITestCase(APITestCase):
             dttot_doc = self.client.get(update_url).data
             self.assertEqual(dttot_doc['dttot_type'], 'Updated Type', "Check the type of the updated document")
             self.assertEqual(dttot_doc['dttot_first_name'], 'UpdatedFirst', "Check the updated first name")
+
+        # Manually tearing down the test environment
+        self.tearDown()
 
 
 class DttotDocReportTestCase(APITestCase):

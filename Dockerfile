@@ -88,7 +88,8 @@ RUN python -m venv $VENV_PATH && \
 COPY ./backend /apps
 
 # Set permissions for application files
-RUN mkdir -p /apps/media/test_media && \
+RUN mkdir -p /apps/app/media && \
+    mkdir -p /apps/app/media/test_media && \
     chown -R django-user:django-user $VENV_PATH /apps
 
 ENV PATH="$VENV_PATH/bin:$PATH"

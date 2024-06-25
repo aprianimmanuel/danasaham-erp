@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'app.config.documents',
     'app.config.dttotDoc',
     'app.config.dsb_user_personal',
+    'app.config.dttotDocReport',
+    'django_celery_results'
 ]
 
 SITE_ID = 1

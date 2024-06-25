@@ -1,4 +1,3 @@
-# dttotDoc.utils
 import difflib
 import logging
 from rest_framework.exceptions import ValidationError
