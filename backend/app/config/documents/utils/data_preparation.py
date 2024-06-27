@@ -121,14 +121,7 @@ class DTTOTDocumentProcessing:
         for i in range(max_aliases):
             alias_col = f'Alias_name_{i+1}'
             df[alias_col] = df['aliases'].apply(lambda aliases: aliases[i] if len(aliases) > i else '')
-            df[
-                [
-                    f'first_name_alias_{i+1}',
-                    f'middle_name_alias_{i+1}',
-                    f'last_name_alias_{i+1}'
-                ]
-            ] = df[alias_col].apply(split_name).tolist()
-
+            df[[f'first_name_alias_{i+1}', f'middle_name_alias_{i+1}', f'last_name_alias_{i+1}']] = df[alias_col].apply(split_name).tolist()
         return df
 
 

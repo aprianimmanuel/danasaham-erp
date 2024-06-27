@@ -1,8 +1,13 @@
+import logging
 import pandas as pd
 from sqlalchemy import create_engine
-from app.config.core.models import dsb_user_personal
+from app.config.core.models import dsb_user_personal, Document
+from django.db import transaction
 from tqdm import tqdm
 import os
+
+logger = logging.getLogger(__name__)
+
 
 def fetch_data_from_external_db():
     sql_file_path = os.path.join(os.path.dirname(__file__), 'dsb_user_personal.sql')
@@ -25,33 +30,37 @@ def fetch_data_from_external_db():
 
     return df
 
-def save_data_to_model(row_data, document, user_id):
-    dsb_user_personal.objects.update_or_create(
-        personal_nik=row_data['personal_nik'],
-        defaults={
-            'document': document,
-            'user': user_id,
-            'user_id': row_data['user_id'],
-            'initial_registration_date': row_data['initial_registration_date'],
-            'user_name': row_data['user_name'],
-            'users_phone_number': row_data['users_phone_number'],
-            'users_email_registered': row_data['users_email_registered'],
-            'has_email_confirmed': row_data['has_email_confirmed'],
-            'users_last_modified_date': row_data['users_last_modified_date'],
-            'user_upgrade_to_personal': row_data['user_upgrade_to_personal'],
-            'personal_name': row_data['personal_name'],
-            'personal_phone_number': row_data['personal_phone_number'],
-            'personal_gender': row_data['personal_gender'],
-            'personal_birth_date': row_data['personal_birth_date'],
-            'personal_spouse_name': row_data['personal_spouse_name'],
-            'personal_mother_name': row_data['personal_mother_name'],
-            'personal_last_modified_date': row_data['personal_last_modified_date'],
-            'personal_domicile_address': row_data['personal_domicile_address'],
-            'personal_domicile_address_postalcode': row_data['personal_domicile_address_postalcode'],
-            'personal_investment_goals': row_data['personal_investment_goals'],
-            'personal_marital_status': row_data['personal_marital_status'],
-            'personal_birth_place': row_data['personal_birth_place'],
-            'personal_nationality': row_data['personal_nationality'],
-            'personal_source_of_fund': row_data['personal_source_of_fund'],
-        }
-    )
+def save_data_to_model(df, document, user_id):
+    with transaction.atomic():
+        for index, row in df.iterrows():
+            dsb_user_personal.objects.update_or_create(
+                coredsb_user_id=row['user_id'],
+                defaults={
+                    'document': document,
+                    'user': user_id,
+                    'initial_registration_date': row['initial_registration_date'],
+                    'user_name': row['user_name'],
+                    'users_phone_number': row['users_phone_number'],
+                    'users_email_registered': row['users_email_registered'],
+                    'has_email_confirmed': row['has_email_confirmed'],
+                    'users_last_modified_date': row['users_last_modified_date'],
+                    'user_upgrade_to_personal': row['user_upgrade_to_personal'],
+                    'personal_name': row['personal_name'],
+                    'personal_phone_number': row['personal_phone_number'],
+                    'personal_nik': row['personal_nik'],
+                    'personal_gender': row['personal_gender'],
+                    'personal_birth_date': row['personal_birth_date'],
+                    'personal_spouse_name': row['personal_spouse_name'],
+                    'personal_mother_name': row['personal_mother_name'],
+                    'personal_last_modified_date': row['personal_last_modified_date'],
+                    'personal_domicile_address': row['personal_domicile_address'],
+                    'personal_domicile_address_postalcode': row['personal_domicile_address_postalcode'],
+                    'personal_investment_goals': row['personal_investment_goals'],
+                    'personal_marital_status': row['personal_marital_status'],
+                    'personal_birth_place': row['personal_birth_place'],
+                    'personal_nationality': row['personal_nationality'],
+                    'personal_source_of_fund': row['personal_source_of_fund'],
+                    'personal_legal_last_modified_date': row['personal_last_modified_date'],
+                }
+            )
+    logger.info(f"Successfully processed document ID {document.document_id}")

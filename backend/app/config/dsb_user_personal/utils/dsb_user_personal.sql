@@ -25,7 +25,7 @@ SELECT
 FROM
     users
 INNER JOIN personal on users.user_id = personal.user_id
-LEFT JOIN personal_legal ON personal.personal_id = personal_legal.personal_id
+INNER JOIN personal_legal ON personal.personal_id = personal_legal.personal_id
 LEFT JOIN address ON personal_legal.address = address.address_id
 LEFT JOIN lookup lk1 ON personal_legal.investment_indv_lookup_id = lk1.lookup_id
 LEFT JOIN lookup lk2 ON personal_legal.marital_status_lookup_id = lk2.lookup_id

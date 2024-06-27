@@ -38,11 +38,11 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_INITDB_ARGS: --auth=md5
-      POSTGRES_HOST: ${DB_HOST}
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_PORT: ${DB_PORT}
+    ports:
+      - "${DB_PORT}:5432"
     volumes:
       - dev-db-data:/var/lib/postgresql/data
 
@@ -56,7 +56,6 @@ services:
       - POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
       - POSTGRESQL_USERNAME=${POSTGRESQL_USERNAME}
       - POSTGRESQL_HOST=${POSTGRESQL_HOST}
-      - POSTGRESQL_PORT=${POSTGRESQL_PORT}
       - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
       - DATABASE_URL=postgresql://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${POSTGRESQL_HOST}:${POSTGRESQL_PORT}/${POSTGRESQL_DATABASE}
       - POOL_MODE=transaction
@@ -72,6 +71,8 @@ services:
       - LOG_POOLER_ERRORS=1
       - STATS_PERIOD=60
       - AUTH_TYPE=md5
+    ports:
+      - "${POSTGRESQL_PORT}:5432"
     volumes:
       - pgbouncer-data:/var/lib/pgbouncer
 

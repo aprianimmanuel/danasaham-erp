@@ -22,17 +22,6 @@ class DsbUserPersonalListView(APIView):
         serializer = DsbUserPersonalSerializer(queryset, many=True)
         return Response(serializer.data)
 
-    @extend_schema(
-        request=DsbUserPersonalSerializer,
-        responses={201: DsbUserPersonalSerializer}
-    )
-    def post(self, request, *args, **kwargs):
-        serializer = DsbUserPersonalSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @router.register_decorator(r"dsb-user-personal/details/<uuid:dsb_user_personal_id>/", name="dsb-user-personal-details")
 class DsbUserPersonalDetailView(APIView):

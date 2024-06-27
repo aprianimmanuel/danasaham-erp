@@ -76,13 +76,14 @@ def encrypt_filename(filename):
 
 
 def save_file_to_instance(instance, uploaded_file):
-    filename = uploaded_file.name
-    encrypted_filename = encrypt_filename(filename)
-    file_path = document_directory_path(instance, encrypted_filename)
-    file_content = uploaded_file.read()
+    if uploaded_file:
+        filename = uploaded_file.name
+        encrypted_filename = encrypt_filename(filename)
+        file_path = document_directory_path(instance, encrypted_filename)
+        file_content = uploaded_file.read()
 
-    content_file = ContentFile(file_content, name=os.path.basename(file_path))
-    instance.document_file.save(content_file.name, content_file, save=False)
+        content_file = ContentFile(file_content, name=os.path.basename(file_path))
+        instance.document_file.save(content_file.name, content_file, save=False)
 
 
 def document_directory_path(instance, filename):
