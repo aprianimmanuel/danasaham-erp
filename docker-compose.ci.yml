@@ -1,0 +1,137 @@
+version: "3.9"
+
+x-common: &common
+  env_file:
+    - '.env'
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+  networks:
+    - main
+
+services:
+  app:
+    <<: *common
+    build:
+      context: .
+      args:
+        DEV: true
+        DB_USER: ${DB_USER}
+        DB_PASSWORD: ${DB_PASSWORD}
+        DB_NAME: ${DB_NAME}
+        DB_PORT: ${DB_PORT}
+    environment:
+      WORKERS: ${WORKERS:-2}
+      THREADS: ${THREADS:-2}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/apps
+    command: make run.server.prod
+    depends_on:
+      - db
+      - redis
+      - rabbitmq
+
+  db:
+    <<: *common
+    image: postgres:13-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_INITDB_ARGS: --auth=md5
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - dev-db-data:/var/lib/postgresql/data
+
+  redis:
+    <<: *common
+    image: redis:7.2.5-bookworm
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    command: redis-server --maxmemory 2gb --maxmemory-policy allkeys-lru
+
+  rabbitmq:
+    <<: *common
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+
+  celery:
+    <<: *common
+    build:
+      context: .
+      args:
+        - DEV=true
+    command: make run.celery.prod
+    restart: unless-stopped
+    depends_on:
+      - app
+      - redis
+      - rabbitmq
+    volumes:
+      - ./backend:/apps
+
+  celery-beat:
+    <<: *common
+    build:
+      context: .
+      args:
+        - DEV=true
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+      - CELERY_BEAT_SLEEP_INTERVAL=${CELERY_BEAT_SLEEP_INTERVAL}
+    command: make run.celery.beat.prod
+    restart: no
+    depends_on:
+      - app
+      - redis
+      - rabbitmq
+    volumes:
+      - ./backend:/apps
+
+  collectstatic:
+    <<: *common
+    build:
+      context: .
+      args:
+        - DEV=true
+    command: make collectstatic
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/apps
+
+  smtp:
+    <<: *common
+    build:
+      context: .
+      args:
+        - DEV=true
+    command: >
+      sh -c "python -m aiosmtpd -n -l 0.0.0.0:8025"
+    ports:
+      - "8025:8025"
+    volumes:
+      - ./backend:/apps
+
+networks:
+  main:
+    ipam:
+      driver: default
+
+volumes:
+  dev-db-data:
+  redis-data:
+  rabbitmq-data:
