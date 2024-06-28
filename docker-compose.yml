@@ -2,7 +2,7 @@ version: "3.9"
 
 x-common: &common
   env_file:
-    - ./env/.env
+    - '.env'
   logging:
     driver: "json-file"
     options:
@@ -17,7 +17,11 @@ services:
     build:
       context: .
       args:
-        - DEV=true
+        DEV: true
+        DB_USER: ${DB_USER}
+        DB_PASSWORD: ${DB_PASSWORD}
+        DB_NAME: ${DB_NAME}
+        DB_PORT: ${DB_PORT}
     environment:
       WORKERS: ${WORKERS:-2}
       THREADS: ${THREADS:-2}

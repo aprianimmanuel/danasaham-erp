@@ -14,6 +14,10 @@ COPY ./requirements.dev.txt /tmp/requirements.dev.txt
 
 # Install system dependencies and Python packages
 ARG DEV=false
+ARG DB_USER
+ARG DB_PASSWORD
+ARG DB_NAME
+ARG DB_PORT
 
 # Install system dependencies and Python packages
 RUN python -m venv $VENV_PATH && \
