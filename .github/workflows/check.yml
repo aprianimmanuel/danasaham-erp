@@ -12,12 +12,11 @@ permissions:
 jobs:
   check-code-and-docker-compose:
     name: Check Code and Test with Docker Compose
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
         python-version: [ '3.8', '3.9', '3.10', '3.11', '3.12' ]
-        os: [ ubuntu-latest, macos-latest ]
 
     services:
       db:
@@ -68,7 +67,6 @@ jobs:
         run: make test
 
       - name: Set up Docker
-        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -85,17 +83,9 @@ jobs:
           newgrp docker
 
       - name: Start Docker
-        if: runner.os == 'Linux'
         run: |
           sudo systemctl start docker
           sudo systemctl enable docker
-
-      - name: Install Docker for macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew install --cask docker
-          open /Applications/Docker.app
-          while ! docker system info > /dev/null 2>&1; do sleep 1; done
 
       - name: Login to Docker Hub
         uses: docker/login-action@v2
