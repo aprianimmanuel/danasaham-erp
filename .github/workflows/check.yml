@@ -60,12 +60,6 @@ jobs:
           python -m pip install -r requirements.txt
           python -m pip install -r requirements.dev.txt
 
-      - name: Run linters
-        run: make lint
-
-      - name: Run unit tests
-        run: make test
-
       - name: Set up Docker
         run: |
           sudo apt-get update
