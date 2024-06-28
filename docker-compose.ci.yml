@@ -1,8 +1,6 @@
 version: "3.9"
 
 x-common: &common
-  env_file:
-    - '.env'
   logging:
     driver: "json-file"
     options:
