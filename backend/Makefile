@@ -54,10 +54,10 @@ black-check:
 	python -m black --check .
 
 ruff:
-	python -m ruff .
+	python -m ruff check .
 
 ruff-fmt:
-	python -m ruff --fix-only --unsafe-fixes .
+	python -m ruff check --fix-only --unsafe-fixes .
 
 test:
 	python -m pytest --cov=/apps
