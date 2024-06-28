@@ -1,43 +1,51 @@
+from __future__ import annotations
+
 import re
-import pandas as pd  # noqa
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.feature_extraction.text import CountVectorizer
 from zipfile import BadZipFile
+
+import pandas as pd
+
 
 class DTTOTDocumentProcessing:
     def import_document(self, file_path, document_format):
-        """
-        Imports a document based on its format and returns a pandas DataFrame.
+        """Imports a document based on its format and returns a pandas DataFrame.
 
         Args:
+        ----
             file_path (str): The path to the document file.
             document_format (str): The format of the document ('CSV', 'XLS', or 'XLSX').
 
         Returns:
+        -------
             DataFrame: The imported document as a pandas DataFrame.
+
         """
         try:
-            if document_format == 'CSV':
+            if document_format == "CSV":
                 return pd.read_csv(file_path)
-            elif document_format == 'XLS':
-                return pd.read_excel(file_path, engine='xlrd')
-            elif document_format == 'XLSX':
-                return pd.read_excel(file_path, engine='openpyxl')
+            elif document_format == "XLS":
+                return pd.read_excel(file_path, engine="xlrd")
+            elif document_format == "XLSX":
+                return pd.read_excel(file_path, engine="openpyxl")
             else:
-                raise ValueError(f"Unsupported document format: {document_format}")
+                msg = f"Unsupported document format: {document_format}"
+                raise ValueError(msg)
         except BadZipFile as e:
-            raise ValueError("File is not a zip file") from e
+            msg = "File is not a zip file"
+            raise ValueError(msg) from e
 
     def retrieve_data_as_dataframe(self, file_path, document_format):
-        """
-        Wrapper function to retrieve all data from a document into a pandas DataFrame.
+        """Wrapper function to retrieve all data from a document into a pandas DataFrame.
 
         Args:
+        ----
             file_path (str): The path to the document file.
             document_format (str): The format of the document ('CSV', 'XLS', or 'XLSX').
 
         Returns:
+        -------
             DataFrame: The document data as a pandas DataFrame.
+
         """
         return self.import_document(file_path, document_format)
 
@@ -45,83 +53,100 @@ class DTTOTDocumentProcessing:
     def split_name(name):
         """Splits a name into first, middle, and last components."""
         if not isinstance(name, str):
-            return '', '', ''
+            return "", "", ""
         parts = name.strip().split()
         if len(parts) >= 3:
-            return parts[0], ' '.join(parts[1:-1]), parts[-1]
+            return parts[0], " ".join(parts[1:-1]), parts[-1]
         elif len(parts) == 2:
-            return parts[0], '', parts[1]
+            return parts[0], "", parts[1]
         elif len(parts) == 1:
-            return parts[0], '', ''
-        return '', '', ''
+            return parts[0], "", ""
+        return "", "", ""
 
     def split_aliases(self, name, case_insensitive=True):
         if case_insensitive:
             name = name.lower()
-            return name.split(' alias ')[1:] if ' alias ' in name else []
+            return name.split(" alias ")[1:] if " alias " in name else []
         else:
-            parts = name.split(' Alias ')
+            parts = name.split(" Alias ")
             aliases = parts[1:] if len(parts) > 1 else []
             if not aliases:
-                parts = name.split(' alias ')
+                parts = name.split(" alias ")
                 aliases = parts[1:] if len(parts) > 1 else []
             return aliases
 
     def extract_and_split_names(self, df, name_column, case_insensitive=False):
-        """
-        Extracts full names and aliases from a specified column in a DataFrame,
+        """Extracts full names and aliases from a specified column in a DataFrame,
         then splits these names into first, middle, and last names.
         Adds new columns for each component of the name and its aliases.
 
         Args:
+        ----
             df (DataFrame): The DataFrame containing the names.
             name_column (str): The column containing the names from which to extract aliases.
             case_insensitive (bool): Whether to process names in a case-insensitive manner.
 
         Returns:
+        -------
             DataFrame: The DataFrame with additional columns for name components.
+
         """
+
         def split_name(name):
             if not isinstance(name, str):
-                return '', '', ''
+                return "", "", ""
             parts = name.strip().split()
             if len(parts) >= 3:
-                return parts[0], ' '.join(parts[1:-1]), parts[-1]
+                return parts[0], " ".join(parts[1:-1]), parts[-1]
             elif len(parts) == 2:
-                return parts[0], '', parts[1]
+                return parts[0], "", parts[1]
             elif len(parts) == 1:
-                return parts[0], '', ''
-            return '', '', ''
+                return parts[0], "", ""
+            return "", "", ""
 
         def split_aliases(name):
             if case_insensitive:
                 name = name.lower()
-                return name.split(' alias ')[1:] if ' alias ' in name else []
+                return name.split(" alias ")[1:] if " alias " in name else []
             else:
-                parts = name.split(' Alias ')
+                parts = name.split(" Alias ")
                 aliases = parts[1:] if len(parts) > 1 else []
                 if not aliases:
-                    parts = name.split(' alias ')
+                    parts = name.split(" alias ")
                     aliases = parts[1:] if len(parts) > 1 else []
                 return aliases
 
         # Initialize the full name column
-        df['full_name'] = df[name_column].apply(lambda x: re.split(' (?i)alias ', x, 1)[0] if isinstance(x, str) else '')
+        df["full_name"] = df[name_column].apply(
+            lambda x: re.split(" (?i)alias ", x, 1)[0] if isinstance(x, str) else "",
+        )
 
         # Extract first, middle, and last names from the full_name
-        df[['first_name', 'middle_name', 'last_name']] = df['full_name'].apply(split_name).tolist()
+        df[["first_name", "middle_name", "last_name"]] = (
+            df["full_name"].apply(split_name).tolist()
+        )
 
         # Extract all aliases from the name column
-        df['aliases'] = df[name_column].apply(split_aliases)
+        df["aliases"] = df[name_column].apply(split_aliases)
 
         # Find the maximum number of aliases in any row to determine the number of fields
-        max_aliases = df['aliases'].str.len().max()
+        max_aliases = df["aliases"].str.len().max()
 
         # Process each alias and split into name components
         for i in range(max_aliases):
-            alias_col = f'Alias_name_{i+1}'
-            df[alias_col] = df['aliases'].apply(lambda aliases: aliases[i] if len(aliases) > i else '')
-            df[[f'first_name_alias_{i+1}', f'middle_name_alias_{i+1}', f'last_name_alias_{i+1}']] = df[alias_col].apply(split_name).tolist()
+            alias_col = f"Alias_name_{i+1}"
+            df[alias_col] = df["aliases"].apply(
+                lambda aliases: aliases[i] if len(aliases) > i else "",
+            )
+            df[
+                [
+                    f"first_name_alias_{i+1}",
+                    f"middle_name_alias_{i+1}",
+                    f"last_name_alias_{i+1}",
+                ]
+            ] = (
+                df[alias_col].apply(split_name).tolist()
+            )
         return df
 
 
@@ -142,16 +167,17 @@ class ExtractNIKandPassportNumber:
                                        letters followed by six or more digits, with an
                                        optional space between letters and digits.
     """  # noqa
-    def __init__(self):
+
+    def __init__(self) -> None:
         """
         Initializes the ExtractNIKandPassportNumber class with specific regex patterns
         for identifying NIK and passport numbers within text.
         """  # noqa
         self.nik_regex = re.compile(
-            r"(\b\d{16}\b)"
+            r"(\b\d{16}\b)",
         )  # Pattern for NIK numbers with a capture group
         self.passport_regex = re.compile(
-            r"(\b[A-Z]{0,2}\s*\d{6,}\b)"
+            r"(\b[A-Z]{0,2}\s*\d{6,}\b)",
         )  # Pattern for passport numbers with a capture group
 
     def extract_nik_and_passport_number(self, df):
@@ -173,67 +199,44 @@ class ExtractNIKandPassportNumber:
             return df  # Return early if no description columns are found
 
         # Initialize columns to hold extracted NIK and passport numbers
-        df['idNumber'] = ''
-        df['passport_number'] = ''
+        df["idNumber"] = ""
+        df["passport_number"] = ""
 
         # Apply regex to all description columns at once
         for column in description_columns:
-            df[
-                'idNumber'
-            ] = df[
-                column
-            ].str.extract(
-                self.nik_regex,
-                expand=False
-            ).fillna(
-                df[
-                    'idNumber'
-                ]
+            df["idNumber"] = (
+                df[column]
+                .str.extract(self.nik_regex, expand=False)
+                .fillna(df["idNumber"])
             )
-            df[
-                'passport_number'
-            ] = df[
-                column
-            ].str.extract(
-                self.passport_regex,
-                expand=False
-                ).fillna(
-                    df[
-                        'passport_number'
-                    ]
-                )
+            df["passport_number"] = (
+                df[column]
+                .str.extract(self.passport_regex, expand=False)
+                .fillna(df["passport_number"])
+            )
 
             # Clean the description text
-            df[
-                column
-            ] = df[
-                column
-            ].str.replace(
-                self.nik_regex,
-                '',
-                regex=True
-            ).str.replace(
-                self.passport_regex,
-                '',
-                regex=True
-            ).str.strip()
+            df[column] = (
+                df[column]
+                .str.replace(self.nik_regex, "", regex=True)
+                .str.replace(self.passport_regex, "", regex=True)
+                .str.strip()
+            )
 
         return df
 
     def _detect_description_columns(self, df):
-        """
-        Identifies columns within the DataFrame that likely contain descriptive
+        """Identifies columns within the DataFrame that likely contain descriptive
         texts for extracting NIK and passport numbers.
         """
-        return [col for col in df.columns if 'description' in col.lower()]
+        return [col for col in df.columns if "description" in col.lower()]
 
     def _clean_description(self, text):
-        """
-        Cleans the description text
+        """Cleans the description text
         by removing detected NIK and passport numbers.
         """
-        text = self.nik_regex.sub('', text)
-        text = self.passport_regex.sub('', text)
+        text = self.nik_regex.sub("", text)
+        text = self.passport_regex.sub("", text)
         return text.strip()
 
 
@@ -243,41 +246,40 @@ class CleaningSeparatingDeskripsi:
     'description_{seqNumber}' columns based on the content of bullet points or numbered items.
     """  # noqa
 
-    def __init__(self):
-        """
-        Initializes the CleaningSeparatingDeskripsi instance.
-        """
-        self.split_regex = r'\n\s*(?:-\s+|\d+\.\s+|\*\s+)?(?=[^;\.,]*[;\.,]?\s*(?:-\s+|\d+\.\s+|\*\s+|$))'  # noqa
+    def __init__(self) -> None:
+        """Initializes the CleaningSeparatingDeskripsi instance."""
+        self.split_regex = r"\n\s*(?:-\s+|\d+\.\s+|\*\s+)?(?=[^;\.,]*[;\.,]?\s*(?:-\s+|\d+\.\s+|\*\s+|$))"
 
     def separating_cleaning_deskripsi(self, df):
-        """
-        Separates bullet points or numbered items in the 'Deskripsi' column
+        """Separates bullet points or numbered items in the 'Deskripsi' column
         into individual 'description_{seqNumber}' columns
         based on the maximum count of items found in the column.
         Removes the original 'Deskripsi' column afterward.
 
         Args:
+        ----
             df (pd.DataFrame): The input DataFrame with a 'Deskripsi' column.
 
         Returns:
+        -------
             pd.DataFrame: The processed DataFrame
             with separated description columns.
-        """
-        df['Deskripsi'] = df['Deskripsi'].fillna('').astype(str)
-        max_items = self._find_max_descriptions(df['Deskripsi'])
 
-        description_cols = [f'description_{i+1}' for i in range(max_items)]
+        """
+        df["Deskripsi"] = df["Deskripsi"].fillna("").astype(str)
+        max_items = self._find_max_descriptions(df["Deskripsi"])
+
+        description_cols = [f"description_{i+1}" for i in range(max_items)]
         for col in description_cols:
             df[col] = None
 
         for index, row in df.iterrows():
-            descriptions = self._extract_descriptions(row['Deskripsi'])
+            descriptions = self._extract_descriptions(row["Deskripsi"])
             for i, desc in enumerate(descriptions):
                 if i < max_items:
-                    df.at[index, f'description_{i+1}'] = desc
+                    df.at[index, f"description_{i+1}"] = desc
 
-        df.drop(columns=['Deskripsi'], inplace=True)
-        return df
+        return df.drop(columns=["Deskripsi"])
 
     def _find_max_descriptions(self, descriptions):
         """
@@ -290,7 +292,7 @@ class CleaningSeparatingDeskripsi:
             int: The maximum count of descriptions found in any single row.
         """  # noqa
         counts = descriptions.apply(
-            lambda text: len(re.split(self.split_regex, text.strip())) - 1
+            lambda text: len(re.split(self.split_regex, text.strip())) - 1,
         )
         return counts.max()
 
@@ -323,22 +325,40 @@ class FormattingColumn:
                                    and extract date components from text.
     """  # noqa
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initializes the FormattingColumn instance, setting up the month dictionary and
         compiling the date pattern regular expression.
         """  # noqa
         self.months_dict = {
-            'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04',
-            'may': '05', 'jun': '06', 'jul': '07', 'aug': '08',
-            'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12',
-            'januari': '01', 'februari': '02', 'maret': '03', 'april': '04',
-            'mei': '05', 'juni': '06', 'juli': '07', 'agustus': '08',
-            'september': '09', 'oktober': '10',
-            'november': '11', 'desember': '12'
-        }  # noqa
+            "jan": "01",
+            "feb": "02",
+            "mar": "03",
+            "apr": "04",
+            "may": "05",
+            "jun": "06",
+            "jul": "07",
+            "aug": "08",
+            "sep": "09",
+            "oct": "10",
+            "nov": "11",
+            "dec": "12",
+            "januari": "01",
+            "februari": "02",
+            "maret": "03",
+            "april": "04",
+            "mei": "05",
+            "juni": "06",
+            "juli": "07",
+            "agustus": "08",
+            "september": "09",
+            "oktober": "10",
+            "november": "11",
+            "desember": "12",
+        }
 
-        self.date_pattern = re.compile(r"""
+        self.date_pattern = re.compile(
+            r"""
             (?P<day>\d{1,2})
             [\s/-]
             (?P<month>[a-zA-Z]+|\d{1,2})
@@ -348,7 +368,9 @@ class FormattingColumn:
             (?P<day2>\d{1,2})\s+
             (?P<month2>[a-zA-Z]+)\s+
             (?P<year2>\d{4})
-        """, re.VERBOSE | re.IGNORECASE)
+        """,
+            re.VERBOSE | re.IGNORECASE,
+        )
 
         self.country_dict = {
             "Afghanistan": "Afghanistan",
@@ -504,7 +526,7 @@ class FormattingColumn:
             "Saint Helena": "Saint Helena",
             "Saint Kitts and Nevis": "Saint Kitts and Nevis",
             "Saint Lucia": "Saint Lucia",
-            "Saint Vincent and the Grenadines": "Saint Vincent and the Grenadines",  # noqa
+            "Saint Vincent and the Grenadines": "Saint Vincent and the Grenadines",
             "San Marino": "San Marino",
             "Sao Tome & Principe": "Sao Tome & Principe",
             "Pulau Solomon": "Solomon Islands",
@@ -581,17 +603,15 @@ class FormattingColumn:
         # Calculate distances
         for i in range(1, len_str1 + 1):
             for j in range(1, len_str2 + 1):
-                if str1[i-1] == str2[j-1]:
-                    cost = 0
-                else:
-                    cost = 1
-                matrix[i][j] = min(matrix[i-1][j] + 1,  # Deletion
-                                   matrix[i][j-1] + 1,  # Insertion
-                                   matrix[i-1][j-1] + cost)  # Substitution
+                cost = 0 if str1[i - 1] == str2[j - 1] else 1
+                matrix[i][j] = min(
+                    matrix[i - 1][j] + 1,  # Deletion
+                    matrix[i][j - 1] + 1,  # Insertion
+                    matrix[i - 1][j - 1] + cost,
+                )  # Substitution
 
         distance = matrix[len_str1][len_str2]
-        similarity = ((max_len - distance) / max_len) * 100
-        return similarity
+        return ((max_len - distance) / max_len) * 100
 
     def format_birth_date(self, df):
         """
@@ -604,17 +624,17 @@ class FormattingColumn:
             pd.DataFrame: The DataFrame with additional columns for formatted birth dates.
         """  # noqa
         for i in range(1, 4):
-            df[f'birth_date_{i}'] = ""
+            df[f"birth_date_{i}"] = ""
 
         for index, row in df.iterrows():
             # Skip formatting if 'Tgl lahir' is "00/00/0000"
-            if row['Tgl Lahir'] == "00/00/0000":
+            if row["Tgl Lahir"] == "00/00/0000":
                 continue
-            dates = self.extract_dates(row['Tgl Lahir'])
+            dates = self.extract_dates(row["Tgl Lahir"])
             for i, date_str in enumerate(dates):
                 if i >= 3:
                     break
-                df.at[index, f'birth_date_{i+1}'] = date_str
+                df.at[index, f"birth_date_{i+1}"] = date_str
 
         return df
 
@@ -631,16 +651,13 @@ class FormattingColumn:
         if not isinstance(text, str) or text == "00/00/0000":
             return []
         matches = self.date_pattern.finditer(text)
-        dates = [self._format_match(match) for match in matches]
-        return dates
+        return [self._format_match(match) for match in matches]
 
-    def _format_match(self, match):
-        """
-        Formats a single date match into YYYY/MM/DD format.
-        """
-        day = match.group('day') or match.group('day2')
-        month = match.group('month') or match.group('month2')
-        year = match.group('year') or match.group('year2')
+    def _format_match(self, match) -> str:
+        """Formats a single date match into YYYY/MM/DD format."""
+        day = match.group("day") or match.group("day2")
+        month = match.group("month") or match.group("month2")
+        year = match.group("year") or match.group("year2")
 
         if month.isdigit():
             month_number = month.zfill(2)
@@ -688,14 +705,18 @@ class FormattingColumn:
             pd.DataFrame: The DataFrame with formatted and possibly split nationality information.
         """  # noqa
         # Initialize new columns for the potentially split nationalities
-        df['WN_1'], df['WN_2'] = "", ""
+        df["WN_1"], df["WN_2"] = "", ""
 
         for index, row in df.iterrows():
-            nationalities = self._clean_and_split_nationality(row['WN'])
+            nationalities = self._clean_and_split_nationality(row["WN"])
             if len(nationalities) > 0:
-                df.at[index, 'WN_1'] = self._standardize_country_name(nationalities[0])  # noqa
+                df.at[index, "WN_1"] = self._standardize_country_name(
+                    nationalities[0],
+                )
             if len(nationalities) > 1:
-                df.at[index, 'WN_2'] = self._standardize_country_name(nationalities[1])  # noqa
+                df.at[index, "WN_2"] = self._standardize_country_name(
+                    nationalities[1],
+                )
 
         return df
 
@@ -746,8 +767,7 @@ class FormattingColumn:
         best_score = 0
         best_match = None
         for key, standardized_name in self.country_dict.items():
-            score = self._calculate_similarity(
-                country_name.lower(), key.lower())
+            score = self._calculate_similarity(country_name.lower(), key.lower())
             if score > best_score:
                 best_score = score
                 best_match = standardized_name
@@ -771,6 +791,5 @@ def process_data(file_path, document_format):
 
     formatter = FormattingColumn()
     df = formatter.format_birth_date(df)
-    df = formatter.format_nationality(df)
+    return formatter.format_nationality(df)
 
-    return df

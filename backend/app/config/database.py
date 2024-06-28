@@ -28,22 +28,33 @@ DATABASES = {
 }
 
 # Ensure the DATABASE_URL environment variable is set correctly
-if not DATABASES['default']:
-    raise ImproperlyConfigured("DATABASE_URL environment variable is not set or is incorrect.")
+if not DATABASES["default"]:
+    msg = "DATABASE_URL environment variable is not set or is incorrect."
+    raise ImproperlyConfigured(
+        msg,
+    )
 
 # Optional: external database configuration if needed
-EXTERNAL_DB_NAME = getenv('EXTERNAL_DB_NAME')
-EXTERNAL_DB_HOST = getenv('EXTERNAL_DB_HOST')
-EXTERNAL_DB_USER = getenv('EXTERNAL_DB_USER')
-EXTERNAL_DB_PORT = getenv('EXTERNAL_DB_PORT')
-EXTERNAL_DB_PASSWORD = getenv('EXTERNAL_DB_PASSWORD')
-EXTERNAL_DB_URL = getenv('EXTERNAL_DB_URL')
+EXTERNAL_DB_NAME = getenv("EXTERNAL_DB_NAME")
+EXTERNAL_DB_HOST = getenv("EXTERNAL_DB_HOST")
+EXTERNAL_DB_USER = getenv("EXTERNAL_DB_USER")
+EXTERNAL_DB_PORT = getenv("EXTERNAL_DB_PORT")
+EXTERNAL_DB_PASSWORD = getenv("EXTERNAL_DB_PASSWORD")
+EXTERNAL_DB_URL = getenv("EXTERNAL_DB_URL")
 
-if all([EXTERNAL_DB_NAME, EXTERNAL_DB_HOST, EXTERNAL_DB_USER, EXTERNAL_DB_PORT, EXTERNAL_DB_PASSWORD]):
-    DATABASES['external'] = {
+if all(
+    [
+        EXTERNAL_DB_NAME,
+        EXTERNAL_DB_HOST,
+        EXTERNAL_DB_USER,
+        EXTERNAL_DB_PORT,
+        EXTERNAL_DB_PASSWORD,
+    ],
+):
+    DATABASES["external"] = {
         "default": dj_database_url.parse(
             EXTERNAL_DB_URL,
             conn_max_age=CONN_MAX_AGE,
-            conn_health_checks=True
-        )
+            conn_health_checks=True,
+        ),
     }

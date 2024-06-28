@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import sys
+
 from typing_extensions import TypeAlias
 
 from app.config.base import BASE_DIR

@@ -19,5 +19,5 @@ include(
     "axes.py",
     "email.py",
     "jwt.py",
-    scope=globals()
+    scope=globals(),
 )

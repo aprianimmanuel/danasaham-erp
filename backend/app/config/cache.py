@@ -9,9 +9,7 @@ from redis.exceptions import RedisError
 
 logger = logging.getLogger(__name__)
 
-USE_REDIS_FOR_CACHE = getenv(
-    "USE_REDIS_FOR_CACHE",
-    default="true").lower() == "true"
+USE_REDIS_FOR_CACHE = getenv("USE_REDIS_FOR_CACHE", default="true").lower() == "true"
 REDIS_HOST = getenv("REDIS_HOST", default="localhost")
 REDIS_PORT = getenv("REDIS_PORT", default="6379")
 REDIS_URL = getenv("REDIS_URL", default=f"redis://{REDIS_HOST}:{REDIS_PORT}/0")
