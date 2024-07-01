@@ -24,9 +24,9 @@ jobs:
         ports:
           - "5432:5432"
         env:
-          POSTGRES_USER: ${{ secrets.POSTGRESQL_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRESQL_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRESQL_DB }}
+          POSTGRES_USER: ${{ secrets.DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.DB_NAME }}
 
       redis:
         image: redis:7.2.5-bookworm
@@ -97,18 +97,22 @@ jobs:
 
       - name: Build and start Docker Compose services
         env:
-          DB_USER: ${{ secrets.POSTGRESQL_USER }}
-          DB_PASSWORD: ${{ secrets.POSTGRESQL_PASSWORD }}
-          DB_NAME: ${{ secrets.POSTGRESQL_DB }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
           DB_PORT: 5432
           API_PORT: 8000
           RABBITMQ_DASHBOARD_PORT: 15672
-          CELERY_BROKER_URL: redis://redis:6379/0
-          CELERY_RESULT_BACKEND: redis://redis:6379/0
-          CELERY_BEAT_SLEEP_INTERVAL: 10
+          CELERY_BROKER_URL: ${{ secrets.CELERY_BROKER_URL }}
+          CELERY_RESULT_BACKEND: ${{ secrets.CELERY_RESULT_BACKEND }}
+          CELERY_BEAT_SLEEP_INTERVAL: ${{ secrets.CELERY_BEAT_SLEEP_INTERVAL }}
         run: |
           docker-compose -f docker-compose.ci.yml down -v --rmi all --remove-orphans
           docker-compose -f docker-compose.ci.yml up -d --build
+
+      - name: Create custom temporary media directory and set permissions
+        run: |
+          docker-compose -f docker-compose.ci.yml exec -T app sh -c "chown -R $(whoami):$(whoami) /apps && mkdir -p /apps/media/test_media"
 
       - name: Run migrations
         run: docker-compose -f docker-compose.ci.yml run --rm app sh -c "make migrate"
