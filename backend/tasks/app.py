@@ -1,10 +1,14 @@
-# tasks.app
 from __future__ import annotations
 
+import logging
 import os
 
-from celery import Celery
+from celery import Celery, Task
 from django.conf import settings
+
+
+logger = logging.getLogger(__name__)
+
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.config.settings")
 
@@ -22,5 +26,5 @@ celery_app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 
 @celery_app.task(bind=True)
-def debug_task(self) -> None:
-    print(f"Request: {self.request!r}")
+def debug_task(self: Task) -> None:
+    logger.debug(f"Request: {self.request!r}")

@@ -2,37 +2,36 @@
 line-length = 90
 
 [tool.ruff]
-select = ["ALL"]
-unfixable = ["T201"]
-ignore = [
-    "E501",   # Line too long  # Will be fixed by black
-    "A003",
-    "RUF001",
-    "ERA001",
+lint.select = ["ALL"]
+lint.unfixable = ["T201"]
+lint.ignore = [
+    "E501",   # Line too long (will be fixed by black)
+    "A003",   # Variable name "id" is shadowing a built-in name
+    "RUF001", # Unused variable in a f-string
+    "ERA001", # Raw f-string is missing format specifier(s)
     "F841",   # Local variable is assigned to but never used
 
-    "ANN101",
-    "ANN102",  # Missing type annotation for `cls` in classmethod
-    "ANN401", # Dynamically typed expressions (typing.Any) are disallowed in `{name}`
+    "ANN101", # Missing type annotation for self in method
+    "ANN102", # Missing type annotation for cls in classmethod
+    "ANN401", # Dynamically typed expressions (typing.Any) are disallowed
 
-    "D10",
+    "D10",    # Missing docstring in public module
+    "D203",   # 1 blank line required before class docstring
+    "D213",   # Multi-line docstring summary should start at the second line
+    "EXE002", # Ensure module has a valid __main__.py file
 
-    "D203",
-    "D213",
-    "EXE002",
-
-    "PD011",
+    "PD011",  # Use pandas DataFrame.assign for more readable code
 ]
-show-fixes = true
-exclude = [
+lint.show-fixes = true
+lint.exclude = [
     "migrations",
     ".venv",
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 required-imports = ["from __future__ import annotations"]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = [
     "F401",  # Module imported but unused
 ]
@@ -42,11 +41,10 @@ required-imports = ["from __future__ import annotations"]
 
 [tool.mypy]
 python_version = "3.12"
-ignore_missing_imports_per_module = true
 ignore_missing_imports = true
 warn_return_any = true
 warn_unused_configs = true
-strict = false
+strict = true
 implicit_reexport = true
 exclude = [
     ".venv",

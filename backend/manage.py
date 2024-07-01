@@ -1,16 +1,15 @@
-#!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
 from __future__ import annotations
 
 import os
 import sys
-
+from pathlib import Path
 from typing_extensions import TypeAlias
 
 from app.config.base import BASE_DIR
 
-_APPS_DIR = os.path.join(BASE_DIR, "app")
-_TEMPLATE_DIR = os.path.join(BASE_DIR, "app", "config", "__app_template__")
+_APPS_DIR = Path(BASE_DIR) / "app"
+_TEMPLATE_DIR = Path(BASE_DIR) / "app" / "config" / "__app_template__"
 
 _AppName: TypeAlias = str
 _AppDirectory: TypeAlias = str
@@ -53,10 +52,10 @@ def _add_app_directory_if_not_provided() -> None:
     if _app_directory:
         return
 
-    app_directory = os.path.join(_APPS_DIR, app_name)
-    os.makedirs(app_directory, exist_ok=True)
+    app_directory = _APPS_DIR / app_name
+    app_directory.mkdir(parents=True, exist_ok=True)
 
-    sys.argv.insert(sys.argv.index(app_name) + 1, app_directory)
+    sys.argv.insert(sys.argv.index(app_name) + 1, str(app_directory))
 
 
 def _get_app_parameters() -> tuple[_AppName, _AppDirectory]:

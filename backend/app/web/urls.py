@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from dj_rest_auth.registration.views import ResendEmailVerificationView, VerifyEmailView
 from dj_rest_auth.views import LoginView, LogoutView, PasswordChangeView
@@ -47,7 +48,7 @@ _swagger_urlpatterns = [
 ]
 
 
-def trigger_error(request) -> None:
+def trigger_error(_request: Any) -> None:
     division_by_zero = 1 / 0
 
 

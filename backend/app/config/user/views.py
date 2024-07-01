@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from dj_rest_auth.app_settings import api_settings
 from dj_rest_auth.registration.views import RegisterView
 from dj_rest_auth.views import PasswordResetConfirmView
@@ -11,7 +13,8 @@ from django.utils.http import urlsafe_base64_encode
 from drf_spectacular.utils import OpenApiExample, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny
-
+from rest_framework.request import Request
+from rest_framework.response import Response
 from app.common.routers import CustomViewRouter
 from app.config.user.serializers import (
     CustomRegisterSerializer,
@@ -27,7 +30,7 @@ class CustomRegisterView(RegisterView):
     serializer_class = CustomRegisterSerializer
 
 
-def custom_url_generator(self, request, temp_key):
+def custom_url_generator(self: Any, request: Request, temp_key: str) -> str:
     uid = urlsafe_base64_encode(force_bytes(self.user))
     token = temp_key
 
@@ -37,7 +40,7 @@ def custom_url_generator(self, request, temp_key):
 
 class CustomPasswordResetView(DjRestAuthPasswordResetView):
 
-    def get_email_options(self):
+    def get_email_options(self) -> dict[str, Any]:
         """Return the email options including the custom URL generator."""
         return {
             "url_generator": custom_url_generator,
@@ -66,7 +69,7 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
             ),
         },
     )
-    def post(self, request, *args, **kwargs):
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().post(request, *args, **kwargs)
 
 

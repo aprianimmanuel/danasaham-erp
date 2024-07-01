@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from asyncio import new_event_loop
 from os import getenv
+from typing import Any, Dict
 
 import pytest
 from celery.contrib.testing.worker import start_worker
+from celery.app.task import Task
 
 from tasks.app import celery_app
 
@@ -12,7 +14,7 @@ pytest_plugins = "celery.contrib.pytest"
 
 
 @pytest.fixture(scope="session")
-def celery_config():
+def celery_config() -> Dict[str, Any]:
     return {
         "broker_url": getenv("CELERY_BROKER_URL"),
         "result_backend": getenv("CELERY_RESULT_BACKEND"),
@@ -26,7 +28,7 @@ def celery_config():
 
 
 @pytest.fixture(scope="session")
-def celery_includes():
+def celery_includes() -> list[str]:
     return ["app.config.dttotDoc.tasks", "app.config.dsb_user_personal.tasks"]
 
 
@@ -41,7 +43,7 @@ def celery_worker_pool() -> str:
 
 
 @pytest.fixture(scope="session")
-def celery_worker_parameters():
+def celery_worker_parameters() -> Dict[str, Any]:
     return {
         "queues": ("default",),
         "perform_ping_check": False,
@@ -49,7 +51,7 @@ def celery_worker_parameters():
 
 
 @pytest.fixture(scope="session")
-def celery_parameters():
+def celery_parameters() -> Dict[str, Any]:
     return {
         "broker_url": getenv("CELERY_BROKER_URL"),
         "result_backend": getenv("CELERY_RESULT_BACKEND"),
@@ -65,10 +67,10 @@ def use_celery_app_trap() -> bool:
 
 @pytest.fixture(scope="session")
 def celery_session_worker(
-    celery_session_app,
-    celery_worker_pool,
-    celery_worker_parameters,
-):
+    celery_session_app: Task,
+    celery_worker_pool: str,
+    celery_worker_parameters: Dict[str, Any],
+) -> Task:
     with start_worker(
         celery_session_app,
         pool=celery_worker_pool,
@@ -79,7 +81,7 @@ def celery_session_worker(
 
 # Define the event loop fixture
 @pytest.fixture(scope="session")
-def event_loop():
+def event_loop() -> Any:
     loop = new_event_loop()
     yield loop
     loop.close()
@@ -88,9 +90,9 @@ def event_loop():
 # Celery app fixture
 @pytest.fixture()
 def celery_function_app_fixture(
-    celery_config,
-    celery_worker_pool,
-    celery_worker_parameters,
-):
+    celery_config: Dict[str, Any],
+    celery_worker_pool: str,
+    celery_worker_parameters: Dict[str, Any],
+) -> Task:
     with celery_app() as app:
         yield app
