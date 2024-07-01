@@ -100,7 +100,7 @@ jobs:
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_NAME: ${{ secrets.DB_NAME }}
-          DB_PORT: 5432
+          DB_PORT: ${{ secrets.DB_PORT }}
           API_PORT: 8000
           RABBITMQ_DASHBOARD_PORT: 15672
           CELERY_BROKER_URL: ${{ secrets.CELERY_BROKER_URL }}
@@ -112,7 +112,7 @@ jobs:
 
       - name: Wait for services to be healthy
         run: |
-          docker-compose -f docker-compose.ci.yml run --rm app sh -c "while ! curl -s http://db:5432/ > /dev/null; do echo waiting for db; sleep 1; done"
+          docker-compose -f docker-compose.ci.yml run --rm app sh -c "while ! curl -s http://db:5445/ > /dev/null; do echo waiting for db; sleep 1; done"
           docker-compose -f docker-compose.ci.yml run --rm app sh -c "while ! curl -s http://redis:6379/ > /dev/null; do echo waiting for redis; sleep 1; done"
           docker-compose -f docker-compose.ci.yml run --rm app sh -c "while ! curl -s http://rabbitmq:5672/ > /dev/null; do echo waiting for rabbitmq; sleep 1; done"
 
