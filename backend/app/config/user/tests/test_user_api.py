@@ -30,7 +30,7 @@ class PublicUserAPITests(TestCase):
         }
         response = self.client.post(self.registration_url, user_data)
         try:
-            assert response.status_code == status.HTTP_201_CREATED
+            assert response.status_code == status.HTTP_201_CREATED  #noqa: S101
         except AssertionError as e:
             print("Failed to register user. Response:", response.content)
             raise
@@ -44,7 +44,7 @@ class PublicUserAPITests(TestCase):
             "password2": "Testpass!124",
         }
         response = self.client.post(self.registration_url, user_data)
-        assert response.status_code != status.HTTP_201_CREATED
+        assert response.status_code != status.HTTP_201_CREATED  # noqa: S101
 
     def test_user_registration_short_password(self) -> None:
         """Test registering a user with a short password fails."""
@@ -55,7 +55,7 @@ class PublicUserAPITests(TestCase):
             "password2": "short",
         }
         response = self.client.post(self.registration_url, user_data)
-        assert response.status_code != status.HTTP_201_CREATED
+        assert response.status_code != status.HTTP_201_CREATED  #noqa: S101
 
     def test_user_registration_no_email(self) -> None:
         """Test registering a user without an email fails."""
@@ -65,7 +65,7 @@ class PublicUserAPITests(TestCase):
             "password2": "Testpass!123",
         }
         response = self.client.post(self.registration_url, user_data)
-        assert response.status_code != status.HTTP_201_CREATED
+        assert response.status_code != status.HTTP_201_CREATED  # noqa: S101
 
     def test_user_registration_existing_username(self) -> None:
         """Test registering a user with an existing username fails."""
@@ -83,7 +83,7 @@ class PublicUserAPITests(TestCase):
         }
         self.client.post(self.registration_url, user_data_1)
         response = self.client.post(self.registration_url, user_data_2)
-        assert response.status_code != status.HTTP_201_CREATED
+        assert response.status_code != status.HTTP_201_CREATED  #noqa: S101
 
     def test_user_registration_existing_email(self) -> None:
         """Test registering a user with an existing email fails."""
@@ -101,7 +101,7 @@ class PublicUserAPITests(TestCase):
         }
         self.client.post(self.registration_url, user_data_1)
         response = self.client.post(self.registration_url, user_data_2)
-        assert response.status_code != status.HTTP_201_CREATED
+        assert response.status_code != status.HTTP_201_CREATED  #noqa: S101
 
 
 class PrivateUserAPITests(TestCase):
@@ -131,23 +131,23 @@ class PrivateUserAPITests(TestCase):
     def test_token_verify(self) -> None:
         # Verify token
         verify_response = self.client.post(self.verify_url, {"token": self.token})
-        assert verify_response.status_code == status.HTTP_200_OK
+        assert verify_response.status_code == status.HTTP_200_OK  #noqa: S101
 
     def test_user_profile_retrieve(self) -> None:
         profile_url = reverse("rest_details")
         response = self.client.get(profile_url)
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data["email"] == self.user.email
-        assert response.data["username"] == self.user.username
-        assert response.data["first_name"] == self.user_profile.first_name
+        assert response.status_code == status.HTTP_200_OK  #noqa: S101
+        assert response.data["email"] == self.user.email  #noqa: S101
+        assert response.data["username"] == self.user.username  #noqa: S101
+        assert response.data["first_name"] == self.user_profile.first_name  #noqa: S101
 
     def test_user_profile_update(self) -> None:
         profile_url = reverse("rest_details")
         update_data = {"first_name": "NewName"}
         response = self.client.patch(profile_url, update_data)
         self.user_profile.refresh_from_db()
-        assert response.status_code == status.HTTP_200_OK
-        assert self.user_profile.first_name == "NewName"
+        assert response.status_code == status.HTTP_200_OK  #noqa: S101
+        assert self.user_profile.first_name == "NewName"  #noqa: S101
 
     def test_user_change_password(self) -> None:
         change_password_url = reverse("rest_password_change")
@@ -158,8 +158,8 @@ class PrivateUserAPITests(TestCase):
         }
         response = self.client.post(change_password_url, password_data)
         self.user.refresh_from_db()
-        assert self.user.check_password("NewTestpass!123")
-        assert response.status_code == status.HTTP_200_OK
+        assert self.user.check_password("NewTestpass!123")  #noqa: S101
+        assert response.status_code == status.HTTP_200_OK  #noqa: S101
 
     @patch("dj_rest_auth.registration.views.ConfirmEmailView.get_object")
     def test_user_email_verification(self, mock_get_object) -> None:
@@ -167,20 +167,20 @@ class PrivateUserAPITests(TestCase):
         mock_confirm.confirm.return_value = True
         email_verification_url = reverse("rest_verify_email")
         response = self.client.post(email_verification_url, {"key": "dummy-key"})
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_200_OK  #noqa: S101
 
     def test_user_password_reset(self) -> None:
         password_reset_url = reverse("rest_password_reset")
         reset_data = {"email": self.user.email}
         response = self.client.post(password_reset_url, reset_data)
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_200_OK  #noqa: S101
 
     def test_password_reset_confirmation(self) -> None:
         # Request a password reset
         self.client.post(reverse("rest_password_reset"), {"email": self.user.email})
 
         # Check the email box
-        assert len(mail.outbox) == 1
+        assert len(mail.outbox) == 1  #noqa: S101
 
         # Extract the password reset token and uidb64 from the email
         email_body = mail.outbox[0].body
@@ -204,14 +204,14 @@ class PrivateUserAPITests(TestCase):
         }
         confirm_url = f"/api/user/password/reset/confirm/{uidb64}/{token}/"
         response = self.client.post(confirm_url, post_data)
-        assert response.status_code == status.HTTP_200_OK
+        assert response.status_code == status.HTTP_200_OK  #noqa: S101
 
         # Verify password was updated
         self.user.refresh_from_db()
-        assert self.user.check_password("NewPassword123")
+        assert self.user.check_password("NewPassword123")  #noqa: S101
 
     def test_unauthorized_access(self) -> None:
         self.client.logout()
         profile_url = reverse("rest_details")
         response = self.client.get(profile_url)
-        assert response.status_code != status.HTTP_200_OK
+        assert response.status_code != status.HTTP_200_OK  #noqa: S101

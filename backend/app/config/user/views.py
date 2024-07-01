@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from dj_rest_auth.app_settings import api_settings
 from dj_rest_auth.registration.views import RegisterView
@@ -13,13 +13,16 @@ from django.utils.http import urlsafe_base64_encode
 from drf_spectacular.utils import OpenApiExample, extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny
-from rest_framework.request import Request
-from rest_framework.response import Response
+
 from app.common.routers import CustomViewRouter
 from app.config.user.serializers import (
     CustomRegisterSerializer,
     CustomUserDetailsSerializer,
 )
+
+if TYPE_CHECKING:
+    from rest_framework.request import Request
+    from rest_framework.response import Response
 
 
 class CustomUserDetailsView(BaseUserDetailsView):

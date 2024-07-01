@@ -2,19 +2,21 @@ from __future__ import annotations
 
 from asyncio import new_event_loop
 from os import getenv
-from typing import Any, Dict
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from celery.contrib.testing.worker import start_worker
-from celery.app.task import Task
 
 from tasks.app import celery_app
+
+if TYPE_CHECKING:
+    from celery.app.task import Task
 
 pytest_plugins = "celery.contrib.pytest"
 
 
 @pytest.fixture(scope="session")
-def celery_config() -> Dict[str, Any]:
+def celery_config() -> dict[str, Any]:
     return {
         "broker_url": getenv("CELERY_BROKER_URL"),
         "result_backend": getenv("CELERY_RESULT_BACKEND"),
@@ -43,7 +45,7 @@ def celery_worker_pool() -> str:
 
 
 @pytest.fixture(scope="session")
-def celery_worker_parameters() -> Dict[str, Any]:
+def celery_worker_parameters() -> dict[str, Any]:
     return {
         "queues": ("default",),
         "perform_ping_check": False,
@@ -51,7 +53,7 @@ def celery_worker_parameters() -> Dict[str, Any]:
 
 
 @pytest.fixture(scope="session")
-def celery_parameters() -> Dict[str, Any]:
+def celery_parameters() -> dict[str, Any]:
     return {
         "broker_url": getenv("CELERY_BROKER_URL"),
         "result_backend": getenv("CELERY_RESULT_BACKEND"),
@@ -69,7 +71,7 @@ def use_celery_app_trap() -> bool:
 def celery_session_worker(
     celery_session_app: Task,
     celery_worker_pool: str,
-    celery_worker_parameters: Dict[str, Any],
+    celery_worker_parameters: dict[str, Any],
 ) -> Task:
     with start_worker(
         celery_session_app,
@@ -90,9 +92,9 @@ def event_loop() -> Any:
 # Celery app fixture
 @pytest.fixture()
 def celery_function_app_fixture(
-    celery_config: Dict[str, Any],
+    celery_config: dict[str, Any],
     celery_worker_pool: str,
-    celery_worker_parameters: Dict[str, Any],
+    celery_worker_parameters: dict[str, Any],
 ) -> Task:
     with celery_app() as app:
         yield app

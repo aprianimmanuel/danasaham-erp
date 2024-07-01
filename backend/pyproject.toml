@@ -2,9 +2,9 @@
 line-length = 90
 
 [tool.ruff]
-lint.select = ["ALL"]
-lint.unfixable = ["T201"]
-lint.ignore = [
+select = ["ALL"]
+unfixable = ["T201"]
+ignore = [
     "E501",   # Line too long (will be fixed by black)
     "A003",   # Variable name "id" is shadowing a built-in name
     "RUF001", # Unused variable in a f-string
@@ -22,22 +22,18 @@ lint.ignore = [
 
     "PD011",  # Use pandas DataFrame.assign for more readable code
 ]
-lint.show-fixes = true
-lint.exclude = [
+show-fixes = true
+exclude = [
     "migrations",
     ".venv",
 ]
 
-[tool.ruff.lint.isort]
+[tool.ruff.isort]
 required-imports = ["from __future__ import annotations"]
 
-[tool.ruff.lint.per-file-ignores]
-"__init__.py" = [
-    "F401",  # Module imported but unused
-]
-"tests/**" = [
-    "S101",  # Use of assert detected
-]
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]  # Module imported but unused
+"tests/**" = ["S101"]  # Use of assert detected
 
 [tool.mypy]
 python_version = "3.12"

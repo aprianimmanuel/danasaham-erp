@@ -6,7 +6,6 @@ import os
 from celery import Celery, Task
 from django.conf import settings
 
-
 logger = logging.getLogger(__name__)
 
 
