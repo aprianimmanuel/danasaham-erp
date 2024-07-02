@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging.config
+from pathlib import Path
 from os import getenv
+from app.config.base import BASE_DIR
 
 LOG_LEVEL = getenv("LOG_LEVEL", default="INFO")
 
@@ -29,7 +31,7 @@ logging.config.dictConfig(
             },
             "file": {
                 "class": "logging.FileHandler",
-                "filename": "debug.log",
+                "filename": Path(BASE_DIR) / "logs" / "debug.log",
                 "formatter": "standard",
             },
         },
