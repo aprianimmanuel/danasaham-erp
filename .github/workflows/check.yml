@@ -102,7 +102,7 @@ jobs:
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_PORT: ${{ secrets.DB_PORT }}
           API_PORT: ${{ secrets.API_PORT }}
-          RABBITMQ_DASHBOARD_PORT: ${{ RABBITMQ_DASHBOARD_PORT }}
+          RABBITMQ_DASHBOARD_PORT: ${{ secrets.RABBITMQ_DASHBOARD_PORT }}
           CELERY_BROKER_URL: ${{ secrets.CELERY_BROKER_URL }}
           CELERY_RESULT_BACKEND: ${{ secrets.CELERY_RESULT_BACKEND }}
           CELERY_BEAT_SLEEP_INTERVAL: ${{ secrets.CELERY_BEAT_SLEEP_INTERVAL }}
