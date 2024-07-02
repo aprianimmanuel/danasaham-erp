@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any, ClassVar
+
 from rest_framework import serializers
 
 from app.config.core.models import Document, User, dttotDoc, dttotDocReport
@@ -21,15 +23,15 @@ class DttotDocSerializer(serializers.ModelSerializer):
     class Meta:
         model = dttotDoc
         fields = "__all__"
-        read_only_fields = ["dttot_id", "updated_at"]
+        read_only_fields: ClassVar = ["dttot_id", "updated_at"]
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict[str, Any]) -> dttotDoc:
         user = self.context.get("request").user if self.context.get("request") else None
         validated_data["user"] = validated_data.get("user", user)
         document = validated_data.pop("document", None)
         return dttotDoc.objects.create(document=document, **validated_data)
 
-    def to_representation(self, instance):
+    def to_representation(self, instance: dttotDoc) -> dict[str, Any]:
         representation = super().to_representation(instance)
         representation["user_id"] = instance.user.user_id if instance.user else None
         representation["document_id"] = (
@@ -52,7 +54,7 @@ class DttotDocListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = dttotDoc
-        fields = [
+        fields: ClassVar = [
             "document",
             "dttot_id",
             "document_data",
@@ -76,9 +78,9 @@ class DttotDocReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = dttotDocReport
         fields = "__all__"
-        read_only_fields = ["dttot_search_id"]
+        read_only_fields: ClassVar = ["dttot_search_id"]
 
-    def create(self, validated_data):
+    def create(self, validated_data: dict[str, Any]) -> dttotDocReport:
         user = self.context.get("request").user if self.context.get("request") else None
         validated_data["user"] = validated_data.get("user", user)
         document = validated_data.pop("document", None)

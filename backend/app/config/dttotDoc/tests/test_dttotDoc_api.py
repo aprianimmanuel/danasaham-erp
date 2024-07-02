@@ -1,9 +1,10 @@
-from __future__ import annotations
+from __future__ import annotations  #noqa: N999
 
 import io
-import os
 import shutil
+from pathlib import Path
 from time import sleep
+from typing import Any
 from unittest.mock import patch
 
 import pandas as pd
@@ -20,6 +21,10 @@ from rest_framework.test import APIClient, APITestCase
 
 User = get_user_model()
 
+TEST_USER_PASSWORD = "Testp@ss!23"  #noqa: S106
+EXPECTED_RESPONSE_LENGTH_2 = 2
+EXPECTED_RESPONSE_LENGTH_3 = 3
+
 
 @pytest.mark.django_db()
 @pytest.mark.usefixtures(
@@ -33,7 +38,7 @@ User = get_user_model()
 @override_settings(CELERY_ALWAYS_EAGER=True)
 class DttotDocAPITestCase(APITestCase):
     @pytest.fixture(autouse=True, scope="class")
-    def setup_celery_worker(self, celery_session_worker) -> None:
+    def _setup_celery_worker(self, celery_session_worker: Any) -> None:
         self.celery_worker = celery_session_worker
 
     def setUp(self) -> None:
@@ -41,28 +46,27 @@ class DttotDocAPITestCase(APITestCase):
         self.user = User.objects.create_user(
             email="test@example.com",
             username="testuser",
-            password="Testp@ss!23",
+            password=TEST_USER_PASSWORD,
         )
         self.token, _ = Token.objects.get_or_create(user=self.user)
         self.client.force_authenticate(user=self.user)
         self.test_media_subdir = "test_media"
-        self.test_media_path = os.path.join(settings.MEDIA_ROOT, self.test_media_subdir)
-        os.makedirs(self.test_media_path, exist_ok=True)
+        self.test_media_path = Path(settings.MEDIA_ROOT) / self.test_media_subdir
+        self.test_media_path.mkdir(parents=True, exist_ok=True)
         self.old_media_root = settings.MEDIA_ROOT
-        settings.MEDIA_ROOT = self.test_media_path
+        settings.MEDIA_ROOT = str(self.test_media_path)
 
     def tearDown(self) -> None:
-        for item in os.listdir(self.test_media_path):
-            path = os.path.join(self.test_media_path, item)
-            if os.path.isfile(path) or os.path.islink(path):
-                os.unlink(path)
-            elif os.path.isdir(path):
-                shutil.rmtree(path)
+        for item in self.test_media_path.iterdir():
+            if item.is_file() or item.is_symlink():
+                item.unlink()
+            elif item.is_dir():
+                shutil.rmtree(item)
         settings.MEDIA_ROOT = self.old_media_root
         super().tearDown()
 
     @staticmethod
-    def create_test_document_file():
+    def create_test_document_file() -> SimpleUploadedFile:
         output = io.BytesIO()
         data = {
             "Nama": ["John Doe Alias Don John Alias John Krew"],
@@ -78,9 +82,9 @@ class DttotDocAPITestCase(APITestCase):
                 "Jalan Getis Gg.III/95A, RT/RW. 013/003, Kel. Lemah Putro, Kec. Sidoarjo, Kab/Kota. Sidoarjo, Prov. Jawa Timur",
             ],
         }
-        df = pd.DataFrame(data)
+        data_frame = pd.DataFrame(data)
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            df.to_excel(writer, index=False, sheet_name="Sheet1")
+            data_frame.to_excel(writer, index=False, sheet_name="Sheet1")
         output.seek(0)
         return SimpleUploadedFile(
             "test.xlsx",
@@ -89,7 +93,7 @@ class DttotDocAPITestCase(APITestCase):
         )
 
     @patch("app.config.core.models.save_file_to_instance")
-    def test_create_and_update_dttotDoc(self, mock_save_file_to_instance) -> None:
+    def test_create_and_update_dttotdoc(self, mock_save_file_to_instance: Any) -> None:
         document_file = self.create_test_document_file()
         with self.settings(MEDIA_ROOT=self.test_media_path):
             upload_response = self.client.post(
@@ -102,17 +106,15 @@ class DttotDocAPITestCase(APITestCase):
                 },
                 format="multipart",
             )
-            assert (
+            assert (  #noqa: S101
                 upload_response.status_code == status.HTTP_201_CREATED
             ), "Document upload failed"
 
-            # Assert the save_file_to_instance was called
             mock_save_file_to_instance.assert_called()
 
-            # Wait for the response data
             document_id = upload_response.data["document_id"]
             dttot_docs = None
-            for _ in range(180):  # Retry 20 times
+            for _ in range(180):
                 response = self.client.get(
                     reverse(
                         "dttotdocs:dttot-doc-list",
@@ -129,7 +131,7 @@ class DttotDocAPITestCase(APITestCase):
             dttot_doc = dttot_docs[0]
             assert dttot_doc["document"] == document_id, "Document ID does not match"  # noqa: S101
             assert "dttot_id" in dttot_doc, "dttot_id not found in the response"  # noqa: S101
-            assert (
+            assert (  #noqa: S101
                 "document_data" in dttot_doc
             ), "document_data not found in the response"
             assert "updated_at" in dttot_doc, "updated_at not found in the response"  # noqa: S101
@@ -147,60 +149,52 @@ class DttotDocAPITestCase(APITestCase):
                 "dttot_description_1": "Updated Description",
             }
             update_response = self.client.patch(update_url, update_data, format="json")
-            assert (
+            assert (  #noqa: S101
                 update_response.status_code == status.HTTP_200_OK
             ), "Should return HTTP 200 OK"
 
             dttot_doc = self.client.get(update_url).data
-            assert (
+            assert (  #noqa: S101
                 dttot_doc["dttot_type"] == "Updated Type"
             ), "Check the type of the updated document"
-            assert (
+            assert (  #noqa: S101
                 dttot_doc["dttot_first_name"] == "UpdatedFirst"
             ), "Check the updated first name"
 
-        # Manually tearing down the test environment
         self.tearDown()
 
 
 class DttotDocReportTestCase(APITestCase):
     @classmethod
     def setUpTestData(cls) -> None:
-        # Setting up user that is only run once for all tests in this class
         cls.user = User.objects.create_user(
             "newuser",
             "newuser@example.com",
-            "TestP@ss!23",
+            TEST_USER_PASSWORD,
         )
         cls.document_url = reverse("document-create")
 
     def setUp(self) -> None:
         self.client.force_authenticate(user=self.user)
 
-        # Create a 'test_media' subdirectory within MEDIA_ROOT for test files
         self.test_media_subdir = "test_media"
-        self.test_media_path = os.path.join(settings.MEDIA_ROOT, self.test_media_subdir)
-        os.makedirs(self.test_media_path, exist_ok=True)
+        self.test_media_path = Path(settings.MEDIA_ROOT) / self.test_media_subdir
+        self.test_media_path.mkdir(parents=True, exist_ok=True)
 
-        # Override the MEDIA_ROOT to point to the test media directory
         self.old_media_root = settings.MEDIA_ROOT
-        settings.MEDIA_ROOT = self.test_media_path
+        settings.MEDIA_ROOT = str(self.test_media_path)
 
     def tearDown(self) -> None:
-        # Restore the original MEDIA_ROOT
         settings.MEDIA_ROOT = self.old_media_root
-
-        # Clean up the test media directory content
         shutil.rmtree(self.test_media_path, ignore_errors=True)
         super().tearDown()
 
     @staticmethod
-    def create_test_document_file():
-        # Create an XLSX file in memory
+    def create_test_document_file() -> SimpleUploadedFile:
         output = io.BytesIO()
-        wb = Workbook()
-        ws = wb.active
-        ws.append(
+        workbook = Workbook()
+        worksheet = workbook.active
+        worksheet.append(
             [
                 "Nama",
                 "Deskripsi",
@@ -415,8 +409,8 @@ class DttotDocReportTestCase(APITestCase):
             ],
         ]
         for row in data:
-            ws.append(row)
-        wb.save(output)
+            worksheet.append(row)
+        workbook.save(output)
         output.seek(0)
         return SimpleUploadedFile(
             "test.xlsx",
@@ -425,7 +419,6 @@ class DttotDocReportTestCase(APITestCase):
         )
 
     def upload_dttotdoc_and_process(self) -> None:
-        """Upload and processing of a DTTOT Document and its saving into the dttotDoc model."""
         document_file = self.create_test_document_file()
         with self.settings(MEDIA_ROOT=self.test_media_path):
             response = self.client.post(
@@ -441,26 +434,26 @@ class DttotDocReportTestCase(APITestCase):
 
             document_id = response.data["document"]["document_id"]
 
-    def test_search_dttotDoc_by_name(self) -> None:
+    def test_search_dttotdoc_by_name(self) -> None:
         response = self.client.get(
             reverse("dttotdocs:dttotdoc-search"),
             {"search": "John"},
         )
         assert response.status_code == status.HTTP_200_OK  # noqa: S101
-        assert len(response.data) == 2  # noqa: S101
+        assert len(response.data) == EXPECTED_RESPONSE_LENGTH_2  # noqa: S101
 
-    def test_search_dttotDoc_by_nik(self) -> None:
+    def test_search_dttotdoc_by_nik(self) -> None:
         response = self.client.get(
             reverse("dttotdocs:dttotdoc-search"),
             {"search": "1234"},
         )
         assert response.status_code == status.HTTP_200_OK  # noqa: S101
-        assert len(response.data) == 3  # noqa: S101
+        assert len(response.data) == EXPECTED_RESPONSE_LENGTH_3  # noqa: S101
 
-    def test_search_dttotDoc_by_phone(self) -> None:
+    def test_search_dttotdoc_by_phone(self) -> None:
         response = self.client.get(
             reverse("dttotdocs:dttotdoc-search"),
             {"search": "0801"},
         )
         assert response.status_code == status.HTTP_200_OK  # noqa: S101
-        assert len(response.data) == 2  # noqa: S101
+        assert len(response.data) == EXPECTED_RESPONSE_LENGTH_2  # noqa: S101

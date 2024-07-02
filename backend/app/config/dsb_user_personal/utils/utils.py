@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
+from pathlib import Path
 
 import pandas as pd
 from django.db import transaction
@@ -12,9 +13,9 @@ from app.config.core.models import dsb_user_personal
 logger = logging.getLogger(__name__)
 
 
-def fetch_data_from_external_db():
-    sql_file_path = os.path.join(os.path.dirname(__file__), "dsb_user_personal.sql")
-    with open(sql_file_path) as file:
+def fetch_data_from_external_db() -> pd.DataFrame:
+    sql_file_path = Path(__file__).parent / "dsb_user_personal.sql"
+    with sql_file_path.open() as file:
         query = file.read()
 
     # Fetching database connection details from environment variables
@@ -35,7 +36,7 @@ def fetch_data_from_external_db():
 
 
 
-def save_data_to_model(df, document, user_id) -> None:
+def save_data_to_model(df: pd.DataFrame, document: dsb_user_personal, user_id: int) -> None:
     with transaction.atomic():
         for _index, row in df.iterrows():
             dsb_user_personal.objects.update_or_create(
@@ -72,4 +73,4 @@ def save_data_to_model(df, document, user_id) -> None:
                     ],
                 },
             )
-    logger.info(f"Successfully processed document ID {document.document_id}")
+    logger.info("Successfully processed document ID %s", document.document_id)
