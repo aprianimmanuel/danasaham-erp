@@ -110,7 +110,7 @@ jobs:
           docker-compose -f docker-compose.ci.yml down -v --rmi all --remove-orphans
           docker-compose -f docker-compose.ci.yml up -d --build
 
-      - name: Wait for services to be healthy, Run Migrations, Linters and Unit Testing
+      - name: Run Migrations, Linters and Unit Testing
         env:
           DB_USER: ${{ secrets.DB_USER }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -125,9 +125,6 @@ jobs:
           CELERY_RESULT_BACKEND: ${{ secrets.CELERY_RESULT_BACKEND }}
           CELERY_BEAT_SLEEP_INTERVAL: ${{ secrets.CELERY_BEAT_SLEEP_INTERVAL }}
         run: |
-          docker-compose -f docker-compose.ci.yml run --rm app sh -c "while ! curl -s http://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@${{ secrets.DB_HOST }}:${{ secrets.DB_PORT }}/ > /dev/null; do echo waiting for db; sleep 1; done"
-          docker-compose -f docker-compose.ci.yml run --rm app sh -c "while ! curl -s http://${{ secrets.REDIS_HOST }}:${{ secrets.REDIS_PORT }}/ > /dev/null; do echo waiting for redis; sleep 1; done"
-          docker-compose -f docker-compose.ci.yml run --rm app sh -c "while ! curl -s http://${{ secrets.RABBITMQ_HOST }}:${{ secrets.RABBITMQ_PORT }}/ > /dev/null; do echo waiting for rabbitmq; sleep 1; done"
           docker-compose -f docker-compose.ci.yml run --rm app sh -c "make migrate"
           docker-compose -f docker-compose.ci.yml run --rm app sh -c "make lint"
           docker-compose -f docker-compose.ci.yml run --rm app sh -c "make test"
