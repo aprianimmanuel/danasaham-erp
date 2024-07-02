@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any, ClassVar
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, status
@@ -22,15 +23,15 @@ router = CustomViewRouter(url_prefix="api/")
 )
 class DttotDocListView(GenericAPIView):
     serializer_class = DttotDocListSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes: ClassVar[list[type[permissions.BasePermission]]] = [permissions.IsAuthenticated]
 
     @extend_schema(responses={200: DttotDocListSerializer})
-    def get(self, request, document_id):
-        logger.info(f"Fetching DTTOT documents for document ID: {document_id}")
+    def get(self, _request: Any, document_id: str) -> Response:
+        logger.info("Fetching DTTOT documents for document ID: %s", document_id)
         queryset = dttotDoc.objects.filter(document=document_id)
         serializer = self.get_serializer(queryset, many=True)
         logger.info(
-            f"Successfully fetched {len(queryset)} DTTOT documents for document ID: {document_id}",
+            "Successfully fetched %d DTTOT documents for document ID: %s", len(queryset), document_id,
         )
         return Response(serializer.data)
 
@@ -41,52 +42,52 @@ class DttotDocListView(GenericAPIView):
 )
 class DttotDocDetailView(GenericAPIView):
     serializer_class = DttotDocSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes: ClassVar[list[type[permissions.BasePermission]]] = [permissions.IsAuthenticated]
 
     @extend_schema(responses={200: DttotDocSerializer})
-    def get(self, request, dttot_id):
-        logger.info(f"Fetching DTTOT document details for DTTOT ID: {dttot_id}")
+    def get(self, _request: Any, dttot_id: str) -> Response:
+        logger.info("Fetching DTTOT document details for DTTOT ID: %s", dttot_id)
         dttot_doc = dttotDoc.objects.get(dttot_id=dttot_id)
         serializer = self.get_serializer(dttot_doc)
         logger.info(
-            f"Successfully fetched DTTOT document details for DTTOT ID: {dttot_id}",
+            "Successfully fetched DTTOT document details for DTTOT ID: %s", dttot_id,
         )
         return Response(serializer.data)
 
     @extend_schema(request=DttotDocSerializer, responses={200: DttotDocSerializer})
-    def put(self, request, dttot_id):
-        logger.info(f"Updating DTTOT document for DTTOT ID: {dttot_id}")
+    def put(self, _request: Any, dttot_id: str) -> Response:
+        logger.info("Updating DTTOT document for DTTOT ID: %s", dttot_id)
         dttot_doc = dttotDoc.objects.get(dttot_id=dttot_id)
-        serializer = self.get_serializer(dttot_doc, data=request.data)
+        serializer = self.get_serializer(dttot_doc, data=_request.data)
         if serializer.is_valid():
             serializer.save()
-            logger.info(f"Successfully updated DTTOT document for DTTOT ID: {dttot_id}")
+            logger.info("Successfully updated DTTOT document for DTTOT ID: %s", dttot_id)
             return Response(serializer.data)
         logger.error(
-            f"Failed to update DTTOT document for DTTOT ID: {dttot_id}, errors: {serializer.errors}",
+            "Failed to update DTTOT document for DTTOT ID: %s, errors: %s", dttot_id, serializer.errors,
         )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(request=DttotDocSerializer, responses={200: DttotDocSerializer})
-    def patch(self, request, dttot_id):
-        logger.info(f"Partially updating DTTOT document for DTTOT ID: {dttot_id}")
+    def patch(self, _request: Any, dttot_id: str) -> Response:
+        logger.info("Partially updating DTTOT document for DTTOT ID: %s", dttot_id)
         dttot_doc = dttotDoc.objects.get(dttot_id=dttot_id)
-        serializer = self.get_serializer(dttot_doc, data=request.data, partial=True)
+        serializer = self.get_serializer(dttot_doc, data=_request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             logger.info(
-                f"Successfully partially updated DTTOT document for DTTOT ID: {dttot_id}",
+                "Successfully partially updated DTTOT document for DTTOT ID: %s", dttot_id,
             )
             return Response(serializer.data)
         logger.error(
-            f"Failed to partially update DTTOT document for DTTOT ID: {dttot_id}, errors: {serializer.errors}",
+            "Failed to partially update DTTOT document for DTTOT ID: %s, errors: %s", dttot_id, serializer.errors,
         )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(responses={204: None})
-    def delete(self, request, dttot_id):
-        logger.info(f"Deleting DTTOT document for DTTOT ID: {dttot_id}")
+    def delete(self, _request: Any, dttot_id: str) -> Response:
+        logger.info("Deleting DTTOT document for DTTOT ID: %s", dttot_id)
         dttot_doc = dttotDoc.objects.get(dttot_id=dttot_id)
         dttot_doc.delete()
-        logger.info(f"Successfully deleted DTTOT document for DTTOT ID: {dttot_id}")
+        logger.info("Successfully deleted DTTOT document for DTTOT ID: %s", dttot_id)
         return Response(status=status.HTTP_204_NO_CONTENT)

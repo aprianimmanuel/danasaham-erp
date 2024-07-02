@@ -40,7 +40,7 @@ class DsbUserPersonalTests(APITestCase):
         }
         response = self.client.post(url, data, format="json")
         assert response.status_code == status.HTTP_201_CREATED
-        assert dsb_user_personal.objects.count() == 2
+        assert dsb_user_personal.objects.count() == 2  # noqa: S101
         assert dsb_user_personal.objects.get(personal_nik="2345678901234567").user_name == "New Test User"
 
     def test_retrieve_dsb_user_personal(self) -> None:

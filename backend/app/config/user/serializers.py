@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from dj_rest_auth.registration.serializers import (
     RegisterSerializer as DefaultRegisterSerializer,
 )
@@ -23,9 +25,14 @@ class CustomUserDetailsSerializer(UserDetailsSerializer):
 
     class Meta(UserDetailsSerializer.Meta):
         model = User
-        fields = (*UserDetailsSerializer.Meta.fields, "username", "first_name", "last_name")
+        fields = (
+            *UserDetailsSerializer.Meta.fields,
+            "username",
+            "first_name",
+            "last_name",
+        )
 
-    def update(self, instance, validated_data):
+    def update(self, instance: User, validated_data: dict[str, Any]) -> User:
         profile_data = validated_data.pop("profile", {})
         first_name = profile_data.get("first_name")
         last_name = profile_data.get("last_name")
@@ -41,18 +48,16 @@ class CustomUserDetailsSerializer(UserDetailsSerializer):
 
 
 class CustomRegisterSerializer(DefaultRegisterSerializer):
-    def validate_email(self, email):
+    def validate_email(self, email: str) -> str:
         existing = User.objects.filter(email__iexact=email).exists()
         if existing:
             msg = "A user with that email already exists."
             raise serializers.ValidationError(msg)
         return super().validate_email(email)
 
-    def validate_username(self, username):
+    def validate_username(self, username: str) -> str:
         existing = User.objects.filter(username__iexact=username).exists()
         if existing:
             msg = "A user with that username already exists."
-            raise serializers.ValidationError(
-                msg,
-            )
+            raise serializers.ValidationError(msg)
         return super().validate_username(username)

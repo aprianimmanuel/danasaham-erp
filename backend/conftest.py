@@ -91,10 +91,6 @@ def event_loop() -> Any:
 
 # Celery app fixture
 @pytest.fixture()
-def celery_function_app_fixture(
-    celery_config: dict[str, Any],
-    celery_worker_pool: str,
-    celery_worker_parameters: dict[str, Any],
-) -> Task:
+def celery_function_app_fixture() -> Task:
     with celery_app() as app:
         yield app

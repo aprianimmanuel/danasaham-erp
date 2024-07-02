@@ -32,7 +32,6 @@ User = get_user_model()
 )
 @override_settings(CELERY_ALWAYS_EAGER=True)
 class DttotDocAPITestCase(APITestCase):
-
     @pytest.fixture(autouse=True, scope="class")
     def setup_celery_worker(self, celery_session_worker) -> None:
         self.celery_worker = celery_session_worker
@@ -103,7 +102,9 @@ class DttotDocAPITestCase(APITestCase):
                 },
                 format="multipart",
             )
-            assert upload_response.status_code == status.HTTP_201_CREATED, "Document upload failed"  #noqa: S101
+            assert (
+                upload_response.status_code == status.HTTP_201_CREATED
+            ), "Document upload failed"
 
             # Assert the save_file_to_instance was called
             mock_save_file_to_instance.assert_called()
@@ -123,14 +124,16 @@ class DttotDocAPITestCase(APITestCase):
                     break
                 sleep(1)
 
-            assert dttot_docs, "dttotDoc was not found in the response"  #noqa: S101
+            assert dttot_docs, "dttotDoc was not found in the response"  # noqa: S101
 
             dttot_doc = dttot_docs[0]
-            assert dttot_doc["document"] == document_id, "Document ID does not match"  #noqa: S101
-            assert "dttot_id" in dttot_doc, "dttot_id not found in the response"  #noqa: S101
-            assert "document_data" in dttot_doc, "document_data not found in the response"  #noqa: S101
-            assert "updated_at" in dttot_doc, "updated_at not found in the response"  #noqa: S101
-            assert "user" in dttot_doc, "user not found in the response"  #noqa: S101
+            assert dttot_doc["document"] == document_id, "Document ID does not match"  # noqa: S101
+            assert "dttot_id" in dttot_doc, "dttot_id not found in the response"  # noqa: S101
+            assert (
+                "document_data" in dttot_doc
+            ), "document_data not found in the response"
+            assert "updated_at" in dttot_doc, "updated_at not found in the response"  # noqa: S101
+            assert "user" in dttot_doc, "user not found in the response"  # noqa: S101
 
             update_url = reverse(
                 "dttotdocs:dttot-doc-detail",
@@ -144,18 +147,23 @@ class DttotDocAPITestCase(APITestCase):
                 "dttot_description_1": "Updated Description",
             }
             update_response = self.client.patch(update_url, update_data, format="json")
-            assert update_response.status_code == status.HTTP_200_OK, "Should return HTTP 200 OK"  #noqa: S101
+            assert (
+                update_response.status_code == status.HTTP_200_OK
+            ), "Should return HTTP 200 OK"
 
             dttot_doc = self.client.get(update_url).data
-            assert dttot_doc["dttot_type"] == "Updated Type", "Check the type of the updated document"  #noqa: S101
-            assert dttot_doc["dttot_first_name"] == "UpdatedFirst", "Check the updated first name"  #noqa: S101
+            assert (
+                dttot_doc["dttot_type"] == "Updated Type"
+            ), "Check the type of the updated document"
+            assert (
+                dttot_doc["dttot_first_name"] == "UpdatedFirst"
+            ), "Check the updated first name"
 
         # Manually tearing down the test environment
         self.tearDown()
 
 
 class DttotDocReportTestCase(APITestCase):
-
     @classmethod
     def setUpTestData(cls) -> None:
         # Setting up user that is only run once for all tests in this class
@@ -417,7 +425,7 @@ class DttotDocReportTestCase(APITestCase):
         )
 
     def upload_dttotdoc_and_process(self) -> None:
-        """ Upload and processing of a DTTOT Document and its saving into the dttotDoc model."""
+        """Upload and processing of a DTTOT Document and its saving into the dttotDoc model."""
         document_file = self.create_test_document_file()
         with self.settings(MEDIA_ROOT=self.test_media_path):
             response = self.client.post(
@@ -438,21 +446,21 @@ class DttotDocReportTestCase(APITestCase):
             reverse("dttotdocs:dttotdoc-search"),
             {"search": "John"},
         )
-        assert response.status_code == status.HTTP_200_OK  #noqa: S101
-        assert len(response.data) == 2  #noqa: S101
+        assert response.status_code == status.HTTP_200_OK  # noqa: S101
+        assert len(response.data) == 2  # noqa: S101
 
-    def test_search_dttotDoc_by_nik(self) -> None:  #noqa: S101
+    def test_search_dttotDoc_by_nik(self) -> None:
         response = self.client.get(
             reverse("dttotdocs:dttotdoc-search"),
             {"search": "1234"},
         )
-        assert response.status_code == status.HTTP_200_OK  #noqa: S101
-        assert len(response.data) == 3  #noqa: S101
+        assert response.status_code == status.HTTP_200_OK  # noqa: S101
+        assert len(response.data) == 3  # noqa: S101
 
     def test_search_dttotDoc_by_phone(self) -> None:
         response = self.client.get(
             reverse("dttotdocs:dttotdoc-search"),
             {"search": "0801"},
         )
-        assert response.status_code == status.HTTP_200_OK  #noqa: S101
-        assert len(response.data) == 2  #noqa: S101
+        assert response.status_code == status.HTTP_200_OK  # noqa: S101
+        assert len(response.data) == 2  # noqa: S101

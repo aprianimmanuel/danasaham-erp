@@ -21,6 +21,7 @@ ignore = [
     "EXE002", # Ensure module has a valid __main__.py file
 
     "PD011",  # Use pandas DataFrame.assign for more readable code
+    "S106",   # Possible hardcoded password assigned to argument: "password"
 ]
 show-fixes = true
 exclude = [

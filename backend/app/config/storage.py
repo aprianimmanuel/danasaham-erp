@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import logging
-import os
 from os import getenv
+from pathlib import Path
 from typing import Any
 
 from storages.backends.s3boto3 import S3Boto3Storage
@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 USE_S3_FOR_MEDIA = getenv("USE_S3_FOR_MEDIA", "false").lower() == "true"
 USE_S3_FOR_STATIC = getenv("USE_S3_FOR_STATIC", "false").lower() == "true"
 
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATIC_ROOT = Path(BASE_DIR) / "static"
 STATIC_URL = "static/"
 
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+MEDIA_ROOT = Path(BASE_DIR) / "media"
 MEDIA_URL = "media/"
 
 AWS_STORAGE_BUCKET_NAME = getenv("AWS_STORAGE_BUCKET_NAME", "bucket")

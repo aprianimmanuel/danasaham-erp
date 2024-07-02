@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+from typing import Any
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -12,6 +14,8 @@ from rest_framework.test import APIClient
 from app.config.core.models import UserProfile
 
 User = get_user_model()
+
+logger = logging.getLogger(__name__)
 
 
 class PublicUserAPITests(TestCase):
@@ -32,7 +36,7 @@ class PublicUserAPITests(TestCase):
         try:
             assert response.status_code == status.HTTP_201_CREATED  #noqa: S101
         except AssertionError as e:
-            print("Failed to register user. Response:", response.content)
+            logger.exception("Failed to register user. Response: %s", response.content)
             raise
 
     def test_user_registration_password_mismatch(self) -> None:
@@ -162,7 +166,7 @@ class PrivateUserAPITests(TestCase):
         assert response.status_code == status.HTTP_200_OK  #noqa: S101
 
     @patch("dj_rest_auth.registration.views.ConfirmEmailView.get_object")
-    def test_user_email_verification(self, mock_get_object) -> None:
+    def test_user_email_verification(self, mock_get_object: Any) -> None:
         mock_confirm = mock_get_object.return_value
         mock_confirm.confirm.return_value = True
         email_verification_url = reverse("rest_verify_email")

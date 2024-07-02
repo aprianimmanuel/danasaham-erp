@@ -26,4 +26,4 @@ celery_app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 @celery_app.task(bind=True)
 def debug_task(self: Task) -> None:
-    logger.debug(f"Request: {self.request!r}")
+    logger.debug("Request: %r", self.request)

@@ -14,4 +14,4 @@ class UserProfile(AppConfig):
     verbose_name = "UserProfile"
 
     def ready(self) -> None:
-        import app.config.user.signals  # noqa
+        pass
