@@ -101,8 +101,8 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           DB_NAME: ${{ secrets.DB_NAME }}
           DB_PORT: ${{ secrets.DB_PORT }}
-          API_PORT: 8000
-          RABBITMQ_DASHBOARD_PORT: 15672
+          API_PORT: ${{ secrets.API_PORT }}
+          RABBITMQ_DASHBOARD_PORT: ${{ RABBITMQ_DASHBOARD_PORT }}
           CELERY_BROKER_URL: ${{ secrets.CELERY_BROKER_URL }}
           CELERY_RESULT_BACKEND: ${{ secrets.CELERY_RESULT_BACKEND }}
           CELERY_BEAT_SLEEP_INTERVAL: ${{ secrets.CELERY_BEAT_SLEEP_INTERVAL }}
@@ -112,13 +112,12 @@ jobs:
 
       - name: Wait for services to be healthy
         run: |
-          docker-compose -f docker-compose.ci.yml run --rm app sh -c "while ! curl -s http://db:5445/ > /dev/null; do echo waiting for db; sleep 1; done"
-          docker-compose -f docker-compose.ci.yml run --rm app sh -c "while ! curl -s http://redis:6379/ > /dev/null; do echo waiting for redis; sleep 1; done"
-          docker-compose -f docker-compose.ci.yml run --rm app sh -c "while ! curl -s http://rabbitmq:5672/ > /dev/null; do echo waiting for rabbitmq; sleep 1; done"
+          docker-compose -f docker-compose.ci.yml run --rm app sh -c "while ! curl -s http://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@${{ secrets.DB_HOST }}:${{ secrets.DB_PORT }}/ > /dev/null; do echo waiting for db; sleep 1; done"
+          docker-compose -f docker-compose.ci.yml run --rm app sh -c "while ! curl -s http://${{ secrets.REDIS_HOST }}:${{ secrets.REDIS_PORT }}/ > /dev/null; do echo waiting for redis; sleep 1; done"
+          docker-compose -f docker-compose.ci.yml run --rm app sh -c "while ! curl -s http://${{ secrets.RABBITMQ_HOST }}:${{ secrets.RABBITMQ_PORT }}/ > /dev/null; do echo waiting for rabbitmq; sleep 1; done"
 
       - name: Run migrations
         run: docker-compose -f docker-compose.ci.yml run --rm app sh -c "make migrate"
-
       - name: Run Docker Compose linters
         run: docker-compose -f docker-compose.ci.yml run --rm app sh -c "make lint"
 
@@ -135,4 +134,4 @@ jobs:
         run: gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN_PAT }}
