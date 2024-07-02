@@ -110,19 +110,24 @@ jobs:
           docker-compose -f docker-compose.ci.yml down -v --rmi all --remove-orphans
           docker-compose -f docker-compose.ci.yml up -d --build
 
-      - name: Wait for services to be healthy
+      - name: Wait for services to be healthy, Run Migrations, Linters and Unit Testing
+        env:
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          REDIS_HOST: ${{ secrets.REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.REDIS_PORT }}
+          RABBITMQ_HOST: ${{ secrets.RABBITMQ_HOST }}
+          RABBITMQ_PORT: ${{ secrets.RABBITMQ_PORT }}
         run: |
           docker-compose -f docker-compose.ci.yml run --rm app sh -c "while ! curl -s http://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@${{ secrets.DB_HOST }}:${{ secrets.DB_PORT }}/ > /dev/null; do echo waiting for db; sleep 1; done"
           docker-compose -f docker-compose.ci.yml run --rm app sh -c "while ! curl -s http://${{ secrets.REDIS_HOST }}:${{ secrets.REDIS_PORT }}/ > /dev/null; do echo waiting for redis; sleep 1; done"
           docker-compose -f docker-compose.ci.yml run --rm app sh -c "while ! curl -s http://${{ secrets.RABBITMQ_HOST }}:${{ secrets.RABBITMQ_PORT }}/ > /dev/null; do echo waiting for rabbitmq; sleep 1; done"
-
-      - name: Run migrations
-        run: docker-compose -f docker-compose.ci.yml run --rm app sh -c "make migrate"
-      - name: Run Docker Compose linters
-        run: docker-compose -f docker-compose.ci.yml run --rm app sh -c "make lint"
-
-      - name: Run Docker Compose tests
-        run: docker-compose -f docker-compose.ci.yml run --rm app sh -c "make test"
+          docker-compose -f docker-compose.ci.yml run --rm app sh -c "make migrate"
+          docker-compose -f docker-compose.ci.yml run --rm app sh -c "make lint"
+          docker-compose -f docker-compose.ci.yml run --rm app sh -c "make test"
 
   dependabot-auto-merge:
     name: 'Dependabot Auto Merge'
