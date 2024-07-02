@@ -96,6 +96,7 @@ RUN mkdir -p /apps/app/media && \
     mkdir -p /apps/app/media/test_media && \
     mkdir -p /apps/logs && \
     touch /apps/logs/debug.log && \
+    chmod a+rwx /apps/logs/debug.log && \
     chown -R django-user:django-user $VENV_PATH /apps
 
 ENV PATH="$VENV_PATH/bin:$PATH"

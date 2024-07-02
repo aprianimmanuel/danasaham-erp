@@ -124,6 +124,7 @@ jobs:
           CELERY_BROKER_URL: ${{ secrets.CELERY_BROKER_URL }}
           CELERY_RESULT_BACKEND: ${{ secrets.CELERY_RESULT_BACKEND }}
           CELERY_BEAT_SLEEP_INTERVAL: ${{ secrets.CELERY_BEAT_SLEEP_INTERVAL }}
+          DJANGO_SETTINGS_MODULE: 'app.config.settings'
         run: |
           docker-compose -f docker-compose.ci.yml run --rm app sh -c "make migrate"
           docker-compose -f docker-compose.ci.yml run --rm app sh -c "make lint"

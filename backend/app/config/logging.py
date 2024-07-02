@@ -7,6 +7,16 @@ from app.config.base import BASE_DIR
 
 LOG_LEVEL = getenv("LOG_LEVEL", default="INFO")
 
+
+# Define the logging path
+LOG_DIR = Path(BASE_DIR) / "logs"
+LOG_FILE = LOG_DIR / "debug.log"
+
+# Ensure the logging directory exists
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+LOG_FILE.touch(exist_ok=True)
+
+
 LOGGING_CONFIG = None
 
 logging.config.dictConfig(
@@ -30,8 +40,9 @@ logging.config.dictConfig(
                 "formatter": "colored",
             },
             "file": {
+                "level": LOG_LEVEL,
                 "class": "logging.FileHandler",
-                "filename": Path(BASE_DIR) / "logs" / "debug.log",
+                "filename": LOG_FILE,
                 "formatter": "standard",
             },
         },
