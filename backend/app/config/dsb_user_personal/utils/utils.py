@@ -36,7 +36,7 @@ def fetch_data_from_external_db() -> pd.DataFrame:
 
 
 
-def save_data_to_model(df: pd.DataFrame, document: dsb_user_personal, user_id: int) -> None:
+def save_data_to_model(df: pd.DataFrame, document: dsb_user_personal, user_id: str) -> None:
     with transaction.atomic():
         for _index, row in df.iterrows():
             dsb_user_personal.objects.update_or_create(
