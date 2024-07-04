@@ -13,7 +13,6 @@
 │   ├── app
 │   │   ├── __init__.py
 │   │   ├── __pycache__
-│   │   │   └── __init__.cpython-38.pyc
 │   │   ├── common
 │   │   │   ├── __init__.py
 │   │   │   └── routers.py
@@ -38,37 +37,23 @@
 │   │   │   ├── core
 │   │   │   │   ├── __init__.py
 │   │   │   │   ├── __pycache__
-│   │   │   │   │   ├── __init__.cpython-38.pyc
-│   │   │   │   │   ├── admin.cpython-38.pyc
-│   │   │   │   │   ├── apps.cpython-38.pyc
-│   │   │   │   │   └── models.cpython-38.pyc
 │   │   │   │   ├── admin.py
 │   │   │   │   ├── apps.py
 │   │   │   │   ├── management
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── __pycache__
-│   │   │   │   │   │   └── __init__.cpython-38.pyc
 │   │   │   │   │   └── commands
 │   │   │   │   │       ├── __init__.py
 │   │   │   │   │       ├── __pycache__
-│   │   │   │   │       │   ├── __init__.cpython-38.pyc
-│   │   │   │   │       │   └── wait_for_db.cpython-38.pyc
 │   │   │   │   │       ├── show_urls.py
 │   │   │   │   │       └── wait_for_db.py
 │   │   │   │   ├── migrations
-│   │   │   │   │   ├── 0001_initial.py
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   └── __pycache__
-│   │   │   │   │       ├── 0001_initial.cpython-38.pyc
-│   │   │   │   │       └── __init__.cpython-38.pyc
 │   │   │   │   ├── models.py
 │   │   │   │   └── tests
 │   │   │   │       ├── __init__.py
 │   │   │   │       ├── __pycache__
-│   │   │   │       │   ├── __init__.cpython-38.pyc
-│   │   │   │       │   ├── test_admin.cpython-38-pytest-8.2.2.pyc
-│   │   │   │       │   ├── test_commands.cpython-38-pytest-8.2.2.pyc
-│   │   │   │       │   └── test_models.cpython-38-pytest-8.2.2.pyc
 │   │   │   │       ├── test_admin.py
 │   │   │   │       ├── test_commands.py
 │   │   │   │       └── test_models.py
@@ -76,13 +61,6 @@
 │   │   │   ├── documents
 │   │   │   │   ├── __init__.py
 │   │   │   │   ├── __pycache__
-│   │   │   │   │   ├── __init__.cpython-38.pyc
-│   │   │   │   │   ├── apps.cpython-38.pyc
-│   │   │   │   │   ├── serializers.cpython-38.pyc
-│   │   │   │   │   ├── signals.cpython-38.pyc
-│   │   │   │   │   ├── tasks.cpython-38.pyc
-│   │   │   │   │   ├── urls.cpython-38.pyc
-│   │   │   │   │   └── views.cpython-38.pyc
 │   │   │   │   ├── apps.py
 │   │   │   │   ├── serializers.py
 │   │   │   │   ├── signals.py
@@ -90,21 +68,15 @@
 │   │   │   │   ├── tests
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── __pycache__
-│   │   │   │   │   │   ├── __init__.cpython-38.pyc
-│   │   │   │   │   │   └── test_document_api.cpython-38-pytest-8.2.2.pyc
 │   │   │   │   │   └── test_document_api.py
 │   │   │   │   ├── urls.py
 │   │   │   │   ├── utils
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── __pycache__
-│   │   │   │   │   │   ├── __init__.cpython-38.pyc
-│   │   │   │   │   │   └── data_preparation.cpython-38.pyc
 │   │   │   │   │   ├── data_preparation.py
 │   │   │   │   │   └── tests
 │   │   │   │   │       ├── __init__.py
 │   │   │   │   │       ├── __pycache__
-│   │   │   │   │       │   ├── __init__.cpython-38.pyc
-│   │   │   │   │       │   └── test_data_preparation.cpython-38-pytest-8.2.2.pyc
 │   │   │   │   │       └── test_data_preparation.py
 │   │   │   │   └── views.py
 │   │   │   ├── dsb_user_personal
@@ -125,14 +97,6 @@
 │   │   │   ├── dttotDoc
 │   │   │   │   ├── __init__.py
 │   │   │   │   ├── __pycache__
-│   │   │   │   │   ├── __init__.cpython-38.pyc
-│   │   │   │   │   ├── apps.cpython-38.pyc
-│   │   │   │   │   ├── serializers.cpython-38.pyc
-│   │   │   │   │   ├── signals.cpython-38.pyc
-│   │   │   │   │   ├── tasks.cpython-38.pyc
-│   │   │   │   │   ├── urls.cpython-38.pyc
-│   │   │   │   │   ├── utils.cpython-38.pyc
-│   │   │   │   │   └── views.cpython-38.pyc
 │   │   │   │   ├── apps.py
 │   │   │   │   ├── serializers.py
 │   │   │   │   ├── signals.py
@@ -140,8 +104,6 @@
 │   │   │   │   ├── tests
 │   │   │   │   │   ├── __init__.py
 │   │   │   │   │   ├── __pycache__
-│   │   │   │   │   │   ├── __init__.cpython-38.pyc
-│   │   │   │   │   │   └── test_dttotDoc_api.cpython-38-pytest-8.2.2.pyc
 │   │   │   │   │   └── test_dttotDoc_api.py
 │   │   │   │   ├── urls.py
 │   │   │   │   ├── utils.py
@@ -161,12 +123,6 @@
 │   │   │   └── user
 │   │   │       ├── __init__.py
 │   │   │       ├── __pycache__
-│   │   │       │   ├── __init__.cpython-38.pyc
-│   │   │       │   ├── apps.cpython-38.pyc
-│   │   │       │   ├── permissions.cpython-38.pyc
-│   │   │       │   ├── serializers.cpython-38.pyc
-│   │   │       │   ├── urls.cpython-38.pyc
-│   │   │       │   └── views.cpython-38.pyc
 │   │   │       ├── apps.py
 │   │   │       ├── permissions.py
 │   │   │       ├── serializers.py
@@ -174,20 +130,10 @@
 │   │   │       ├── tests
 │   │   │       │   ├── __init__.py
 │   │   │       │   ├── __pycache__
-│   │   │       │   │   ├── __init__.cpython-38.pyc
-│   │   │       │   │   └── test_user_api.cpython-38-pytest-8.2.2.pyc
 │   │   │       │   └── test_user_api.py
 │   │   │       ├── urls.py
 │   │   │       └── views.py
 │   │   ├── media
-│   │   │   ├── core
-│   │   │   │   └── DTTOT Document
-│   │   │   │       └── 2024
-│   │   │   │           └── 06
-│   │   │   │               └── 25
-│   │   │   │                   └── a268bf89-0127-4cdf-82fd-090b66ccc116
-│   │   │   │                       ├── e9b826bd4f1f03e68cc4_O6AJukq.xls
-│   │   │   │                       └── fc39039c38a94a3411db_7G1CwQu.xls
 │   │   │   └── test_media
 │   │   ├── staticfiles
 │   │   │   ├── admin
@@ -485,7 +431,6 @@
 │   │       ├── urls.py
 │   │       └── wsgi.py
 │   ├── conftest.py
-│   ├── debug.log
 │   ├── htmlcov
 │   │   ├── __init___py.html
 │   │   ├── class_index.html
@@ -867,11 +812,12 @@
 │   └── tasks
 │       ├── __init__.py
 │       └── app.py
+├── docker-compose.ci.yml
 ├── docker-compose.yml
-├── env
 ├── pytest.ini
 ├── requirements.dev.txt
 ├── requirements.txt
+├── ruff_check.txt
 └── tree.txt
 
-125 directories, 749 files
+118 directories, 702 files

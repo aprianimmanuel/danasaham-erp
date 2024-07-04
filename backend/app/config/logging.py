@@ -1,21 +1,16 @@
 from __future__ import annotations
 
 import logging.config
-from pathlib import Path
+import os
 from os import getenv
+
 from app.config.base import BASE_DIR
 
 LOG_LEVEL = getenv("LOG_LEVEL", default="INFO")
 
-
 # Define the logging path
-LOG_DIR = Path(BASE_DIR) / "logs"
-LOG_FILE = LOG_DIR / "debug.log"
-
-# Ensure the logging directory exists
-LOG_DIR.mkdir(parents=True, exist_ok=True)
-LOG_FILE.touch(exist_ok=True)
-
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+LOG_FILE = os.path.join(LOG_DIR, "debug.log")
 
 LOGGING_CONFIG = None
 

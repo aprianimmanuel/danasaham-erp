@@ -29,6 +29,7 @@ services:
       - "${API_PORT}:8000"
     volumes:
       - ./backend:/apps
+      - logs:/apps/logs
     command: make run.server.prod
     depends_on:
       - pgbouncer
@@ -111,6 +112,7 @@ services:
       - rabbitmq
     volumes:
       - ./backend:/apps
+      - logs:/apps/logs
 
   celery-beat:
     <<: *common
@@ -130,6 +132,7 @@ services:
       - rabbitmq
     volumes:
       - ./backend:/apps
+      - logs:/apps/logs
 
   collectstatic:
     <<: *common
@@ -166,3 +169,4 @@ volumes:
   pgbouncer-data:
   redis-data:
   rabbitmq-data:
+  logs:

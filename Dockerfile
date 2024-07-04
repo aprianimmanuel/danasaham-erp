@@ -14,16 +14,9 @@ COPY ./requirements.dev.txt /tmp/requirements.dev.txt
 
 # Install system dependencies and Python packages
 ARG DEV=false
-ARG DB_USER
-ARG DB_PASSWORD
-ARG DB_NAME
-ARG DB_PORT
-
-# Install system dependencies and Python packages
-RUN python -m venv $VENV_PATH && \
-    $VENV_PATH/bin/pip install --upgrade pip && \
-    apt-get update --fix-missing && \
+RUN apt-get update --fix-missing && \
     apt-get install -y --no-install-recommends \
+        python3-venv \
         postgresql-client \
         pkg-config \
         libxml2-dev \
@@ -78,6 +71,8 @@ RUN python -m venv $VENV_PATH && \
         python3-openpyxl \
         wget \
         unzip && \
+    python3 -m venv $VENV_PATH && \
+    $VENV_PATH/bin/pip install --upgrade pip && \
     $VENV_PATH/bin/pip install -r /tmp/requirements.txt && \
     if [ "$DEV" = "true" ]; then \
         $VENV_PATH/bin/pip install -r /tmp/requirements.dev.txt; \
@@ -92,12 +87,10 @@ RUN python -m venv $VENV_PATH && \
 COPY ./backend /apps
 
 # Set permissions for application files
-RUN mkdir -p /apps/app/media && \
-    mkdir -p /apps/app/media/test_media && \
-    mkdir -p /apps/logs && \
+RUN mkdir -p /apps/app/media/test_media /apps/logs && \
     touch /apps/logs/debug.log && \
-    chmod a+rwx /apps/logs/debug.log && \
-    chown -R django-user:django-user $VENV_PATH /apps
+    chmod 666 /apps/logs/debug.log && \
+    chown -R django-user:django-user $VENV_PATH /apps /apps/logs /apps/tasks /apps/app /apps/app/config /apps/app/config/core /apps/app/config/core/migrations /apps/app/media /apps/app/media/test_media
 
 ENV PATH="$VENV_PATH/bin:$PATH"
 
