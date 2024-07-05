@@ -7,7 +7,6 @@ from rest_framework.test import APITestCase
 
 from app.config.core.models import User, dsb_user_personal
 
-
 DSB_USER_PASSWORD_TEST = "t3Stp@ssw0rd"  #noqa: S106
 DSB_USER_COUNT = 2
 

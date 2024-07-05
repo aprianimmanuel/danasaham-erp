@@ -106,9 +106,12 @@ jobs:
           CELERY_BROKER_URL: ${{ secrets.CELERY_BROKER_URL }}
           CELERY_RESULT_BACKEND: ${{ secrets.CELERY_RESULT_BACKEND }}
           CELERY_BEAT_SLEEP_INTERVAL: ${{ secrets.CELERY_BEAT_SLEEP_INTERVAL }}
+          DJANGO_USER: ${{ secrets.DJANGO_USER }}
+          DJANGO_UID: ${{ secrets.DJANGO_UID }}
+          DJANGO_GID: ${{ secrets.DJANGO_GID }}
         run: |
-          docker-compose -f docker-compose.ci.yml down -v --rmi all --remove-orphans
-          docker-compose -f docker-compose.ci.yml up -d --build
+          docker-compose -f docker-compose.yml down -v --rmi all --remove-orphans
+          docker-compose -f docker-compose.yml up -d --build
 
       - name: Run Migrations, Linters and Unit Testing
         env:
@@ -124,11 +127,14 @@ jobs:
           CELERY_BROKER_URL: ${{ secrets.CELERY_BROKER_URL }}
           CELERY_RESULT_BACKEND: ${{ secrets.CELERY_RESULT_BACKEND }}
           CELERY_BEAT_SLEEP_INTERVAL: ${{ secrets.CELERY_BEAT_SLEEP_INTERVAL }}
+          DJANGO_USER: ${{ secrets.DJANGO_USER }}
+          DJANGO_UID: ${{ secrets.DJANGO_UID }}
+          DJANGO_GID: ${{ secrets.DJANGO_GID }}
           DJANGO_SETTINGS_MODULE: 'app.config.settings'
         run: |
-          docker-compose -f docker-compose.ci.yml run --rm app sh -c "make migrate"
-          docker-compose -f docker-compose.ci.yml run --rm app sh -c "make lint"
-          docker-compose -f docker-compose.ci.yml run --rm app sh -c "make test"
+          docker-compose -f docker-compose.yml run --rm app sh -c "make migrate"
+          docker-compose -f docker-compose.yml run --rm app sh -c "make lint"
+          docker-compose -f docker-compose.yml run --rm app sh -c "make test"
 
   dependabot-auto-merge:
     name: 'Dependabot Auto Merge'

@@ -22,6 +22,9 @@ services:
         DB_PASSWORD: ${DB_PASSWORD}
         DB_NAME: ${DB_NAME}
         DB_PORT: ${DB_PORT}
+        DJANGO_USER: ${DJANGO_USER}
+        DJANGO_UID: ${DJANGO_UID}
+        DJANGO_GID: ${DJANGO_GID}
     environment:
       WORKERS: ${WORKERS:-2}
       THREADS: ${THREADS:-2}
@@ -104,6 +107,9 @@ services:
       context: .
       args:
         - DEV=true
+        - DJANGO_USER=${DJANGO_USER}
+        - DJANGO_UID=${DJANGO_UID}
+        - DJANGO_GID=${DJANGO_GID}
     command: make run.celery.prod
     restart: unless-stopped
     depends_on:
@@ -120,6 +126,9 @@ services:
       context: .
       args:
         - DEV=true
+        - DJANGO_USER=${DJANGO_USER}
+        - DJANGO_UID=${DJANGO_UID}
+        - DJANGO_GID=${DJANGO_GID}
     environment:
       - CELERY_BROKER_URL=${CELERY_BROKER_URL}
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
@@ -140,6 +149,9 @@ services:
       context: .
       args:
         - DEV=true
+        - DJANGO_USER=${DJANGO_USER}
+        - DJANGO_UID=${DJANGO_UID}
+        - DJANGO_GID=${DJANGO_GID}
     command: make collectstatic
     depends_on:
       - db
@@ -152,6 +164,9 @@ services:
       context: .
       args:
         - DEV=true
+        - DJANGO_USER=${DJANGO_USER}
+        - DJANGO_UID=${DJANGO_UID}
+        - DJANGO_GID=${DJANGO_GID}
     command: >
       sh -c "python -m aiosmtpd -n -l 0.0.0.0:8025"
     ports:

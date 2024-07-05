@@ -14,6 +14,10 @@ COPY ./requirements.dev.txt /tmp/requirements.dev.txt
 
 # Install system dependencies and Python packages
 ARG DEV=false
+ARG DJANGO_USER
+ARG DJANGO_UID
+ARG DJANGO_GID
+
 RUN apt-get update --fix-missing && \
     apt-get install -y --no-install-recommends \
         python3-venv \
@@ -81,7 +85,8 @@ RUN apt-get update --fix-missing && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/* /usr/share/man/* /usr/share/locale/* /usr/share/info/* && \
     find /usr/lib -type f -name '*.a' -delete && \
     find /usr/include -type f -name '*.h' -delete && \
-    adduser --disabled-password --gecos '' django-user
+    groupadd -g $DJANGO_GID $DJANGO_USER && \
+    useradd -m -u $DJANGO_UID -g $DJANGO_GID $DJANGO_USER
 
 # Copy application files
 COPY ./backend /apps
@@ -90,8 +95,11 @@ COPY ./backend /apps
 RUN mkdir -p /apps/app/media/test_media /apps/logs && \
     touch /apps/logs/debug.log && \
     chmod 666 /apps/logs/debug.log && \
-    chown -R django-user:django-user $VENV_PATH /apps /apps/logs /apps/tasks /apps/app /apps/app/config /apps/app/config/core /apps/app/config/core/migrations /apps/app/media /apps/app/media/test_media
+    chown -R $DJANGO_USER:$DJANGO_USER $VENV_PATH /apps /apps/logs /apps/app/media /apps/app/media/test_media
+
+# Change ownership of migration directories
+RUN chown -R $DJANGO_USER:$DJANGO_USER /apps/app/config/core/migrations
 
 ENV PATH="$VENV_PATH/bin:$PATH"
 
-USER django-user
+USER $DJANGO_USER
