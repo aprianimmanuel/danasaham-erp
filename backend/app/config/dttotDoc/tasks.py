@@ -33,16 +33,13 @@ def process_dttot_document_row(document_id: int, row_data: dict[str, Any], user_
 
 @shared_task
 def process_dttot_document(document_id: int, user_data: dict[str, Any]) -> None:
-    def raise_value_error(msg: str) -> None:
-        raise ValueError(msg)
-
     try:
         user_data_copy = copy.deepcopy(user_data)
         document = Document.objects.get(pk=document_id)
         user_id = user_data_copy["user_id"]
 
         if not document.document_file or not document.document_file.path:
-            raise_value_error("The document_file attribute is not set or has no associated file")
+            raise ValueError("The document_file attribute is not set or has no associated file")
 
         # Perform all steps in sequence to ensure no overlap
         processor = DTTOTDocumentProcessing()

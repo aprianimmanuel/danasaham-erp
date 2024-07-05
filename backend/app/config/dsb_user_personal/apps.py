@@ -8,4 +8,4 @@ class DsbUserPersonalConfig(AppConfig):
     name = "app.config.dsb_user_personal"
 
     def ready(self) -> None:
-        import app.config.dsb_user_personal.signals  # noqa
+        import app.config.dsb_user_personal.signals

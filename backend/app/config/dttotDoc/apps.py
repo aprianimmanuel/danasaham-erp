@@ -9,4 +9,4 @@ class DttotDocConfig(AppConfig):
     verbose_name = "DTTOT Documents"
 
     def ready(self) -> None:
-        pass
+        import app.config.dttotDoc.signals
