@@ -144,9 +144,8 @@ class DTTOTDocumentProcessing:
                     f"middle_name_alias_{i+1}",
                     f"last_name_alias_{i+1}",
                 ]
-            ] = (
-                df[alias_col].apply(split_name).tolist()
-            )
+            ] = df[alias_col].apply(split_name).apply(pd.Series)
+
         return df
 
 
