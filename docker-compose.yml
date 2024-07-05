@@ -134,7 +134,7 @@ services:
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
       - CELERY_BEAT_SLEEP_INTERVAL=${CELERY_BEAT_SLEEP_INTERVAL}
     command: make run.celery.beat.prod
-    restart: no
+    restart: "no"
     depends_on:
       - app
       - redis
