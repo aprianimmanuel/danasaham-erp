@@ -109,6 +109,11 @@ jobs:
           DJANGO_USER: ${{ secrets.DJANGO_USER }}
           DJANGO_UID: ${{ secrets.DJANGO_UID }}
           DJANGO_GID: ${{ secrets.DJANGO_GID }}
+          POSTGRESQL_DATABASE: ${{ secrets.POSTGRESQL_DATABASE }}
+          POSTGRESQL_USERNAME: ${{ secrets.POSTGRESQL_USERNAME }}
+          POSTGRESQL_HOST: ${{ secrets.POSTGRESQL_HOST }}
+          POSTGRESQL_PASSWORD: ${{ secrets.POSTGRESQL_PASSWORD }}
+          POSTGRESQL_PORT: ${{ secrets.POSTGRESQL_HOST }}
         run: |
           docker-compose -f docker-compose.yml down -v --rmi all --remove-orphans
           docker-compose -f docker-compose.yml up -d --build
@@ -130,6 +135,11 @@ jobs:
           DJANGO_USER: ${{ secrets.DJANGO_USER }}
           DJANGO_UID: ${{ secrets.DJANGO_UID }}
           DJANGO_GID: ${{ secrets.DJANGO_GID }}
+          POSTGRESQL_DATABASE: ${{ secrets.POSTGRESQL_DATABASE }}
+          POSTGRESQL_USERNAME: ${{ secrets.POSTGRESQL_USERNAME }}
+          POSTGRESQL_HOST: ${{ secrets.POSTGRESQL_HOST }}
+          POSTGRESQL_PASSWORD: ${{ secrets.POSTGRESQL_PASSWORD }}
+          POSTGRESQL_PORT: ${{ secrets.POSTGRESQL_HOST }}
           DJANGO_SETTINGS_MODULE: 'app.config.settings'
         run: |
           docker-compose -f docker-compose.yml run --rm app sh -c "make migrate"
