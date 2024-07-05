@@ -17,7 +17,7 @@ services:
     build:
       context: .
       args:
-        DEV: true
+        DEV: "True"
         DB_USER: ${DB_USER}
         DB_PASSWORD: ${DB_PASSWORD}
         DB_NAME: ${DB_NAME}
@@ -125,7 +125,7 @@ services:
     build:
       context: .
       args:
-        - DEV=true
+        - DEV="true"
         - DJANGO_USER=${DJANGO_USER}
         - DJANGO_UID=${DJANGO_UID}
         - DJANGO_GID=${DJANGO_GID}
@@ -170,7 +170,7 @@ services:
     command: >
       sh -c "python -m aiosmtpd -n -l 0.0.0.0:8025"
     ports:
-      - "8025:8025"
+      - 8025:8025
     volumes:
       - ./backend:/apps
 
