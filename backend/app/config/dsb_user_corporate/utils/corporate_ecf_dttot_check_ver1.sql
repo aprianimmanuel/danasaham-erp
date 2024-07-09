@@ -7,7 +7,6 @@ SELECT
     users.last_modified_date AS "users_last_modofied_date",
     pengurus.pengurus_id AS "corporate_pengurus_id",
     pengurus.nama AS "pengurus_corporate_name",
-    pengurus.
     pengurus.id_ktp AS "pengurus_corporate_idnumber",
     pengurus.phone_number AS "pengurus_corporate_phone_number",
     pengurus.pob AS "pengurus_corporate_place_of_birth",
