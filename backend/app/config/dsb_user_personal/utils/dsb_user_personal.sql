@@ -2,9 +2,7 @@ SELECT
     users.user_id AS "user_id",
     users.created_date AS "initial_registration_date",
     users.name AS "user_name",
-    users.phone_number AS "users_phone_number",
     users.email AS "users_email_registered",
-    email_confirmed AS "has_email_confirmed",
     users.last_modified_date AS "users_last_modified_date",
     personal.created_date AS "user_upgrade_to_personal",
     personal_legal.ktp_name AS "personal_name",
@@ -33,8 +31,8 @@ LEFT JOIN lookup lk3 ON personal_legal.birth_place_lookup_id = lk3.lookup_id
 LEFT JOIN lookup lk4 ON personal_legal.nationality_lookup_id = lk4.lookup_id
 LEFT JOIN lookup lk5 ON personal_legal.sof_indv_lookup_id = lk5.lookup_id
 WHERE
-    users.email NOT LIKE '%+%'
-    AND users.name NOT LIKE '%test%'
-    AND users.name NOT LIKE '%Testing%'
-    AND users.name NOT LIKE '%Test%';
+    users.email NOT LIKE '%%+%%'
+    AND users.name NOT LIKE '%%test%%'
+    AND users.name NOT LIKE '%%Testing%%'
+    AND users.name NOT LIKE '%%Test%%';
 

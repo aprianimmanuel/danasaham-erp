@@ -487,7 +487,12 @@ class dsb_user_personal(models.Model):
         blank=True,
         null=True,
     )
-    personal_spouse = models.CharField(
+    personal_gender = models.CharField(
+        _("Gender of Personal (from Danasaham Core)"),
+        max_length=50,
+        blank=True,
+        null=True)
+    personal_spouse_name = models.CharField(
         _("Personal Spouse (from Danasaham Core)"),
         max_length=255,
         blank=True,

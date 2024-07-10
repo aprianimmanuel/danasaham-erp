@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 MAGIC_COMPARISON_RATIO: float = 0.90
 
-def handle_dttot_document(document: Any, row_data: dict[str, Any], user_id: int) -> int:
+def handle_dttot_document(document: Any, row_data: dict[str, Any], user_id: str) -> str:
     try:
         existing_kode_densus = set(
             dttotDoc.objects.values_list("dttot_kode_densus", flat=True),
