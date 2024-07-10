@@ -594,6 +594,12 @@ class dsb_user_publisher(models.Model):
         blank=True,
         null=True,
     )
+    coredsb_user_id = models.CharField(
+        _("ID of User From Danasaham Core"),
+        max_length=36,
+        blank=True,
+        null=True,
+    )
     user_name = models.CharField(
         _("Name of User when Initiating Registration (from Danasaham Core)"),
         max_length=255,
