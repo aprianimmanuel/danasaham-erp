@@ -20,6 +20,8 @@ ARG DJANGO_GID
 
 RUN apt-get update --fix-missing && \
     apt-get install -y --no-install-recommends \
+        tzdata \
+        ntpdate \
         python3-venv \
         postgresql-client \
         pkg-config \

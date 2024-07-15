@@ -4,7 +4,7 @@ SELECT
     users.name AS "user_name",
     users.email AS "users_email_registered",
     users.last_modified_date AS "users_last_modified_date",
-    personal.created_date AS "user_upgrade_to_personal",
+    personal.created_date AS "user_upgrade_to_personal_date",
     personal_legal.ktp_name AS "personal_name",
     personal.phone_number AS "personal_phone_number",
     personal_legal.gender AS "personal_gender",

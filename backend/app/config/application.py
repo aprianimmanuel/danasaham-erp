@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "app.config.dttotDoc",
     "app.config.dsb_user_personal",
     "app.config.dsb_user_corporate",
+    "app.config.dsb_user_publisher",
     "django_celery_results",
 ]
 
@@ -85,6 +86,6 @@ LANGUAGE_CODE = getenv("LANGUAGE_CODE", "en-us")
 
 USE_TZ = True
 
-TIME_ZONE = getenv("TIME_ZONE", "UTC")
+TIME_ZONE = getenv("TIME_ZONE", "Asia/Jakarta")
 
 USE_I18N = True

@@ -69,7 +69,7 @@ def trigger_dsb_user_corporate_processing(sender, instance, created, **kwargs) -
         context = kwargs.get("context", {})
         user = instance.created_by
         user_data = {
-            "user_id": user.pk
+            "user_id": user.pk,
         }
         transaction.on_commit(
             lambda: dsb_user_corporate_document_created.send_robust(
@@ -77,6 +77,29 @@ def trigger_dsb_user_corporate_processing(sender, instance, created, **kwargs) -
                 instance=instance,
                 created=created,
                 context=context,
-                user_data=user_data
+                user_data=user_data,
+            ),
+        )
+
+
+dsb_user_publisher_document_created = Signal(
+    providing_args=["instance", "created", "context", "user_data"],
+)
+
+@receiver(post_save, sender=Document)
+def trigger_dsb_user_publisher_processing(sender, instance, created, **kwargs) -> None:
+    if created and instance.document_type == "DSB User Publisher List Document":
+        context = kwargs.get("context", {})
+        user = instance.created_by
+        user_data = {
+            "user_id": user.pk,
+        }
+        transaction.on_commit(
+            lambda: dsb_user_publisher_document_created.send_robust(
+                sender=instance.__class__,
+                instance=instance,
+                created=created,
+                context=context,
+                user_data=user_data,
             ),
         )

@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pandas as pd
 from django.db import transaction
-from django.utils import timezone
 from sqlalchemy import create_engine
 
 from app.config.core.models import dsb_user_personal, User
@@ -39,17 +38,6 @@ def fetch_data_from_external_db() -> pd.DataFrame:
 def save_data_to_model(df: pd.DataFrame, document: dsb_user_personal, user: User) -> None:
     with transaction.atomic():
         for _index, row in df.iterrows():
-            if pd.notna(row["initial_registration_date"]):
-                row["initial_registration_date"] = timezone.make_aware(row["initial_registration_date"])
-            if pd.notna(row["users_last_modified_date"]):
-                row["users_last_modified_date"] = timezone.make_aware(row["users_last_modified_date"])
-            if pd.notna(row["user_upgrade_to_personal_date"]):
-                row["user_upgrade_to_personal_date"] = timezone.make_aware(row["user_upgrade_to_personal_date"])
-            if pd.notna(row["personal_birth_date"]):
-                row["personal_birth_date"] = timezone.make_aware(row["personal_birth_date"])
-            if pd.notna(row["personal_last_modified_date"]):
-                row["personal_last_modified_date"] = timezone.make_aware(row["personal_last_modified_date"])
-
             # Check if a record with the same coredsb_user_id already exists
             existing_record = dsb_user_personal.objects.filter(coredsb_user_id=row["user_id"]).first()
 
@@ -59,26 +47,9 @@ def save_data_to_model(df: pd.DataFrame, document: dsb_user_personal, user: User
                     # Update all fields if users_last_modified_date is different
                     existing_record.document = document
                     existing_record.user = user
-                    existing_record.initial_registration_date = row["initial_registration_date"]
                     existing_record.user_name = row["user_name"]
                     existing_record.users_email_registered = row["users_email_registered"]
                     existing_record.users_last_modified_date = row["users_last_modified_date"]
-                    existing_record.user_upgrade_to_personal_date = row["user_upgrade_to_personal_date"]
-                    existing_record.personal_name = row["personal_name"]
-                    existing_record.personal_phone_number = row["personal_phone_number"]
-                    existing_record.personal_nik = row["personal_nik"]
-                    existing_record.personal_gender = row["personal_gender"]
-                    existing_record.personal_birth_date = row["personal_birth_date"]
-                    existing_record.personal_spouse_name = row["personal_spouse_name"]
-                    existing_record.personal_mother_name = row["personal_mother_name"]
-                    existing_record.personal_domicile_address = row["personal_domicile_address"]
-                    existing_record.personal_domicile_address_postalcode = row["personal_domicile_address_postalcode"]
-                    existing_record.personal_investment_goals = row["personal_investment_goals"]
-                    existing_record.personal_marital_status = row["personal_marital_status"]
-                    existing_record.personal_birth_place = row["personal_birth_place"]
-                    existing_record.personal_nationality = row["personal_nationality"]
-                    existing_record.personal_source_of_fund = row["personal_source_of_fund"]
-                    existing_record.personal_legal_last_modified_date = row["personal_last_modified_date"]
                     existing_record.save()
 
                 # Check if personal_legal_last_modified_date is the same
@@ -86,10 +57,6 @@ def save_data_to_model(df: pd.DataFrame, document: dsb_user_personal, user: User
                     # Update all fields if personal_legal_last_modified_date is different
                     existing_record.document = document
                     existing_record.user = user
-                    existing_record.initial_registration_date = row["initial_registration_date"]
-                    existing_record.user_name = row["user_name"]
-                    existing_record.users_email_registered = row["users_email_registered"]
-                    existing_record.users_last_modified_date = row["users_last_modified_date"]
                     existing_record.user_upgrade_to_personal_date = row["user_upgrade_to_personal_date"]
                     existing_record.personal_name = row["personal_name"]
                     existing_record.personal_phone_number = row["personal_phone_number"]

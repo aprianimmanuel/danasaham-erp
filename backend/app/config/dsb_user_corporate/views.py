@@ -26,7 +26,7 @@ class DsbUserCorporateListView(APIView):
 
 @router.register_decorator(
     r"dsb-user-corporate/details/<uuid:dsb_user_corporate_id/",
-    name="dsb-user-corporate-details"
+    name="dsb-user-corporate-details",
 )
 class DsbUserCorporateDetailView(APIView):
     permissions_classes: ClassVar = [permissions.IsAuthenticated]
@@ -61,7 +61,7 @@ class DsbUserCorporateDetailView(APIView):
     ) -> Response:
         try:
             instance = dsb_user_corporate.objects.get(
-                dsb_user_corporate_id=dsb_user_corporate_id
+                dsb_user_corporate_id=dsb_user_corporate_id,
             )
         except dsb_user_corporate.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
@@ -108,7 +108,7 @@ class DsbUserCorporateDetailView(APIView):
     ) -> Response:
         try:
             instance = dsb_user_corporate.objects.get(
-                dsb_user_corporate_id=dsb_user_corporate_id
+                dsb_user_corporate_id=dsb_user_corporate_id,
             )
         except dsb_user_corporate.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)

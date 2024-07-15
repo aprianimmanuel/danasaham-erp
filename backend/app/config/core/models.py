@@ -622,10 +622,6 @@ class dsb_user_publisher(models.Model):
         blank=True,
         null=True,
     )
-    has_email_confirmed = models.BooleanField(
-        _("Has Email Confirmed (from Danasaham Core)"),
-        default=False,
-    )
     users_last_modified_date = models.DateTimeField(
         _("User Entry Last Modified Date (from Danasaham Core)"),
         auto_now=False,
@@ -693,53 +689,53 @@ class dsb_user_publisher(models.Model):
         blank=True,
         null=True,
     )
-    pengurus_id = models.CharField(
+    publisher_pengurus_id = models.CharField(
         _("Pengurus ID (from Danasaham Core)"),
         max_length=36,
         blank=True,
         null=True,
     )
-    pengurus_name = models.CharField(
+    publisher_pengurus_name = models.CharField(
         _("Pengurus Name (from Danasaham Core)"),
         max_length=255,
         blank=True,
         null=True,
     )
-    pengurus_id_number = models.CharField(
+    publisher_pengurus_id_number = models.CharField(
         _("Pengurus ID Number (from Danasaham Core)"),
         max_length=50,
         blank=True,
         null=True,
     )
-    pengurus_phone_number = models.CharField(
+    publisher_pengurus_phone_number = models.CharField(
         _("Pengurus Phone Number (from Danasaham Core)"),
         max_length=20,
         blank=True,
         null=True,
     )
-    role_as = models.CharField(
+    publisher_pengurus_role_as = models.CharField(
         _("Role as (from Danasaham Core)"),
         max_length=255,
         blank=True,
         null=True,
     )
-    jabatan_pengurus = models.CharField(
+    publisher_jabatan_pengurus = models.CharField(
         _("Jabatan Pengurus (from Danasaham Core)"),
         max_length=255,
         blank=True,
         null=True,
     )
-    address_pengurus = models.TextField(
+    publisher_address_pengurus = models.TextField(
         _("Address Pengurus (from Danasaham Core)"),
         blank=True,
         null=True,
     )
-    tgl_lahir_pengurus = models.DateField(
+    publisher_tgl_lahir_pengurus = models.DateField(
         _("Tanggal Lahir Pengurus (from Danasaham Core)"),
         blank=True,
         null=True,
     )
-    tempat_lahir_pengurus = models.CharField(
+    publisher_tempat_lahir_pengurus = models.CharField(
         _("Tempat Lahir Pengurus (from Danasaham Core)"),
         max_length=255,
         blank=True,
@@ -879,7 +875,7 @@ class dsb_user_corporate(models.Model):
         blank=True,
         null=True,
     )
-    users_upgrade_to_corporate = models.DateTimeField(
+    users_upgrade_to_corporate_date = models.DateTimeField(
         _("Date when User Upgrade to Corporate (from Danasaham Core)"),
         blank=True,
         null=True,

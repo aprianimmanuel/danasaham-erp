@@ -4,10 +4,10 @@ SELECT
     users.name as "user_name",
     users.email AS "registered_user_email",
     users.phone_number AS "users_phone_number",
-    users.last_modified_date AS "users_last_modofied_date",
+    users.last_modified_date AS "users_last_modified_date",
     pengurus.pengurus_id AS "corporate_pengurus_id",
     pengurus.nama AS "pengurus_corporate_name",
-    pengurus.id_ktp AS "pengurus_corporate_idnumber",
+    pengurus.id_ktp AS "pengurus_corporate_id_number",
     pengurus.phone_number AS "pengurus_corporate_phone_number",
     pengurus.pob AS "pengurus_corporate_place_of_birth",
     pengurus.dob AS "pengurus_corporate_date_of_birth",
@@ -16,8 +16,8 @@ SELECT
     lk7.description AS "pengurus_corporate_jabatan",
     pengurus.nominal_saham AS "pengurus_nominal_saham",
     pengurus.last_modified_date AS "pengurus_corporate_last_update_date",
-    corporate_legal.created_date AS "users_upgrade_to_corporate",
-    corporate.company_name AS "corporate_name",
+    corporate_legal.created_date AS "users_upgrade_to_corporate_date",
+    corporate.company_name AS "corporate_company_name",
     corporate.phone_number AS "corporate_phone_number",
     corporate_legal.nib AS "corporate_nib",
     corporate_legal.npwp AS "corporate_npwp",
@@ -48,4 +48,4 @@ LEFT JOIN lookup lk7 ON pengurus.jabatan_lookup_id = lk7.lookup_id
 WHERE
     lk2.description IS NOT NULL
     AND lk5.description IS NOT NULL
-    AND users.email NOT LIKE '%+%';
+    AND users.email NOT LIKE '%%+%%';

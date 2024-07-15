@@ -17,7 +17,7 @@ if _default_secret_key == SECRET_KEY:
 DEBUG = getenv("DJANGO_DEBUG", "false").lower() == "true"
 
 ALLOWED_HOSTS = [
-    host.strip() for host in getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+    host.strip() for host in getenv("ALLOWED_HOSTS", "127.0.0.1, localhost").split(",")
 ]
 
 AUTHENTICATION_BACKENDS = [
@@ -28,7 +28,7 @@ AUTHENTICATION_BACKENDS = [
 
 CSRF_TRUSTED_ORIGINS = [
     host.strip()
-    for host in getenv("CSRF_TRUSTED_ORIGINS", "http://localhost").split(",")
+    for host in getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:8000").split(",")
 ]
 
 CORS_ALLOW_ALL_ORIGINS = getenv("CORS_ALLOW_ALL_ORIGINS", "False").lower() == "true"
