@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from django.urls import path
+from django.urls import path, re_path
 
 from app.config.dttotDoc.views import DttotDocDetailView, DttotDocListView
 
@@ -8,12 +8,12 @@ app_name = "dttotdocs"
 
 urlpatterns = [
     path(
-        "api/documents/dttotdocs/list/<uuid:document_id>/",
+        "api/documents/dttotdocs/list/<uuid:identifier>/",
         DttotDocListView.as_view(),
         name="dttot-doc-list",
     ),
     path(
-        "api/documents/dttotdocs/details/<uuid:dttot_id>/",
+        r"^api/documents/dttotdocs/details/$",
         DttotDocDetailView.as_view(),
         name="dttot-doc-detail",
     ),

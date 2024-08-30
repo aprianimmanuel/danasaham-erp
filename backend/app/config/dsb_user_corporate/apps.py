@@ -8,4 +8,4 @@ class DsbUserCorporateConfig(AppConfig):
     name = "app.config.dsb_user_corporate"
 
     def ready(self) -> None:
-        import app.config.dsb_user_corporate.signals
+        pass

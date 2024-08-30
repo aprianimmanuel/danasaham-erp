@@ -1,4 +1,4 @@
-from __future__ import annotations  #noqa: N999
+from __future__ import annotations  # noqa: N999
 
 import io
 import shutil
@@ -21,7 +21,7 @@ from rest_framework.test import APIClient, APITestCase
 
 User = get_user_model()
 
-TEST_USER_PASSWORD = "Testp@ss!23"  #noqa: S106
+TEST_USER_PASSWORD = "Testp@ss!23"  # noqa: S105
 EXPECTED_RESPONSE_LENGTH_2 = 2
 EXPECTED_RESPONSE_LENGTH_3 = 3
 

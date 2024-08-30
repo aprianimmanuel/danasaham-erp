@@ -22,7 +22,6 @@ RUN apt-get update --fix-missing && \
     apt-get install -y --no-install-recommends \
         tzdata \
         ntpdate \
-        python3-venv \
         postgresql-client \
         pkg-config \
         libxml2-dev \
@@ -35,38 +34,10 @@ RUN apt-get update --fix-missing && \
         g++ \
         gcc \
         git \
-        libavcodec-dev \
-        libavformat-dev \
-        libavutil-dev \
-        libboost-python-dev \
-        libboost-thread-dev \
-        libdc1394-dev \
-        libeigen3-dev \
-        libglew-dev \
-        libgstreamer-plugins-base1.0-dev \
-        libgstreamer1.0-dev \
-        libgtk-3-dev \
-        libjpeg-dev \
-        liblapack-dev \
-        libopenblas-dev \
-        libopencv-dev \
-        libpng-dev \
-        libpostproc-dev \
-        libsm6 \
-        libswscale-dev \
-        libtbb-dev \
-        libtesseract-dev \
-        libtiff-dev \
-        libv4l-dev \
-        libx11-dev \
-        libxext6 \
-        libxine2-dev \
-        libxrender-dev \
-        libxvidcore-dev \
-        libx264-dev \
         python3-dev \
         python3-setuptools \
         python3-numpy \
+        python3-scipy \
         python3-pip \
         python3-sklearn \
         python3-sklearn-lib \
@@ -75,6 +46,13 @@ RUN apt-get update --fix-missing && \
         python3-threadpoolctl \
         python3-mdp \
         python3-openpyxl \
+        python3-reportlab \
+        python3-reportlab-accel \
+        python3-renderpm \
+        python3-venv \
+        python3-wheel \
+        python3-distutils \
+        build-essential \
         wget \
         unzip && \
     python3 -m venv $VENV_PATH && \
@@ -93,11 +71,18 @@ RUN apt-get update --fix-missing && \
 # Copy application files
 COPY ./backend /apps
 
+# Ensure the static folder exists and copy the logo
+RUN mkdir -p /apps/app/config/dttotDocReport/static/ && \
+    cp /apps/static/logo_danasaham_surat.jpg /apps/app/config/dttotDocReport/static/logo_danasaham_surat.jpg
+
 # Set permissions for application files
-RUN mkdir -p /apps/app/media/test_media /apps/logs && \
+RUN mkdir -p /apps/media/test_media /apps/logs && \
     touch /apps/logs/debug.log && \
     chmod 666 /apps/logs/debug.log && \
-    chown -R $DJANGO_USER:$DJANGO_USER $VENV_PATH /apps /apps/logs /apps/app/media /apps/app/media/test_media
+    chown -R $DJANGO_USER:$DJANGO_USER $VENV_PATH /apps /apps/logs /apps/media /apps/media/test_media /apps/app/config/dttotDocReport/static
+
+# Download spacy models using the correct Python environment
+RUN $VENV_PATH/bin/python -m spacy download xx_ent_wiki_sm
 
 # Change ownership of migration directories
 RUN chown -R $DJANGO_USER:$DJANGO_USER /apps/app/config/core/migrations

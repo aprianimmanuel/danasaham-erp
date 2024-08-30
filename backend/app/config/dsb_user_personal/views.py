@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import ClassVar, Any
+from typing import Any, ClassVar
 
 from drf_spectacular.utils import extend_schema
-from rest_framework import permissions, status
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -15,103 +15,173 @@ router = CustomViewRouter(url_prefix="api/")
 
 
 @router.register_decorator(r"dsb-user-personal/list/", name="dsb-user-personal-list")
-class DsbUserPersonalListView(APIView):
+class DsbUserPersonalListView(generics.ListAPIView):
+    serializer_class = DsbUserPersonalSerializer
     permission_classes: ClassVar = [permissions.IsAuthenticated]
-
-    @extend_schema(responses={200: DsbUserPersonalSerializer(many=True)})
-    def get(self, _request: Any, *_args: Any, **_kwargs: Any) -> Response:
-        queryset = dsb_user_personal.objects.all()
-        serializer = DsbUserPersonalSerializer(queryset, many=True)
-        return Response(serializer.data)
+    queryset = dsb_user_personal.objects.all()
 
 
 @router.register_decorator(
-    r"dsb-user-personal/details/<uuid:dsb_user_personal_id>/",
+    r"dsb-user-personal/details/$",
     name="dsb-user-personal-details",
 )
 class DsbUserPersonalDetailView(APIView):
     permission_classes: ClassVar = [permissions.IsAuthenticated]
 
-    @extend_schema(responses={200: DsbUserPersonalSerializer})
-    def get(
-        self,
-        _request: Any,
-        dsb_user_personal_id: str,
-        *_args: Any,
-        **_kwargs: Any,
-    ) -> Response:
+    def get_instance(self, identifier: str) -> dsb_user_personal:
+        """To attempt to retrieve a DSB user personal data by either its document ID or its UUID.
+
+        Args:
+        ----
+            identifier: The document ID or UUID of the DSB user personal data to be retrieved.
+
+        Returns:
+        -------
+            The retrieved DSB user personal data, or None if no data with the given identifier was found.
+
+        """
         try:
-            instance = dsb_user_personal.objects.get(
-                dsb_user_personal_id=dsb_user_personal_id,
-            )
+            instance = dsb_user_personal.objects.get(document=identifier)
         except dsb_user_personal.DoesNotExist:
+            try:
+                instance = dsb_user_personal.objects.get(dsb_user_personal_id=identifier)
+            except dsb_user_personal.DoesNotExist:
+                return None
+        return instance
+
+    @extend_schema(responses={200: DsbUserPersonalSerializer})
+    def get(self, request: Any, *_args: Any, **_kwargs: Any) -> Response:
+        """To retrieve a DSB user personal data by its ID.
+
+        **Query Parameters:**
+
+        * `identifier`: The unique identifier of the DSB user personal data to be retrieved.
+
+        **Responses:**
+
+        * `200 OK`: Returns the DSB user personal data with the given ID.
+        * `400 Bad Request`: The `identifier` query parameter is required.
+        * `404 Not Found`: No DSB user personal data with the given ID was found.
+
+        **Security:**
+
+        * `jwtAuth`, `tokenAuth`, `jwtHeaderAuth`, `jwtCookieAuth`: The request is authenticated using a JSON Web Token.
+        """
+        identifier = request.query_params.get("identifier")
+        if not identifier:
+            return Response({"detail": "Identifier query parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        instance = self.get_instance(identifier)
+        if instance is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
         serializer = DsbUserPersonalSerializer(instance)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(
-        request=DsbUserPersonalSerializer,
-        responses={200: DsbUserPersonalSerializer},
-    )
-    def put(
-        self,
-        request: Any,
-        dsb_user_personal_id: str,
-        *_args: Any,
-        **_kwargs: Any,
-    ) -> Response:
-        try:
-            instance = dsb_user_personal.objects.get(
-                dsb_user_personal_id=dsb_user_personal_id,
-            )
-        except dsb_user_personal.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+    @extend_schema(request=DsbUserPersonalSerializer, responses={200: DsbUserPersonalSerializer})
+    def put(self, request: Any, *_args: Any, **_kwargs: Any) -> Response:
+        """To update a DSB User Personal instance by its ID.
+
+        **Query Parameters:**
+
+        * `identifier`: The unique identifier of the DSB User Personal instance.
+
+        **Request Body:**
+
+        * `DsbUserPersonal` object with updated fields.
+
+        **Responses:**
+
+        * `200 OK`: Returns the updated DSB User Personal instance.
+        * `400 Bad Request`: The `identifier` query parameter is required.
+        * `404 Not Found`: No DSB User Personal instance with the given ID was found.
+
+        **Security:**
+
+        * `jwtAuth`, `tokenAuth`, `jwtHeaderAuth`, `jwtCookieAuth`: The request is authenticated using a JSON Web Token.
+        """
+        identifier = request.query_params.get("identifier")
+        if not identifier:
+            return Response({"detail": "Identifier query parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        instance = self.get_instance(identifier)
+        if instance is None:
+            return Response(
+                {"detail": "No DSB User Personal instance with the given ID was found."},
+                status=status.HTTP_404_NOT_FOUND)
+
         serializer = DsbUserPersonalSerializer(instance, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @extend_schema(
-        request=DsbUserPersonalSerializer,
-        responses={200: DsbUserPersonalSerializer},
-    )
-    def patch(
-        self,
-        request: Any,
-        dsb_user_personal_id: str,
-        *_args: Any,
-        **_kwargs: Any,
-    ) -> Response:
-        try:
-            instance = dsb_user_personal.objects.get(
-                dsb_user_personal_id=dsb_user_personal_id,
-            )
-        except dsb_user_personal.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = DsbUserPersonalSerializer(
-            instance,
-            data=request.data,
-            partial=True,
-        )
+    @extend_schema(request=DsbUserPersonalSerializer, responses={200: DsbUserPersonalSerializer})
+    def patch(self, request: Any, *_args: Any, **_kwargs: Any) -> Response:
+        """To partially update a DSB User Personal instance by its ID.
+
+        **Query Parameters:**
+
+        * `identifier`: The unique identifier of the DSB User Personal instance.
+
+        **Request Body:**
+
+        * `DsbUserPersonal` object with updated fields.
+
+        **Responses:**
+
+        * `200 OK`: Returns the updated DSB User Personal instance.
+        * `400 Bad Request`: The `identifier` query parameter is required.
+        * `404 Not Found`: No DSB User Personal instance with the given ID was found.
+
+        **Security:**
+
+        * `jwtAuth`, `tokenAuth`, `jwtHeaderAuth`, `jwtCookieAuth`: The request is authenticated using a JSON Web Token.
+        """
+        identifier = request.query_params.get("identifier")
+        if not identifier:
+            return Response({"detail": "Identifier query parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        instance = self.get_instance(identifier)
+        if instance is None:
+            return Response(
+                {"detail": "No DSB User Personal instance with the given ID was found."},
+                status=status.HTTP_404_NOT_FOUND)
+
+        serializer = DsbUserPersonalSerializer(instance, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(responses={204: None})
-    def delete(
-        self,
-        _request: Any,
-        dsb_user_personal_id: str,
-        *_args: Any,
-        **_kwargs: Any,
-    ) -> Response:
-        try:
-            instance = dsb_user_personal.objects.get(
-                dsb_user_personal_id=dsb_user_personal_id,
-            )
-        except dsb_user_personal.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+    def delete(self, request: Any, *_args: Any, **_kwargs: Any) -> Response:
+        """To delete a DSB User Personal instance by its ID.
+
+        **Query Parameters:**
+
+        * `identifier`: The unique identifier of the DSB User Personal instance.
+
+        **Responses:**
+
+        * `204 No Content`: DSB User Personal instance successfully deleted, no response body.
+        * `400 Bad Request`: The `identifier` query parameter is required.
+        * `404 Not Found`: No DSB User Personal instance with the given ID was found.
+
+        **Security:**
+
+        * `jwtAuth`, `tokenAuth`, `jwtHeaderAuth`, `jwtCookieAuth`: The request is authenticated using a JSON Web Token.
+        """
+        identifier = request.query_params.get("identifier")
+        if not identifier:
+            return Response({"detail": "Identifier query parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        instance = self.get_instance(identifier)
+        if instance is None:
+            return Response(
+                {"detail": "No DSB User Personal instance with the given ID was found."},
+                status=status.HTTP_404_NOT_FOUND)
+
         instance.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"detail": "DSB User Personal instance has been successfully deleted!"},
+            status=status.HTTP_204_NO_CONTENT)

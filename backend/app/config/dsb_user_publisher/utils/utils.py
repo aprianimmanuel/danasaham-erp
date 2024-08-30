@@ -47,7 +47,7 @@ def save_data_to_model(df: pd.DataFrame, document: dsb_user_publisher, user: Use
                 if existing_record.users_last_modified_date != row["users_last_modified_date"]:
                     # Update all fields if users_last_modified_date is different
                     existing_record.document = document
-                    existing_record.user = user
+                    existing_record.last_update_by = user
                     existing_record.initial_registration_date = row["initial_registration_date"]
                     existing_record.user_name = row["user_name"]
                     existing_record.registered_user_email = row["registered_user_email"]
@@ -59,7 +59,7 @@ def save_data_to_model(df: pd.DataFrame, document: dsb_user_publisher, user: Use
                 elif existing_record.pengurus_publisher_last_modified_date != row["pengurus_publisher_last_modified_date"]:
                     # Update all fields if pengurus_publisher_last_modified_date is different
                     existing_record.document = document
-                    existing_record.user = user
+                    existing_record.last_update_by = user
                     existing_record.publisher_pengurus_name = row["publisher_pengurus_name"]
                     existing_record.publisher_pengurus_id_number = row["publisher_pengurus_id_number"]
                     existing_record.publisher_pengurus_phone_number = row["publisher_pengurus_phone_number"]
@@ -73,7 +73,7 @@ def save_data_to_model(df: pd.DataFrame, document: dsb_user_publisher, user: Use
                 dsb_user_publisher.objects.update_or_create(
                     publisher_pengurus_id=row["publisher_pengurus_id"],
                     document=document,
-                    user=user,
+                    last_update_by=None,
                     initial_registration_date=row["initial_registration_date"],
                     user_name=row["user_name"],
                     registered_user_email=row["registered_user_email"],

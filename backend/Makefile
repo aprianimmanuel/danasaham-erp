@@ -17,13 +17,10 @@ run.server.prod: wait_for_services migrate
 		--timeout 480
 
 run.celery.local:
-	OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES celery -A tasks.app worker --loglevel=DEBUG
+	OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES celery -A tasks.app worker --loglevel=DEBUG --prefetch-multiplier=1
 
 run.celery.prod:
-	celery -A tasks.app worker --loglevel=INFO
-
-run.celery.beat.prod:
-	celery -A tasks.app beat -l INFO
+	celery -A tasks.app worker --loglevel=INFO --concurrency=${WORKERS} --prefetch-multiplier=1
 
 wait_for_services:
 	python manage.py wait_for_db

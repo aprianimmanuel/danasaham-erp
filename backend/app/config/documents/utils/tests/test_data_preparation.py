@@ -31,29 +31,30 @@ class DTTOTDocumentProcessingCSVTests(TestCase):
 John Doe,Pemimpin Senior,Orang
 Jane Smith,Guru Honorer,Orang"""
         # Create a test CSV file
-        self.csv_file_path = os.path.join(self.temp_dir, "test.csv")
-        with open(self.csv_file_path, "w") as f:
+        self.csv_file_path = os.path.join(self.temp_dir, "test.csv")  # noqa: PTH118
+        with open(self.csv_file_path, "w") as f:  # noqa: PTH123
             f.write(self.csv_content)
 
     @classmethod
-    def tearDown(self) -> None:
-        # Remove the temporary directory and all its contents after the tests
-        shutil.rmtree(self.temp_dir)
+    def tearDownClass(cls) -> None:
+        """Remove the temporary directory and all its contents after the tests."""
+        # Ignore errors and warnings during deletion
+        shutil.rmtree(cls.temp_dir, ignore_errors=True)
 
     def test_import_document_csv(self) -> None:
         """Test processing a DTTOT document uploaded as a CSV file."""
         df = self.processing.import_document(self.csv_file_path, "CSV")
         expected_columns = ["Nama", "Deskripsi", "Terduga"]
-        assert list(df.columns) == expected_columns
+        assert list(df.columns) == expected_columns  # noqa: S101
 
-    def test_extract_aliases_from_names(self) -> None:
+def test_extract_aliases_from_names(self) -> None:  # noqa: ANN001, ARG001
         """Test extracting aliases from names based on ' Alias ' keyword."""
         # Instantiate the processing class
         processing = DTTOTDocumentProcessing()
 
         # Define a DataFrame with the 'Nama' column
         # containing names and aliases
-        df = pd.DataFrame(
+        df: pd.DataFrame = pd.DataFrame(
             {
                 "Nama": [
                     "John Doe Alias Don Manuel John Alias John Krew",
@@ -63,10 +64,10 @@ Jane Smith,Guru Honorer,Orang"""
         )
 
         # Process the DataFrame to extract aliases
-        processed_df = processing.extract_and_split_names(df, "Nama")
+        processed_df: pd.DataFrame = processing.extract_and_split_names(df, "Nama")
 
         # Define the expected DataFrame after alias extraction
-        expected_df = pd.DataFrame(
+        expected_df: pd.DataFrame = pd.DataFrame(
             {
                 "Nama": [
                     "John Doe Alias Don Manuel John Alias John Krew",
@@ -88,21 +89,12 @@ Jane Smith,Guru Honorer,Orang"""
             },
         )  # Fill NA values for consistency in comparison
 
-        try:
-            # Using assert_frame_equal from pandas testing module
-            pd.testing.assert_frame_equal(processed_df, expected_df, check_like=True)
-        except AssertionError as e:
-            print("AssertionError caught!")
-            print("DataFrame resulting from the processing:")
-            print(processed_df)
-            print("Expected DataFrame:")
-            print(expected_df)
-            raise
+        # Using assert_frame_equal from pandas testing module directly in the assert statement
+        pd.testing.assert_frame_equal(processed_df, expected_df, check_like=True)
 
 
 class DTTOTDocumentProcessingXLSTests(TestCase):
-    """
-    A set of unit tests designed to verify the functionality of document processing
+    """A set of unit tests designed to verify the functionality of document processing
     related to XLS files within the DTTOT document processing framework. This class
     focuses on testing the ability to import XLS documents, as well as the extraction
     of specific data from those documents, such as alias information from names and
@@ -111,21 +103,22 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
     The tests ensure that XLS documents are correctly imported, and that data extraction
     follows expected patterns and yields accurate results.
 
-    Attributes:
+    Attributes
+    ----------
         temp_dir (str): A directory created to temporarily store test files.
         processing_extract (ExtractNIKandPassportNumber): An instance of the class used to extract NIK and passport numbers.
         processing (DTTOTDocumentProcessing): An instance of the class under test that processes documents.
         xls_file_path (str): The file path to the test XLS document created for testing.
-    """  # noqa
+
+    """  # noqa: D205
 
     @classmethod
     def setUp(cls) -> None:
-        """
-        Set up the test environment before running each test in the class. This method
+        """Set up the test environment before running each test in the class. This method
         creates a temporary directory to hold test XLS files and initializes instances
         of the document processing classes. It also creates a sample XLS file to be used
         in the tests.
-        """  # noqa
+        """  # noqa: D205
         # Create a temporary directory to hold the test files
         cls.temp_dir = tempfile.mkdtemp()
         cls.processing_extract = ExtractNIKandPassportNumber()
@@ -133,7 +126,7 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
         cls.processing_separating = CleaningSeparatingDeskripsi()
         cls.processing_formatting = FormattingColumn()
         # Create a test XLS file using openpyxl
-        cls.xls_file_path = os.path.join(cls.temp_dir, "test.xlsx")
+        cls.xls_file_path = os.path.join(cls.temp_dir, "test.xlsx")  # noqa: PTH118
         workbook = Workbook()
         sheet = workbook.active
         sheet.append(["Nama", "Deskripsi", "Terduga"])
@@ -149,29 +142,26 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
 
     @classmethod
     def tearDown(cls) -> None:
-        """
-        Tear down the test environment after each test in the class has run. This method
+        """Tear down the test environment after each test in the class has run. This method
         removes the temporary directory and all its contents, cleaning up the test environment.
-        """  # noqa
+        """  # noqa: D205
         # Remove the temporary directory and all its contents after the tests
         shutil.rmtree(cls.temp_dir)
 
     def test_import_document_xls(self) -> None:
-        """
-        Test the functionality of importing a document uploaded as an XLS file. This test
+        """Test the functionality of importing a document uploaded as an XLS file. This test
         verifies that the imported document has the expected columns and is not empty.
-        """  # noqa
-        df = self.processing.import_document(self.xls_file_path, "XLSX")
+        """  # noqa: D205
+        df = self.processing.import_document(self.xls_file_path, "XLSX")  # noqa: PD901
         expected_columns = ["Nama", "Deskripsi", "Terduga"]
-        assert list(df.columns) == expected_columns
-        assert not df.empty
+        assert list(df.columns) == expected_columns  # noqa: S101
+        assert not df.empty  # noqa: S101
 
     def test_extract_aliases_from_names(self) -> None:
-        """
-        Test the extraction of aliases from full names within the imported document. This test
+        """Test the extraction of aliases from full names within the imported document. This test
         checks whether the extraction and separation of names and aliases are performed accurately,
         comparing the processed DataFrame against an expected structure.
-        """  # noqa
+        """  # noqa: D205
         # Given input DataFrame with 'Nama' column
         input_df = pd.DataFrame(
             {
@@ -221,9 +211,10 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
             check_dtype=False,
         )
 
-    def test_extract_idNumber_and_Paspor_fromDeskripsi_column(self) -> None:
+    def test_extract_idNumber_and_Paspor_fromDeskripsi_column(self) -> None:  # noqa: N802
         """Test extracting id_number and passport_number from separated description columns
-        where 'Terduga' has the value 'Orang'."""  # noqa
+        where 'Terduga' has the value 'Orang'.
+        """  # noqa: D205
         # Given input DataFrame with separated description columns
         input_df = pd.DataFrame(
             {
@@ -357,7 +348,7 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
     def test_separating_description(self) -> None:
         """Test separating per bulletpoint in `Deskripsi` column to sequennce of
         description column (description_{number of sequence}).
-        """
+        """  # noqa: D205
         input_df = pd.DataFrame(
             {
                 "Kode_ID": [
@@ -390,8 +381,8 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
             },
         )
 
-        max_descriptions = self.processing_separating._find_max_descriptions(
-            input_df["Deskripsi"],
+        max_descriptions = self.processing_separating._find_max_descriptions(  # noqa: SLF001
+            input_df["Deskripsi"].dropna().astype(str),
         )
 
         # Function to be tested
@@ -402,7 +393,7 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
         # Check if description columns exist and correspond
         # to the maximum bullet points in any 'Deskripsi' entry
         description_columns = [f"description_{i+1}" for i in range(max_descriptions)]
-        assert all(column in processed_df.columns for column in description_columns), "Missing description columns"
+        assert all(column in processed_df.columns for column in description_columns), "Missing description columns"  # noqa: S101
 
         # Expected output DataFrame
         expected_data = {
@@ -465,7 +456,7 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
         expected_df = pd.DataFrame(expected_data)
 
         # Assert that the structure of processed_df is as expected
-        assert all(processed_df[column].equals(input_df[column]) for column in ["Kode_ID", "Terduga"])
+        assert all(processed_df[column].equals(input_df[column]) for column in ["Kode_ID", "Terduga"])  # noqa: S101
 
         # Assert the equality of each description_{i+1} column
         for column in description_columns:
@@ -479,7 +470,7 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
 
         # Assert no unexpected columns are present
         expected_columns = {"Kode_ID", "Terduga", *description_columns}
-        assert set(processed_df.columns) == expected_columns, "Unexpected columns in processed DataFrame"
+        assert set(processed_df.columns) == expected_columns, "Unexpected columns in processed DataFrame"  # noqa: S101
 
         # Verify 'Terduga' column remains unchanged
         pd.testing.assert_series_equal(
@@ -491,7 +482,7 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
         # Verify the correctness of description columns
         for i in range(1, max_descriptions + 1):
             column_name = f"description_{i}"
-            assert column_name in processed_df.columns, f"{column_name} is missing in the processed DataFrame"
+            assert column_name in processed_df.columns, f"{column_name} is missing in the processed DataFrame"  # noqa: S101
 
             # Content check - ensuring column is not empty
             if "Deskripsi" in input_df.columns:
@@ -505,12 +496,10 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
                     .apply(lambda x: x.strip() != "")
                     .sum()
                 )
-                assert processed_non_empty <= expected_non_empty, f"Column {column_name} has more non-empty entries than expected."
+                assert processed_non_empty <= expected_non_empty, f"Column {column_name} has more non-empty entries than expected."  # noqa: S101
 
     def test_birth_date_formatting(self) -> None:
-        """
-        Test formatting value from `Tgl lahir` column thas has different formatting style for each row
-        """  # noqa
+        """Test formatting value from `Tgl lahir` column thas has different formatting style for each row.."""
         # Given input DataFrame with different formatting style in `Tgl lahir` column
         input_df = pd.DataFrame(
             {

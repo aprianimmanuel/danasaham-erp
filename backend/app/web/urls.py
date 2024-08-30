@@ -105,6 +105,10 @@ urlpatterns = [
     path("", include("app.config.dsb_user_personal.urls")),
     path("", include("app.config.dsb_user_corporate.urls")),
     path("", include("app.config.dsb_user_publisher.urls")),
+    path("", include("app.config.dttotDocReport.urls")),
+    path("", include("app.config.dttotDocReportPersonal.urls")),
+    path("", include("app.config.dttotDocReportPublisher.urls")),
+    path("", include("app.config.dttotDocReportCorporate.urls")),
     path("accounts/", include("allauth.urls")),
     path("sentry-debug/", trigger_error),
 ]

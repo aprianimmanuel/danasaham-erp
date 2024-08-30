@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from django.urls import path
+from django.urls import path, re_path
 
 from app.config.dsb_user_publisher.views import (
     DsbUserPublisherDetailView,
@@ -15,8 +15,8 @@ urlpatterns = [
         DsbUserPublisherListView.as_view(),
         name="dsb-user-publisher-list",
     ),
-    path(
-        "api/dsb-user-publisher/details/<uuid:dsb_user_publisher_id>/",
+    re_path(
+        r"^api/dsb-user-publisher/details/$",
         DsbUserPublisherDetailView.as_view(),
         name="dsb-user-publisher-details",
     ),

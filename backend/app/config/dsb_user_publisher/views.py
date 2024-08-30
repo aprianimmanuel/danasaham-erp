@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, ClassVar
 
 from drf_spectacular.utils import extend_schema
-from rest_framework import permissions, status
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -13,104 +13,176 @@ from app.config.dsb_user_publisher.serializers import DsbUserPublisherSerializer
 
 router = CustomViewRouter(url_prefix="api/")
 
-@router.register_decorator(r"dsb-user-publisher/list/", name="dsb-user-publisher-list")
-class DsbUserPublisherListView(APIView):
-    permission_classes: ClassVar = [permissions.IsAuthenticated]
 
-    @extend_schema(responses={200: DsbUserPublisherSerializer(many=True)})
-    def get(self, _request: Any, *_args: Any, **_kwargs: Any) -> Response:
-        queryset = dsb_user_publisher.objects.all()
-        serializer = DsbUserPublisherSerializer(queryset, many=True)
-        return Response(serializer.data)
+@router.register_decorator(r"dsb-user-publisher/list/", name="dsb-user-publisher-list")
+class DsbUserPublisherListView(generics.ListAPIView):
+    serializer_class = DsbUserPublisherSerializer
+    permission_classes: ClassVar = [permissions.IsAuthenticated]
+    queryset = dsb_user_publisher.objects.all()
+
 
 @router.register_decorator(
-    r"dsb-user-publisher/details/<uuid:dsb_user_publisher_id>/",
+    r"dsb-user-publisher/details/$",
     name="dsb-user-publisher-details",
 )
 class DsbUserPublisherDetailView(APIView):
+    serializer_class = DsbUserPublisherSerializer
     permission_classes: ClassVar = [permissions.IsAuthenticated]
 
-    @extend_schema(responses={200: DsbUserPublisherSerializer})
-    def get(
-        self,
-        _request: Any,
-        dsb_user_publisher_id: str,
-        *_args: Any,
-        **_kwargs: Any,
-    ) -> Response:
+    def get_instance(self, identifier: str) -> dsb_user_publisher:
+        """To attempt to retrieve a DSB User Publisher instance by either its document ID or its UUID.
+
+        Args:
+        ----
+            identifier: The document ID or UUID of the DSB User Publisher instance to be retrieved.
+
+        Returns:
+        -------
+            The retrieved DSB User Publisher instance, or None if no instance with the given identifier was found.
+
+        """
         try:
-            instance = dsb_user_publisher.objects.get(
-                dsb_user_publisher_id=dsb_user_publisher_id,
-            )
+            instance = dsb_user_publisher.objects.get(document=identifier)
         except dsb_user_publisher.DoesNotExist:
+            try:
+                instance = dsb_user_publisher.objects.get(dsb_user_publisher_id=identifier)
+            except dsb_user_publisher.DoesNotExist:
+                return None
+        return instance
+
+    @extend_schema(responses={200: DsbUserPublisherSerializer})
+    def get(self, request: Any, *_args: Any, **_kwargs: Any) -> Response:
+        """To retrieve a DSB User Publisher instance by its ID.
+
+        **Query Parameters:**
+
+        * `identifier`: The unique identifier of the DSB User Publisher instance.
+
+        **Responses:**
+
+        * `200 OK`: Returns the DSB User Publisher instance.
+        * `400 Bad Request`: The `identifier` query parameter is required.
+        * `404 Not Found`: No DSB User Publisher instance with the given ID was found.
+
+        **Security:**
+
+        * `jwtAuth`, `tokenAuth`, `jwtHeaderAuth`, `jwtCookieAuth`: The request is authenticated using a JSON Web Token.
+        """
+        identifier = request.query_params.get("identifier")
+        if not identifier:
+            return Response({"detail": "Identifier query parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        instance = self.get_instance(identifier)
+        if instance is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
         serializer = DsbUserPublisherSerializer(instance)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(
-        request=DsbUserPublisherSerializer,
-        responses={200: DsbUserPublisherSerializer},
-    )
-    def put(
-        self,
-        request: Any,
-        dsb_user_publisher_id: str,
-        *_args: Any,
-        **_kwargs: Any,
-    ) -> Response:
-        try:
-            instance = dsb_user_publisher.objects.get(
-                dsb_user_publisher_id=dsb_user_publisher_id,
-            )
-        except dsb_user_publisher.DoesNotExist:
+    @extend_schema(request=DsbUserPublisherSerializer, responses={200: DsbUserPublisherSerializer})
+    def put(self, request: Any, *_args: Any, **_kwargs: Any) -> Response:
+        """To update a DSB User Publisher instance by its ID.
+
+        **Query Parameters:**
+
+        * `identifier`: The unique identifier of the DSB User Publisher instance.
+
+        **Request Body:**
+
+        * `DsbUserPublisher` object with updated fields.
+
+        **Responses:**
+
+        * `200 OK`: Returns the updated DSB User Publisher instance.
+        * `400 Bad Request`: The `identifier` query parameter is required.
+        * `404 Not Found`: No DSB User Publisher instance with the given ID was found.
+
+        **Security:**
+
+        * `jwtAuth`, `tokenAuth`, `jwtHeaderAuth`, `jwtCookieAuth`: The request is authenticated using a JSON Web Token.
+        """
+        identifier = request.query_params.get("identifier")
+        if not identifier:
+            return Response({"detail": "Identifier query parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        instance = self.get_instance(identifier)
+        if instance is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
         serializer = DsbUserPublisherSerializer(instance, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @extend_schema(
-        request=DsbUserPublisherSerializer,
-        responses={200: DsbUserPublisherSerializer},
-    )
-    def patch(
-        self,
-        request: Any,
-        dsb_user_publisher_id: str,
-        *_args: Any,
-        **_kwargs: Any,
-    ) -> Response:
-        try:
-            instance = dsb_user_publisher.objects.get(
-                dsb_user_publisher_id=dsb_user_publisher_id,
-            )
-        except dsb_user_publisher.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = DsbUserPublisherSerializer(
-            instance,
-            data=request.data,
-            partial=True,
-        )
+    @extend_schema(request=DsbUserPublisherSerializer, responses={200: DsbUserPublisherSerializer})
+    def patch(self, request: Any, *_args: Any, **_kwargs: Any) -> Response:
+        """To partially update a DSB User Publisher instance by its ID.
+
+        **Query Parameters:**
+
+        * `identifier`: The unique identifier of the DSB User Publisher instance.
+
+        **Request Body:**
+
+        * `DsbUserPublisher` object with updated fields.
+
+        **Responses:**
+
+        * `200 OK`: Returns the updated DSB User Publisher instance.
+        * `400 Bad Request`: The `identifier` query parameter is required.
+        * `404 Not Found`: No DSB User Publisher instance with the given ID was found.
+
+        **Security:**
+
+        * `jwtAuth`, `tokenAuth`, `jwtHeaderAuth`, `jwtCookieAuth`: The request is authenticated using a JSON Web Token.
+        """
+        identifier = request.query_params.get("identifier")
+        if not identifier:
+            return Response({"detail": "Identifier query parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        instance = self.get_instance(identifier)
+        if instance is None:
+            return Response(
+                {"detail": "No DSB User Publisher instance with the given ID was found."},
+                status=status.HTTP_404_NOT_FOUND)
+
+        serializer = DsbUserPublisherSerializer(instance, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(responses={204: None})
-    def delete(
-        self,
-        _request: Any,
-        dsb_user_publisher_id: str,
-        *_args: Any,
-        **_kwargs: Any,
-    ) -> Response:
-        try:
-            instance = dsb_user_publisher.objects.get(
-                dsb_user_publisher_id=dsb_user_publisher_id,
-            )
-        except dsb_user_publisher.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        instance.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def delete(self, request: Any, *_args: Any, **_kwargs: Any) -> Response:
+        """To delete a DSB User Publisher instance by its ID.
 
+        **Query Parameters:**
+
+        * `identifier`: The unique identifier of the DSB User Publisher instance.
+
+        **Responses:**
+
+        * `204 No Content`: DSB User Publisher instance successfully deleted, no response body.
+        * `400 Bad Request`: The `identifier` query parameter is required.
+        * `404 Not Found`: No DSB User Publisher instance with the given ID was found.
+
+        **Security:**
+
+        * `jwtAuth`, `tokenAuth`, `jwtHeaderAuth`, `jwtCookieAuth`: The request is authenticated using a JSON Web Token.
+        """
+        identifier = request.query_params.get("identifier")
+        if not identifier:
+            return Response({"detail": "Identifier query parameter is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        instance = self.get_instance(identifier)
+        if instance is None:
+            return Response(
+                {"detail": "No DSB User Publisher instance with the given ID was found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        instance.delete()
+        return Response(
+            {"detail": "DSB User Publisher instance has been successfully deleted!"},
+            status=status.HTTP_204_NO_CONTENT,
+        )

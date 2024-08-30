@@ -24,17 +24,47 @@ if TYPE_CHECKING:
     from rest_framework.request import Request
     from rest_framework.response import Response
 
+router = CustomViewRouter()
+
 
 class CustomUserDetailsView(BaseUserDetailsView):
     serializer_class = CustomUserDetailsSerializer
+
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        response = super().get(request, *args, **kwargs)
+        response.data.update({"detail": "User details fetched successfully."})
+        return response
+
+    def put(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        response = super().put(request, *args, **kwargs)
+        if response.status_code == status.HTTP_200_OK:
+            response.data.update({"detail": "User details updated successfully."})
+        else:
+            response.data.update({"detail": "Failed to update user details."})
+        return response
+
+    def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        response = super().patch(request, *args, **kwargs)
+        if response.status_code == status.HTTP_200_OK:
+            response.data.update({"detail": "User details partially updated successfully."})
+        else:
+            response.data.update({"detail": "Failed to partially update user details."})
+        return response
 
 
 class CustomRegisterView(RegisterView):
     serializer_class = CustomRegisterSerializer
 
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == status.HTTP_201_CREATED:
+            response.data.update({"detail": "User registered successfully."})
+        else:
+            response.data.update({"detail": "Failed to register user."})
+        return response
 
-def custom_url_generator(self: Any, request: Request, temp_key: str) -> str:
-    uid = urlsafe_base64_encode(force_bytes(self.user))
+def custom_url_generator(user: Any, request: Request, temp_key: str) -> str:
+    uid = urlsafe_base64_encode(force_bytes(user.pk))  # Use user.pk for the UID
     token = temp_key
 
     path = reverse("password_reset_confirm", kwargs={"uidb64": uid, "token": token})
@@ -46,8 +76,16 @@ class CustomPasswordResetView(DjRestAuthPasswordResetView):
     def get_email_options(self) -> dict[str, Any]:
         """Return the email options including the custom URL generator."""
         return {
-            "url_generator": custom_url_generator,
+            "url_generator": lambda user, request: custom_url_generator(user, request, self.temp_key),
         }
+
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == status.HTTP_200_OK:
+            response.data.update({"detail": "Password reset email sent successfully."})
+        else:
+            response.data.update({"detail": "Failed to send password reset email."})
+        return response
 
 
 class CustomPasswordResetConfirmView(PasswordResetConfirmView):
@@ -73,15 +111,15 @@ class CustomPasswordResetConfirmView(PasswordResetConfirmView):
         },
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        return super().post(request, *args, **kwargs)
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == status.HTTP_200_OK:
+            response.data.update({"detail": "Password successfully reset."})
+        else:
+            response.data.update({"detail": "Failed to reset password. Invalid UID or token."})
+        return response
 
-
-router = CustomViewRouter()
-router.register("details", CustomUserDetailsView, name="user-details")
-router.register("register", CustomRegisterView, name="user-register")
-router.register("password/reset", CustomPasswordResetView, name="password-reset")
-router.register(
-    "password/reset/confirm/<uuid:user_id>/<str:token>/",
-    CustomPasswordResetConfirmView,
-    name="password-reset-confirm",
-)
+# Register the views with the router if not already registered elsewhere
+router.register_decorator(r"users/details/", name="user-details", view=CustomUserDetailsView)
+router.register_decorator(r"users/register/", name="user-register", view=CustomRegisterView)
+router.register_decorator(r"users/password/reset/", name="password-reset", view=CustomPasswordResetView)
+router.register_decorator(r"users/password/reset/confirm/", name="password-reset-confirm", view=CustomPasswordResetConfirmView)

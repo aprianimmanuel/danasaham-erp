@@ -1,5 +1,6 @@
+# Start the Django development server
 while true; do
-    python manage.py runserver
+    python manage.py runserver 0.0.0.0:8000
 
     # Check the exit status of the command
     if [ $? -eq 0 ]; then
@@ -7,7 +8,7 @@ while true; do
         break
     else
         # If the command fails, display an error message
-        echo "Command failed. Retrying..."
-        sleep 0.5  # Add a delay between retries if desired
+        echo "Django server failed to start. Retrying..."
+        sleep 0.5
     fi
 done

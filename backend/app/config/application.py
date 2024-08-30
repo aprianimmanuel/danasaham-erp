@@ -38,6 +38,10 @@ INSTALLED_APPS = [
     "app.config.dsb_user_personal",
     "app.config.dsb_user_corporate",
     "app.config.dsb_user_publisher",
+    "app.config.dttotDocReport",
+    "app.config.dttotDocReportPersonal",
+    "app.config.dttotDocReportPublisher",
+    "app.config.dttotDocReportCorporate",
     "django_celery_results",
 ]
 

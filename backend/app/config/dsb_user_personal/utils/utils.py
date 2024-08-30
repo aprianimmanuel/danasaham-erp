@@ -5,10 +5,11 @@ import os
 from pathlib import Path
 
 import pandas as pd
+from django.apps import apps
 from django.db import transaction
 from sqlalchemy import create_engine
 
-from app.config.core.models import dsb_user_personal, User
+from app.config.core.models import User, dsb_user_personal
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ def save_data_to_model(df: pd.DataFrame, document: dsb_user_personal, user: User
                 if existing_record.users_last_modified_date != row["users_last_modified_date"]:
                     # Update all fields if users_last_modified_date is different
                     existing_record.document = document
-                    existing_record.user = user
+                    existing_record.last_update_by = user
                     existing_record.user_name = row["user_name"]
                     existing_record.users_email_registered = row["users_email_registered"]
                     existing_record.users_last_modified_date = row["users_last_modified_date"]
@@ -56,7 +57,7 @@ def save_data_to_model(df: pd.DataFrame, document: dsb_user_personal, user: User
                 elif existing_record.personal_legal_last_modified_date != row["personal_last_modified_date"]:
                     # Update all fields if personal_legal_last_modified_date is different
                     existing_record.document = document
-                    existing_record.user = user
+                    existing_record.last_update_by = user
                     existing_record.user_upgrade_to_personal_date = row["user_upgrade_to_personal_date"]
                     existing_record.personal_name = row["personal_name"]
                     existing_record.personal_phone_number = row["personal_phone_number"]
@@ -80,7 +81,7 @@ def save_data_to_model(df: pd.DataFrame, document: dsb_user_personal, user: User
                 dsb_user_personal.objects.update_or_create(
                     coredsb_user_id=row["user_id"],
                     document=document,
-                    user=user,
+                    last_update_by=None,
                     initial_registration_date=row["initial_registration_date"],
                     user_name=row["user_name"],
                     users_email_registered=row["users_email_registered"],

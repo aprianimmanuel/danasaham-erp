@@ -17,7 +17,7 @@ services:
     build:
       context: .
       args:
-        DEV: "True"
+        DEV: True
         DB_USER: ${DB_USER}
         DB_PASSWORD: ${DB_PASSWORD}
         DB_NAME: ${DB_NAME}
@@ -42,10 +42,12 @@ services:
       - ./backend:/apps
       - logs:/apps/logs
     command: make run.server.prod
+    restart: unless-stopped
     depends_on:
       - pgbouncer
       - redis
       - rabbitmq
+      - smtp
       - collectstatic
 
   db:
@@ -114,7 +116,7 @@ services:
     build:
       context: .
       args:
-        DEV: "true"
+        DEV: true
         POSTGRESQL_DATABASE: ${POSTGRESQL_DATABASE}
         POSTGRESQL_USERNAME: ${POSTGRESQL_USERNAME}
         POSTGRESQL_HOST: ${POSTGRESQL_HOST}
@@ -144,45 +146,12 @@ services:
       - ./backend:/apps
       - logs:/apps/logs
 
-  celery-beat:
-    <<: *common
-    build:
-      context: .
-      args:
-        DEV: "true"
-        DJANGO_USER: ${DJANGO_USER}
-        DJANGO_UID: ${DJANGO_UID}
-        DJANGO_GID: ${DJANGO_GID}
-    environment:
-      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
-      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
-      CELERY_BEAT_SLEEP_INTERVAL: ${CELERY_BEAT_SLEEP_INTERVAL}
-      POSTGRESQL_DATABASE: ${POSTGRESQL_DATABASE}
-      POSTGRESQL_USERNAME: ${POSTGRESQL_USERNAME}
-      POSTGRESQL_HOST: ${POSTGRESQL_HOST}
-      POSTGRESQL_PASSWORD: ${POSTGRESQL_PASSWORD}
-      DATABASE_URL: postgresql://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${POSTGRESQL_HOST}:${POSTGRESQL_PORT}/${POSTGRESQL_DATABASE}
-      EXTERNAL_DB_HOST: ${EXTERNAL_DB_HOST}
-      EXTERNAL_DB_USERNAME: ${EXTERNAL_DB_USERNAME}
-      EXTERNAL_DB_DATABASE: ${EXTERNAL_DB_DATABASE}
-      EXTERNAL_DB_PORT: ${EXTERNAL_DB_PORT}
-      EXTERNAL_DB_PASSWORD: ${EXTERNAL_DB_PASSWORD}
-    command: make run.celery.beat.prod
-    restart: "no"
-    depends_on:
-      - app
-      - redis
-      - rabbitmq
-    volumes:
-      - ./backend:/apps
-      - logs:/apps/logs
-
   collectstatic:
     <<: *common
     build:
       context: .
       args:
-        DEV: "true"
+        DEV: true
         DJANGO_USER: ${DJANGO_USER}
         DJANGO_UID: ${DJANGO_UID}
         DJANGO_GID: ${DJANGO_GID}
@@ -208,7 +177,7 @@ services:
     build:
       context: .
       args:
-        DEV: "true"
+        DEV: true
         DJANGO_USER: ${DJANGO_USER}
         DJANGO_UID: ${DJANGO_UID}
         DJANGO_GID: ${DJANGO_GID}
@@ -218,6 +187,7 @@ services:
       - 8025:8025
     volumes:
       - ./backend:/apps
+    restart: unless-stopped
 
 networks:
   main:

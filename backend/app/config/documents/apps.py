@@ -9,4 +9,4 @@ class DocumentsConfig(AppConfig):
     verbose_name = "Documents"
 
     def ready(self) -> None:
-        import app.config.documents.signals
+        import app.config.documents.signals  # noqa: F401

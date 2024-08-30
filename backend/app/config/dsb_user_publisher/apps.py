@@ -8,4 +8,4 @@ class DsbUserPublisherConfig(AppConfig):
     name = "app.config.dsb_user_publisher"
 
     def ready(self) -> None:
-        import app.config.dsb_user_publisher.signals
+        pass

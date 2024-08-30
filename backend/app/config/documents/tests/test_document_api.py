@@ -3,6 +3,7 @@ from __future__ import annotations
 import io
 import os
 import shutil
+from typing import Any
 
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -18,11 +19,29 @@ from app.config.core.models import (
 )
 
 
-def document_list_url():
+def document_list_url() -> Any:
+    """This function returns the URL for the document list.
+
+    Returns
+    -------
+        str: The URL for the document list.
+
+    """  # noqa: D401, D404
     return reverse("documents:document-list")
 
 
-def document_detail_url(document_id):
+def document_detail_url(document_id: str) -> str:
+    """Generate the URL for a document's detail view.
+
+    Args:
+    ----
+        document_id (str): The ID of the document.
+
+    Returns:
+    -------
+        str: The URL for the document's detail view.
+
+    """
     return reverse("documents:document-details", args=[document_id])
 
 
@@ -33,8 +52,8 @@ class DocumentAPITests(APITestCase):
         self.client.force_authenticate(user=self.user)
 
         # Create 'test_media' subdirectory within MEDIA_ROOT for test files
-        self.test_media_path = os.path.join(settings.MEDIA_ROOT, "test_media")
-        os.makedirs(self.test_media_path, exist_ok=True)
+        self.test_media_path = os.path.join(settings.MEDIA_ROOT, "test_media")  # noqa: PTH118
+        os.makedirs(self.test_media_path, exist_ok=True)  # noqa: PTH103
 
         # Override MEDIA_ROOT to the test directory
         self.old_media_root = settings.MEDIA_ROOT
@@ -66,12 +85,12 @@ class DocumentAPITests(APITestCase):
             ),
         }
         res = self.client.post(document_list_url(), payload, format="multipart")
-        assert res.status_code == status.HTTP_201_CREATED
+        assert res.status_code == status.HTTP_201_CREATED  # noqa: S101
         document = Document.objects.get(pk=res.data["document_id"])
         for key in payload:
             if key != "document_file":
-                assert payload[key] == getattr(document, key)
-        assert document.document_file
+                assert payload[key] == getattr(document, key)  # noqa: S101
+        assert document.document_file  # noqa: S101
 
         # Call save_file_to_instance and document.save
         save_file_to_instance(document, payload["document_file"])
@@ -79,7 +98,7 @@ class DocumentAPITests(APITestCase):
 
         # Verify that the file has been saved correctly
         file_path = document.document_file.path
-        assert os.path.exists(file_path)
+        assert os.path.exists(file_path)  # noqa: S101
 
         # Clean up the saved file
         document.document_file.delete()
@@ -101,8 +120,8 @@ class DocumentAPITests(APITestCase):
         )
 
         res = self.client.get(document_list_url())
-        assert res.status_code == status.HTTP_200_OK
-        assert len(res.data) == 2
+        assert res.status_code == status.HTTP_200_OK  # noqa: S101
+        assert len(res.data) == 2  # noqa: S101, PLR2004
 
     def test_retrieve_document_detail(self) -> None:
         """Test retrieving a document's detail."""
@@ -116,8 +135,8 @@ class DocumentAPITests(APITestCase):
 
         url = document_detail_url(document.document_id)
         res = self.client.get(url)
-        assert res.status_code == status.HTTP_200_OK
-        assert res.data["document_name"] == document.document_name
+        assert res.status_code == status.HTTP_200_OK  # noqa: S101
+        assert res.data["document_name"] == document.document_name  # noqa: S101
 
     def test_update_document(self) -> None:
         """Test updating a document."""
@@ -134,9 +153,9 @@ class DocumentAPITests(APITestCase):
         res = self.client.patch(url, payload)
 
         document.refresh_from_db()
-        assert res.status_code == status.HTTP_200_OK
-        assert document.document_name == payload["document_name"]
-        assert document.document_type == payload["document_type"]
+        assert res.status_code == status.HTTP_200_OK  # noqa: S101
+        assert document.document_name == payload["document_name"]  # noqa: S101
+        assert document.document_type == payload["document_type"]  # noqa: S101
 
     def test_delete_document(self) -> None:
         """Test deleting a document."""
@@ -151,8 +170,8 @@ class DocumentAPITests(APITestCase):
         self.client.force_authenticate(user=self.user)
         res = self.client.delete(url)
 
-        assert res.status_code == status.HTTP_204_NO_CONTENT
-        assert not Document.objects.filter(pk=document.pk).exists()
+        assert res.status_code == status.HTTP_204_NO_CONTENT  # noqa: S101
+        assert not Document.objects.filter(pk=document.pk).exists()  # noqa: S101
 
 
 class DTTOTDocumentUploadTests(APITestCase):
@@ -173,8 +192,8 @@ class DTTOTDocumentUploadTests(APITestCase):
 
         # Create 'test_media' subdirectory within MEDIA_ROOT for test files
         self.test_media_subdir = "test_media"
-        self.test_media_path = os.path.join(settings.MEDIA_ROOT, "test_media")
-        os.makedirs(self.test_media_path, exist_ok=True)
+        self.test_media_path = os.path.join(settings.MEDIA_ROOT, "test_media")  # noqa: PTH118
+        os.makedirs(self.test_media_path, exist_ok=True)  # noqa: PTH103
 
         # Override MEDIA_ROOT to the test directory
         self.old_media_root = settings.MEDIA_ROOT
@@ -189,7 +208,7 @@ class DTTOTDocumentUploadTests(APITestCase):
         super().tearDown()
 
     @staticmethod
-    def create_test_document_file():
+    def create_test_document_file():  # noqa: ANN205
         # Create an XLSX file in memory
         output = io.BytesIO()
         wb = Workbook()
@@ -229,7 +248,7 @@ class DTTOTDocumentUploadTests(APITestCase):
     def test_upload_dttot_document_and_process(self) -> None:
         """Test the upload and processing of a DTTOT Document
         and its saving into the dttotDoc model.
-        """
+        """  # noqa: D205
         document_file = self.create_test_document_file()
         with self.settings(MEDIA_ROOT=self.test_media_path):
             response = self.client.post(
@@ -242,11 +261,11 @@ class DTTOTDocumentUploadTests(APITestCase):
                 },
                 format="multipart",
             )
-            assert response.status_code == status.HTTP_201_CREATED, "Document upload failed"
+            assert response.status_code == status.HTTP_201_CREATED, "Document upload failed"  # noqa: S101
 
             # Get document ID from response
             document_id = response.data["document_id"]
-            assert document_id is not None, "Document ID was not returned"
+            assert document_id is not None, "Document ID was not returned"  # noqa: S101
 
 
 class DocumentUploadTests(APITestCase):
@@ -267,8 +286,8 @@ class DocumentUploadTests(APITestCase):
 
         # Create 'test_media' subdirectory within MEDIA_ROOT for test files
         self.test_media_subdir = "test_media"
-        self.test_media_path = os.path.join(settings.MEDIA_ROOT, "test_media")
-        os.makedirs(self.test_media_path, exist_ok=True)
+        self.test_media_path = os.path.join(settings.MEDIA_ROOT, "test_media")  # noqa: PTH118
+        os.makedirs(self.test_media_path, exist_ok=True)  # noqa: PTH103
 
         # Override MEDIA_ROOT to the test directory
         self.old_media_root = settings.MEDIA_ROOT
@@ -283,7 +302,7 @@ class DocumentUploadTests(APITestCase):
         super().tearDown()
 
     @staticmethod
-    def create_test_document_file():
+    def create_test_document_file():  # noqa: ANN205
         # Create an XLSX file in memory
         output = io.BytesIO()
         wb = Workbook()
@@ -333,15 +352,15 @@ class DocumentUploadTests(APITestCase):
                 },
                 format="multipart",
             )
-            assert response.status_code == status.HTTP_201_CREATED, "Document upload failed"
+            assert response.status_code == status.HTTP_201_CREATED, "Document upload failed"  # noqa: S101
             document_id = response.data["document_id"]
-            assert document_id is not None, "Document ID was not returned"
+            assert document_id is not None, "Document ID was not returned"  # noqa: S101
 
             instance = Document.objects.get(pk=document_id)
             save_file_to_instance(instance, document_file)
             instance.save()
 
-            assert Document.objects.filter(pk=document_id).exists(), "Document was not created in the database."
+            assert Document.objects.filter(pk=document_id).exists(), "Document was not created in the database."  # noqa: S101
             file_path = instance.document_file.path
-            assert os.path.exists(file_path)
+            assert os.path.exists(file_path)  # noqa: S101, PTH110
             instance.document_file.delete()

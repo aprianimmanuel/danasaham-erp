@@ -1,6 +1,4 @@
-from  __future__ import annotations
-
-from typing import Any
+from __future__ import annotations
 
 import logging
 import os
@@ -10,8 +8,7 @@ import pandas as pd
 from django.db import transaction
 from sqlalchemy import create_engine
 
-
-from app.config.core.models import dsb_user_corporate, User
+from app.config.core.models import User, dsb_user_corporate
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +35,10 @@ def fetch_data_from_external_db() -> pd.DataFrame:
 
 
 
-def save_data_to_model(df: pd.DataFrame, document: dsb_user_corporate, user: User) -> None:
+def save_data_to_model(
+        df: pd.DataFrame,
+        document: dsb_user_corporate,
+        user: User) -> None:
     with transaction.atomic():
         for _index, row, in df.iterrows():
             # Check if a record with the same corporate_pengurus_id already exist
@@ -49,7 +49,7 @@ def save_data_to_model(df: pd.DataFrame, document: dsb_user_corporate, user: Use
                 if existing_record.users_last_modified_date != row["users_last_modified_date"]:
                     # Update all fields if users_last_modified_date is different
                     existing_record.document = document
-                    existing_record.user = user
+                    existing_record.last_update_by = user
                     existing_record.initial_registration_date = row["initial_registration_date"]
                     existing_record.user_name = row["user_name"]
                     existing_record.registered_user_email = row["registered_user_email"]
@@ -61,7 +61,7 @@ def save_data_to_model(df: pd.DataFrame, document: dsb_user_corporate, user: Use
                 elif existing_record.pengurus_corporate_last_update_date != row["pengurus_corporate_last_update_date"]:
                     # Update all fields if pengurus_last_corporate_date is different
                     existing_record.document = document
-                    existing_record.user = user
+                    existing_record.last_update_by = user
                     existing_record.pengurus_corporate_name = row["pengurus_corporate_name"]
                     existing_record.pengurus_corporate_id_number = row["pengurus_corporate_idnumber"]
                     existing_record.pengurus_corporate_phone_number = row["pengurus_corporate_phone_number"]
@@ -78,7 +78,7 @@ def save_data_to_model(df: pd.DataFrame, document: dsb_user_corporate, user: Use
                 elif existing_record.corporate_legal_last_modified_date != row["corporate_legal_last_modified_date"]:
                     # Update all fields that being connected to corporate_legal and corporate table if corporate_legal_last_modified date is different
                     existing_record.document = document
-                    existing_record.user = user
+                    existing_record.last_update_by = user
                     existing_record.corporate_company_name = row["corporate_company_name"]
                     existing_record.corporate_phone_number = row["corporate_phone_number"]
                     existing_record.corporate_nib = row["corporate_nib"]
@@ -95,7 +95,7 @@ def save_data_to_model(df: pd.DataFrame, document: dsb_user_corporate, user: Use
                 dsb_user_corporate.objects.update_or_create(
                     corporate_pengurus_id=row["corporate_pengurus_id"],
                     document=document,
-                    user=user,
+                    last_update_by=None,
                     initial_registration_date=row["initial_registration_date"],
                     user_name=row["user_name"],
                     registered_user_email=row["registered_user_email"],
@@ -123,6 +123,6 @@ def save_data_to_model(df: pd.DataFrame, document: dsb_user_corporate, user: Use
                     corporate_business_field=row["corporate_business_field"],
                     corporate_type_of_annual_income=row["corporate_type_of_annual_income"],
                     corporate_annual_income=row["corporate_annual_income"],
-                    corporate_investment_goals=row["corporate_investment_goals"]
+                    corporate_investment_goals=row["corporate_investment_goals"],
                 )
         logger.info("Successfully processed document ID %s", document.document_id)
