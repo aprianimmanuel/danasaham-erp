@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-from typing import Any
-
 import logging
 import os
 from pathlib import Path
 
 import pandas as pd
-from django.db  import transaction
+from django.db import transaction
 from sqlalchemy import create_engine
 
-from app.config.core.models import dsb_user_publisher, User
+from app.config.core.models import User, dsb_user_publisher
 
 logger = logging.getLogger(__name__)
 

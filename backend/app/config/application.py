@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "app.config.dttotDocReportPersonal",
     "app.config.dttotDocReportPublisher",
     "app.config.dttotDocReportCorporate",
+    "app.config.log_tracker_publisher",
     "django_celery_results",
 ]
 

@@ -109,6 +109,7 @@ urlpatterns = [
     path("", include("app.config.dttotDocReportPersonal.urls")),
     path("", include("app.config.dttotDocReportPublisher.urls")),
     path("", include("app.config.dttotDocReportCorporate.urls")),
+    path("", include("app.config.log_tracker_publisher.urls")),
     path("accounts/", include("allauth.urls")),
     path("sentry-debug/", trigger_error),
 ]

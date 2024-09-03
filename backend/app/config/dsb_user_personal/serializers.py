@@ -57,9 +57,16 @@ class DsbUserPersonalSerializer(serializers.ModelSerializer):
             dsb_user_personal: The newly created DSB user personal data.
 
         """
-        document = validated_data.get("document")
+        # Pop the document, last_update_by and updated_date field from the validated data.
+        last_update_by = validated_data.pop("last_update_by", None)
+        updated_date = validated_data.pop("updated_date", None)
+        document = validated_data.pop("document")
 
-        return dsb_user_personal.objects.create(document=document, **validated_data)
+        return dsb_user_personal.objects.create(
+            document=document,
+            last_update_by=None,
+            updated_date=None,
+            **validated_data)
 
     def update(
         self, instance: dsb_user_personal, validated_data: dict[str, Any],
@@ -99,8 +106,6 @@ class DsbUserPersonalSerializer(serializers.ModelSerializer):
 
         """
         representation = super().to_representation(instance)
-        representation["user_id"] = instance.last_update_by.user_id if instance.last_update_by else None
-        representation["document_id"] = (
-            instance.document.document_id if instance.document else None
-        )
+        representation["last_update_by"] = instance.last_update_by.user_id if instance.last_update_by else None
+        representation["document_data"] = instance.document.document_id
         return representation

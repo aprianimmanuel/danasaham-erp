@@ -1817,3 +1817,123 @@ class dttotDocReportPublisher(models.Model):  # noqa: N801
 
     def __str__(self) -> str:
         return f"{self.dttotdoc_report} - {self.dsb_user_publisher} - {self.score_match_similarity} - {self.kode_densus_publisher}"
+
+class log_tracker_publisher(models.Model):   # noqa: N801
+    document = models.ForeignKey(
+        Document,
+        on_delete=models.CASCADE,
+        related_name="log_tracker_publishers",
+        related_query_name="log_tracker_publisher",
+    )
+    log_tracker_publisher_id = models.CharField(
+        default=uuid.uuid4,
+        editable=False,
+        primary_key=True,
+        max_length=36,
+        unique=True,
+        verbose_name=_("Log Tracker Publisher ID"),
+    )
+    created_date = models.DateTimeField(_("Entry Created Date"), auto_now_add=True)
+    last_updated_date = models.DateTimeField(_("Entry Updated Date"), auto_now=True)
+    last_update_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Last Updated by User"),
+        related_name="updated_log_tracker_publishers",
+        related_query_name="updated_log_tracker_publisher",
+        null=True,
+    )
+    core_dsb_user_id = models.CharField(  # noqa: DJ001
+        _("ID of User From Danasaham Core"),
+        max_length=36,
+        blank=True,
+        null=True,
+    )
+    publisher_company_name = models.CharField(
+        _("Company Name"),
+        max_length=255,
+        blank=True,
+    )
+    initial_registration_date = models.DateTimeField(
+        _("Initial Registration Date"),
+        blank=True,
+        null=True,
+    )
+    publisher_upgrade_date = models.DateTimeField(
+        _("Publisher Upgrade Date"),
+        blank=True,
+        null=True,
+    )
+    publisher_legal_data_input_created_date = models.DateTimeField(
+        _("Publisher Legal Data Input Created Date"),
+        blank=True,
+        null=True,
+    )
+    publisher_finance_data_input_created_date = models.DateTimeField(
+        _("Publisher Finance Data Input Created Date"),
+        blank=True,
+        null=True,
+    )
+    publisher_proposal_data_input_created_date = models.DateTimeField(
+        _("Publisher Proposal Data Input Created Date"),
+        blank=True,
+        null=True,
+    )
+    primary_va_registration_registration_date = models.DateTimeField(
+        _("Primary VA Registration Registration Date"),
+        blank=True,
+        null=True,
+    )
+    va_operational_approval_created_date = models.DateTimeField(
+        _("VA Operational Approval Created Date"),
+        blank=True,
+        null=True,
+    )
+    approval_registration_fee_date = models.DateTimeField(
+        _("Approval Registration Fee Date"),
+        blank=True,
+        null=True,
+    )
+    primary_offering_input_date = models.DateTimeField(
+        _("Primary Offering Input Date"),
+        blank=True,
+        null=True,
+    )
+    confirmation_primary_offering_date = models.DateTimeField(
+        _("Confirmation Primary Offering Date"),
+        blank=True,
+        null=True,
+    )
+    cbestreporting_date = models.DateTimeField(
+        _("CBEST Reporting Date"),
+        blank=True,
+        null=True,
+    )
+    investation_succcess_sk_upload_date = models.DateTimeField(
+        _("Investation Succcess SK Upload Date"),
+        blank=True,
+        null=True,
+    )
+    investation_success_check_date = models.DateTimeField(
+        _("Investation Success Check Date"),
+        blank=True,
+        null=True,
+    )
+    investation_success_approval_date = models.DateTimeField(
+        _("Investation Success Approval Date"),
+        blank=True,
+        null=True,
+    )
+    investation_success_fund_transfer_date = models.DateTimeField(
+        _("Investation Success Fund Transfer Date"),
+        blank=True,
+        null=True,
+    )
+    investation_success_share_distribution_date = models.DateTimeField(
+        _("Investation Success Share Distribution Date"),
+        blank=True,
+        null=True,
+    )
+
+    def __str__(self) -> str:
+        return f"{self.document} - {self.core_dsb_user_id} - {self.publisher_company_name}"

@@ -128,6 +128,7 @@ def get_dynamic_content(report: dttotDocReport) -> str:  # noqa: ARG001
     Hasilnya, ditemukan {dttotDocReport.objects.filter(created_date__lte=today_date).count()} dengan rerata kecocokan diatas {dttotDocReport.objects.filter(created_date__lte=today_date).aggregate(median_score=pd.Series.median('score_match_similarity'))['median_score']}.
     Terlampir detail nasabah yang memiliki kecocokan dengan data Daftar Teroris dan Organisasi Teroris.
     Demikian laporan ini disampaikan.
+
     Atas perhatiannya, kami mengucapkan terima kasih.
     """
 

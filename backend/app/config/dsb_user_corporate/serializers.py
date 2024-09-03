@@ -73,11 +73,17 @@ class DsbUserCorporateSerializer(serializers.ModelSerializer):
             dsb_user_corporate: The newly created DSB user corporate data.
 
         """
-        # Pop the document field from validated_data.
-        document: Document | None = validated_data.pop("document", None)
+        # Pop the document, last_update_by and updated_date field from the validated data.
+        last_update_by = validated_data.pop("last_update_by", None)
+        updated_date = validated_data.pop("updated_date", None)
+        document = validated_data.pop("document")
 
         # Create a new instance of dsb_user_corporate using the validated data.
-        return dsb_user_corporate.objects.create(document=document, **validated_data)
+        return dsb_user_corporate.objects.create(
+            document=document,
+            last_update_by=None,
+            updated_date=None,
+            **validated_data)
 
     def update(
             self: DsbUserCorporateSerializer,
@@ -121,10 +127,13 @@ class DsbUserCorporateSerializer(serializers.ModelSerializer):
         # Get the parent class's representation of the instance.
         representation: dict[str, Any] = super().to_representation(instance)
 
-        # Add the document_id field to the representation.
-        representation["document_id"] = (
-            instance.document.document_id if instance.document else None
+        # Add the last_update_by field to the representation.
+        representation["last_update_by"] = (
+            instance.last_update_by.user_id if instance.last_update_by else None
         )
+
+        # Add the document_data field to the representation.
+        representation["document_data"] = instance.document.document_id
 
         # Return the representation.
         return representation
