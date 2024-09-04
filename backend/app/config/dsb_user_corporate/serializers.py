@@ -149,8 +149,8 @@ class DsbUserCorporateSerializer(serializers.ModelSerializer):
             dsb_user_corporate: The updated DSB user corporate data.
 
         """
-        document: Document | None = validated_data.pop("document", None)  # type: ignore[assignment]
-        last_update_by: User | None = validated_data.pop("last_update_by", None)  # type: ignore[assignment]
+        document: Document | None = validated_data.pop("document", None)
+        last_update_by: User | None = validated_data.pop("last_update_by", None)
 
         return super().update(instance, validated_data)
 
