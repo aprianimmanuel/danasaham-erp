@@ -55,12 +55,8 @@ class LogTrackerPublisherSerializer(serializers.ModelSerializer):
             log_tracker_publisher: The updated log_tracker_publisher instance.
 
         """
-        # Get the authenticated user from the request context.
-        request = self.context.get("request")
-        last_update_by: User | None = request.user if request else None
-
         # Set the user field to the authenticated user if available.
-        validated_data["last_update_by"] = validated_data.get("last_update_by", last_update_by)
+        validated_data["last_update_by"] = validated_data.pop("last_update_by")
 
         # Set last_updated_date to the current time.
         validated_data["last_updated_date"] = timezone.now()

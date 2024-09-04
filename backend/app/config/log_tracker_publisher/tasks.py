@@ -5,6 +5,7 @@ import logging
 from celery import chain, shared_task
 
 from app.config.core.models import Document, User, log_tracker_publisher
+from app.config.log_tracker_personal.tasks import process_log_tracker_personal_document
 from app.config.log_tracker_publisher.utils.utils import (
     fetch_data_from_external_db,
     save_data_to_model,
@@ -82,4 +83,5 @@ def initiate_log_tracker_publisher(
     # Create a chain of tasks
     task_chain = chain(
         process_log_tracker_publisher_document.si(user_data_serializable, document_data_serializable),
+        process_log_tracker_personal_document.si(user_data_serializable, document_data_serializable),
     )()

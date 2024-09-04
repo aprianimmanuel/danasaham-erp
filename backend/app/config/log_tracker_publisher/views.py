@@ -11,12 +11,11 @@ from app.common.routers import CustomViewRouter
 from app.config.core.models import log_tracker_publisher
 from app.config.log_tracker_publisher.serializers import LogTrackerPublisherSerializer
 
-
 router = CustomViewRouter(url_prefix="api/")
 
 
 @router.register_decorator(
-    r"log-tracker-publisher/list/",
+    r"documents/log-tracker-publisher/list/",
     name="log-tracker-publisher-list",
 )
 class LogTrackerPublisherListView(generics.ListAPIView):
@@ -26,7 +25,7 @@ class LogTrackerPublisherListView(generics.ListAPIView):
 
 
 @router.register_decorator(
-    r"log-tracker-publisher/details/$",
+    r"documents/log-tracker-publisher/details/$",
     name="log-tracker-publisher-details",
 )
 class LogTrackerPublisherDetailView(APIView):

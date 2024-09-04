@@ -11,12 +11,12 @@ app_name = "log_tracker_publisher"
 
 urlpatterns = [
     path(
-        "api/log-tracker-publisher/list/",
+        "api/documents/log-tracker-publisher/list/",
         LogTrackerPublisherListView.as_view(),
         name="log-tracker-publisher-list",
     ),
     re_path(
-        r"^api/log-tracker-publisher/details/$",
+        r"^api/documents/log-tracker-publisher/details/$",
         LogTrackerPublisherDetailView.as_view(),
         name="log-tracker-publisher-details",
     ),

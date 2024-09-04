@@ -9,14 +9,17 @@ from rest_framework.views import APIView
 
 from app.common.routers import CustomViewRouter
 from app.config.core.models import dsb_user_corporate
-from app.config.dsb_user_corporate.serializers import DsbUserCorporateSerializer
+from app.config.dsb_user_corporate.serializers import (
+    DsbUserCorporateListSerializer,
+    DsbUserCorporateSerializer,
+)
 
 router = CustomViewRouter(url_prefix="api/")
 
 
 @router.register_decorator(r"documents/dsb-user-corporate/list/", name="dsb-user-corporate-list")
 class DsbUserCorporateListView(generics.ListAPIView):
-    serializer_class = DsbUserCorporateSerializer
+    serializer_class = DsbUserCorporateListSerializer
     permission_classes: ClassVar[list[type[permissions.BasePermission]]] = [permissions.IsAuthenticated]
     queryset = dsb_user_corporate.objects.all()
 

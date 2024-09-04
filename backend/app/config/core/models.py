@@ -1937,3 +1937,78 @@ class log_tracker_publisher(models.Model):   # noqa: N801
 
     def __str__(self) -> str:
         return f"{self.document} - {self.core_dsb_user_id} - {self.publisher_company_name}"
+
+class log_tracker_personal(models.Model):   # noqa: N801
+    document = models.ForeignKey(
+        Document,
+        on_delete=models.CASCADE,
+        related_name="log_tracker_personals",
+        related_query_name="log_tracker_personal",
+    )
+    log_tracker_personal_id = models.CharField(
+        default=uuid.uuid4,
+        editable=False,
+        primary_key=True,
+        max_length=36,
+        unique=True,
+        verbose_name=_("Log Tracker Personal ID"),
+    )
+    created_date = models.DateTimeField(_("Entry Created Date"), auto_now_add=True)
+    last_updated_date = models.DateTimeField(_("Entry Updated Date"), auto_now=True)
+    last_update_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Last Updated by User"),
+        related_name="updated_log_tracker_personals",
+        related_query_name="updated_log_tracker_personal",
+        null=True,
+    )
+    core_dsb_user_id = models.CharField(  # noqa: DJ001
+        _("ID of User From Danasaham Core"),
+        max_length=36,
+        blank=True,
+        null=True,
+    )
+    personal_name = models.CharField(
+        _("Personal Name"),
+        max_length=255,
+        blank=True,
+    )
+    initial_registration_date = models.DateTimeField(
+        _("Initial Registration Date"),
+        blank=True,
+        null=True,
+    )
+    personal_legal_created_date = models.DateTimeField(
+        _("Personal Legal Created Date"),
+        blank=True,
+        null=True,
+    )
+    personal_finance_created_date = models.DateTimeField(
+        _("Personal Finance Created Date"),
+        blank=True,
+        null=True,
+    )
+    personal_ksei_id_created_date = models.DateTimeField(
+        _("Personal KSEI ID Created Date"),
+        blank=True,
+        null=True,
+    )
+    personal_limit_last_modified_date = models.DateTimeField(
+        _("Personal Limit Last Modified Date"),
+        blank=True,
+        null=True,
+    )
+    personal_data_checking_date = models.DateTimeField(
+        _("Personal Data Checking Date"),
+        blank=True,
+        null=True,
+    )
+    initial_primary_investment_date = models.DateTimeField(
+        _("Initial Primary Investment Date"),
+        blank=True,
+        null=True,
+    )
+
+    def __str__(self) -> str:
+        return f"{self.document} - {self.core_dsb_user_id} - {self.personal_name}"

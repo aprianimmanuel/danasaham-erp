@@ -7,6 +7,17 @@ from rest_framework import serializers
 from app.config.core.models import Document, User, dsb_user_corporate
 
 
+class DsbUserCorporateListSerializer(serializers.ModelSerializer):
+    model = dsb_user_corporate
+    fields = [  # noqa: RUF012
+        "dsb_user_corporate_id",
+        "document",
+        "last_update_by",
+        "created_date",
+        "updated_date",
+        "corporate_pengurus_id",
+    ]
+
 class DsbUserCorporateSerializer(serializers.ModelSerializer):
     document = serializers.PrimaryKeyRelatedField(
         queryset=Document.objects.all(),
@@ -18,7 +29,43 @@ class DsbUserCorporateSerializer(serializers.ModelSerializer):
     )
     class Meta:
         model = dsb_user_corporate
-        fields = "__all__"
+        fields = [  # noqa: RUF012
+            "dsb_user_corporate_id",
+            "created_date",
+            "updated_date",
+            "last_update_by",
+            "initial_registration_date",
+            "user_name",
+            "registered_user_email",
+            "users_phone_number",
+            "coredsb_user_id",
+            "users_upgrade_to_corporate",
+            "users_last_modified_date",
+            "corporate_pengurus_id",
+            "pengurus_corporate_name",
+            "pengurus_corporate_id_number",
+            "pengurus_corporate_phone_number",
+            "pengurus_corporate_place_of_birth",
+            "pengurus_corporate_date_of_birth",
+            "pengurus_corporate_npwp",
+            "pengurus_corporate_domicile_address",
+            "pengurus_nominal_saham",
+            "pengurus_corporate_last_update_date",
+            "corporate_company_name",
+            "corporate_phone_number",
+            "corporate_nib",
+            "corporate_npwp",
+            "corporate_siup",
+            "corporate_skdp",
+            "corporate_domicile_address",
+            "corporate_asset",
+            "corporate_source_of_fund",
+            "corporate_business_field",
+            "corporate_type_of_annual_income",
+            "corporate_annual_income",
+            "corporate_investment_goals",
+            "corporate_legal_last_modified_date",
+        ]
         read_only_fields = [  # noqa: RUF012
             "dsb_user_corporate_id",
             "created_date",

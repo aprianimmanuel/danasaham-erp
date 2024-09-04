@@ -50,6 +50,7 @@ def save_data_to_model(
                 if existing_record.core_dsb_user_id != row["user_id"]:
                     # Update all fields if core_dsb_user_id is different
                     existing_record.document = document
+                    existing_record.log_tracker_publisher_id = uuid.uuid4()
                     existing_record.created_date = timezone.now()
                     existing_record.last_updated_date = None
                     existing_record.last_update_by = None
@@ -74,8 +75,6 @@ def save_data_to_model(
             else:
                 log_tracker_publisher.objects.update(
                     document=document,
-                    log_tracker_publisher_id=uuid.uuid4(),
-                    created_date=None,
                     last_updated_date=timezone.now(),
                     last_update_by=user,
                     core_dsb_user_id=row["user_id"],
