@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import logging
 
+import pandas as pd
 from celery import chain, shared_task
 
-from app.config.core.models import Document, User, log_tracker_publisher
+from app.config.core.models import Document, User
+from app.config.log_tracker_corporate.tasks import (
+    process_log_tracker_corporate_document,
+)
 from app.config.log_tracker_personal.tasks import process_log_tracker_personal_document
 from app.config.log_tracker_publisher.utils.utils import (
     fetch_data_from_external_db,
@@ -37,7 +41,7 @@ def process_log_tracker_publisher_document(
     """
     try:
         # Get the document and user objects
-        document_process_log_tracker_publisher_document = Document.objects.get(pk=document_id)
+        document_process_log_tracker_publisher_document = Document.objects.get(document_id=document_id)
         user_process_log_tracker_publisher_document = User.objects.get(pk=user_id)
 
         # Retrieve the Document instance
@@ -53,24 +57,26 @@ def process_log_tracker_publisher_document(
         # Fetch data from the external database
         df = fetch_data_from_external_db()  # noqa: PD901
 
+        # Replace NaN values with None
+        df = df.replace(  # noqa: PD901
+            {pd.NaT: None},
+        )
+
         # Save data to the model
         save_data_to_model(
             df,
-            document_process_log_tracker_publisher_document,
             user_process_log_tracker_publisher_document,
+            document_process_log_tracker_publisher_document,
         )
 
         # Log the processing information
-        logger.info("Document %s is being processed.", log_tracker_publisher.pk)
+        logger.info("Document %s is being processed.", document_process_log_tracker_publisher_document.pk)
 
-    except log_tracker_publisher.DoesNotExist:
-        logger.exception("Log Tracker Publisher doesn't exist: %s", log_tracker_publisher.pk)
-        raise
     except Document.DoesNotExist:
-        logger.exception("Document %s does not exist.", Document.pk)
+        logger.exception("Document %s does not exist.", document_id)
         raise
     except User.DoesNotExist:
-        logger.exception("User %s does not exist.", User.pk)
+        logger.exception("User %s does not exist.", user_id)
         raise
 
 @shared_task()
@@ -84,4 +90,5 @@ def initiate_log_tracker_publisher(
     task_chain = chain(
         process_log_tracker_publisher_document.si(user_data_serializable, document_data_serializable),
         process_log_tracker_personal_document.si(user_data_serializable, document_data_serializable),
+        process_log_tracker_corporate_document.si(user_data_serializable, document_data_serializable),
     )()

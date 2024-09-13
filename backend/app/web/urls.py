@@ -24,7 +24,7 @@ from rest_framework_simplejwt.views import (
 
 from app.config.silk import USE_SILK
 from app.config.storage import USE_S3_FOR_MEDIA, USE_S3_FOR_STATIC
-from app.config.user.views import CustomPasswordResetView, CustomRegisterView
+from app.config.user.views import CustomPasswordResetView, CustomRegisterView, CustomPasswordResetConfirmView
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +81,11 @@ urlpatterns = [
         CustomPasswordResetView.as_view(),
         name="rest_password_reset",
     ),
+    path(
+        "api/user/password/reset/confirm/",
+        CustomPasswordResetConfirmView.as_view(),
+        name="rest_password_reset_confirm",
+    ),
     # User-specific URLs
     path("api/user/", include("app.config.user.urls")),
     # JWT URLs
@@ -110,6 +115,8 @@ urlpatterns = [
     path("", include("app.config.dttotDocReportPublisher.urls")),
     path("", include("app.config.dttotDocReportCorporate.urls")),
     path("", include("app.config.log_tracker_publisher.urls")),
+    path("", include("app.config.log_tracker_personal.urls")),
+    path("", include("app.config.log_tracker_corporate.urls")),
     path("accounts/", include("allauth.urls")),
     path("sentry-debug/", trigger_error),
 ]

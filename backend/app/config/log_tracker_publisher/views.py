@@ -9,7 +9,10 @@ from rest_framework.views import APIView
 
 from app.common.routers import CustomViewRouter
 from app.config.core.models import log_tracker_publisher
-from app.config.log_tracker_publisher.serializers import LogTrackerPublisherSerializer
+from app.config.log_tracker_publisher.serializers import (
+    LogTrackerPublisherListSerializer,
+    LogTrackerPublisherSerializer,
+)
 
 router = CustomViewRouter(url_prefix="api/")
 
@@ -19,7 +22,7 @@ router = CustomViewRouter(url_prefix="api/")
     name="log-tracker-publisher-list",
 )
 class LogTrackerPublisherListView(generics.ListAPIView):
-    serializer_class = LogTrackerPublisherSerializer
+    serializer_class = LogTrackerPublisherListSerializer
     permission_classes: ClassVar = [permissions.IsAuthenticated]
     queryset = log_tracker_publisher.objects.all()
 
@@ -88,7 +91,7 @@ class LogTrackerPublisherDetailView(APIView):
         instance = self.get_instance(identifier)
         if instance is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = self.get_serializer(instance)
+        serializer = LogTrackerPublisherSerializer(instance)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(request=LogTrackerPublisherSerializer, responses={200: LogTrackerPublisherSerializer})

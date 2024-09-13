@@ -1,12 +1,33 @@
 from __future__ import annotations
 
 import uuid
-from typing import Any
+from typing import Any, ClassVar
 
 from django.utils import timezone
 from rest_framework import serializers
 
 from app.config.core.models import Document, User, dsb_user_personal
+
+
+class DsbUserPersonalListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = dsb_user_personal
+        fields: ClassVar = [
+            "dsb_user_personal_id",
+            "document",
+            "coredsb_user_id",
+            "user_upgrade_to_personal_date",
+            "users_last_modified_date",
+            "personal_legal_last_modified_date",
+        ]
+        read_only_fields: ClassVar = [
+            "dsb_user_personal_id",
+            "document",
+            "coredsb_user_id",
+            "user_upgrade_to_personal_date",
+            "users_last_modified_date",
+            "personal_legal_last_modified_date",
+        ]
 
 
 class DsbUserPersonalSerializer(serializers.ModelSerializer):
@@ -107,5 +128,4 @@ class DsbUserPersonalSerializer(serializers.ModelSerializer):
         """
         representation = super().to_representation(instance)
         representation["last_update_by"] = instance.last_update_by.user_id if instance.last_update_by else None
-        representation["document_data"] = instance.document.document_id
         return representation

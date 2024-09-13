@@ -62,6 +62,7 @@ class DocumentListView(GenericAPIView):
             status=status.HTTP_201_CREATED,
         )
 
+
 @router.register_decorator(
     r"api/documents/details/$",
     name="document-details",

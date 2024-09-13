@@ -1,12 +1,32 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from django.utils import timezone
 from rest_framework import serializers
 
 from app.config.core.models import Document, User, dsb_user_publisher
 
+
+class DsbUserPublisherListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = dsb_user_publisher
+        fields: ClassVar = [
+            "dsb_user_publisher_id",
+            "document",
+            "coredsb_user_id",
+            "user_upgrade_to_publisher_date",
+            "last_update_by",
+            "last_updated_date",
+        ]
+        read_only_fields: ClassVar = [
+            "dsb_user_publisher_id",
+            "document",
+            "coredsb_user_id",
+            "user_upgrade_to_publisher_date",
+            "last_update_by",
+            "last_updated_date",
+        ]
 
 class DsbUserPublisherSerializer(serializers.ModelSerializer):
     document = serializers.PrimaryKeyRelatedField(

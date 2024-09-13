@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from django.utils import timezone
 from rest_framework import serializers
@@ -8,6 +8,34 @@ from rest_framework import serializers
 from app.config.core.models import Document, User, log_tracker_publisher
 from app.config.documents.serializers import DocumentSerializer
 
+
+class LogTrackerPublisherListSerializer(serializers.ModelSerializer):
+    document = serializers.PrimaryKeyRelatedField(
+        queryset=Document.objects.all(),
+        required=True,
+    )
+    log_tracker_publisher_id = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = log_tracker_publisher
+        fields: ClassVar = [
+            "document",
+            "log_tracker_publisher_id",
+            "core_dsb_user_id",
+            "created_date",
+            "last_updated_date",
+            "last_update_by",
+            "initial_registration_date",
+        ]
+        read_only_fields: ClassVar = [
+            "document",
+            "log_tracker_publisher_id",
+            "core_dsb_user_id"
+            "created_date",
+            "last_updated_date",
+            "last_update_by",
+            "initial_registration_date",
+        ]
 
 class LogTrackerPublisherSerializer(serializers.ModelSerializer):
     last_update_by = serializers.PrimaryKeyRelatedField(
@@ -28,7 +56,7 @@ class LogTrackerPublisherSerializer(serializers.ModelSerializer):
         read_only_fields = [  # noqa: RUF012
             "log_tracker_publisher_id",
             "created_date",
-            "updated_date",
+            "last_updated_date",
             "last_update_by",
             "initial_registration_date",
             "document_data",

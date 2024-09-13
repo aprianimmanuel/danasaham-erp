@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from django.utils import timezone
 from rest_framework import serializers
@@ -9,13 +9,28 @@ from app.config.core.models import Document, User, log_tracker_personal
 
 
 class LogTrackerPersonalListSerializer(serializers.ModelSerializer):
+    document = serializers.PrimaryKeyRelatedField(
+        queryset=Document.objects.all(),
+        required=True,
+    )
+    log_tracker_personal_id = serializers.CharField(read_only=True)
     class Meta:
         model = log_tracker_personal
-        fields = [  # noqa: RUF012
+        fields: ClassVar = [
+            "document",
             "log_tracker_personal_id",
             "core_dsb_user_id",
             "created_date",
-            "updated_date",
+            "last_updated_date",
+            "last_update_by",
+            "initial_registration_date",
+        ]
+        read_only_fields: ClassVar = [
+            "document",
+            "log_tracker_personal_id",
+            "core_dsb_user_id",
+            "created_date",
+            "last_updated_date",
             "last_update_by",
             "initial_registration_date",
         ]
@@ -38,7 +53,7 @@ class LogTrackerPersonalSerializer(serializers.ModelSerializer):
         read_only_fields = [  # noqa: RUF012
             "log_tracker_personal_id",
             "created_date",
-            "updated_date",
+            "last_updated_date",
             "last_update_by",
             "initial_registration_date",
         ]
@@ -74,7 +89,12 @@ class LogTrackerPersonalSerializer(serializers.ModelSerializer):
         validated_data["last_updated_date"] = timezone.now()
 
         # Update the log_tracker_personal instance
-        return super().update(instance, validated_data)
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+
+        instance.save()
+
+        return instance
 
 
     def to_representation(

@@ -10,7 +10,7 @@ from django.db import transaction
 from django.utils import timezone
 from sqlalchemy import create_engine
 
-from app.config.core.models import User, log_tracker_publisher
+from app.config.core.models import Document, User, log_tracker_publisher
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +38,7 @@ def fetch_data_from_external_db() -> pd.DataFrame:
 def save_data_to_model(
     df: pd.DataFrame,
     user: User,
-    document: log_tracker_publisher,
+    document: Document,
 ) -> None:
     with transaction.atomic():
         for _index, row, in df.iterrows():
@@ -47,21 +47,18 @@ def save_data_to_model(
 
             if existing_record:
                 # Check if users_last_modified_date is the same
-                if existing_record.core_dsb_user_id != row["user_id"]:
+                if existing_record.core_dsb_user_id == row["user_id"]:
                     # Update all fields if core_dsb_user_id is different
                     existing_record.document = document
-                    existing_record.log_tracker_publisher_id = uuid.uuid4()
-                    existing_record.created_date = timezone.now()
-                    existing_record.last_updated_date = None
-                    existing_record.last_update_by = None
-                    existing_record.core_dsb_user_id = row["core_dsb_user_id"]
+                    existing_record.last_updated_date = timezone.now()
+                    existing_record.last_update_by = user
                     existing_record.publisher_company_name = row["publisher_company_name"]
                     existing_record.initial_registration_date = row["initial_registration_date"]
                     existing_record.publisher_upgrade_date = row["publisher_created_date"]
                     existing_record.publisher_legal_data_input_created_date = row["publisher_legal_created_date"]
                     existing_record.publisher_finance_data_input_created_date = row["publisher_finance_created_date"]
                     existing_record.publisher_proposal_data_input_created_date = row["publisher_proposal_created_date"]
-                    existing_record.primary_va_registration_registration_date = row["primary_va_registration_created_date"]
+                    existing_record.primary_va_registration_date = row["primary_va_registration_created_date"]
                     existing_record.va_operational_approval_created_date = row["va_operational_approval"]
                     existing_record.approval_registration_fee_date = row["approval_registration_fee"]
                     existing_record.primary_offering_input_date = row["primary_offering_input"]
@@ -73,10 +70,12 @@ def save_data_to_model(
                     existing_record.investation_success_fund_transfer_date = row["investation_success_fund_transfer"]
                     existing_record.investation_success_share_distribution_date = row["investation_success_share_distribution"]
             else:
-                log_tracker_publisher.objects.update(
+                log_tracker_publisher.objects.create(
                     document=document,
-                    last_updated_date=timezone.now(),
-                    last_update_by=user,
+                    log_tracker_publisher_id=uuid.uuid4(),
+                    created_date=timezone.now(),
+                    last_updated_date=None,
+                    last_update_by=None,
                     core_dsb_user_id=row["user_id"],
                     publisher_company_name=row["publisher_company_name"],
                     initial_registration_date=row["initial_registration_date"],
@@ -84,7 +83,7 @@ def save_data_to_model(
                     publisher_legal_data_input_created_date=row["publisher_legal_created_date"],
                     publisher_finance_data_input_created_date=row["publisher_finance_created_date"],
                     publisher_proposal_data_input_created_date=row["publisher_proposal_created_date"],
-                    primary_va_registration_registration_date=row["primary_va_registration_created_date"],
+                    primary_va_registration_date=row["primary_va_registration_created_date"],
                     va_operational_approval_created_date=row["va_operational_approval"],
                     approval_registration_fee_date=row["approval_registration_fee"],
                     primary_offering_input_date=row["primary_offering_input"],

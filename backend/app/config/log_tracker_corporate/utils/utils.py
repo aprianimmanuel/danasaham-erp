@@ -10,12 +10,12 @@ from django.db import transaction
 from django.utils import timezone
 from sqlalchemy import create_engine
 
-from app.config.core.models import Document, User, log_tracker_personal
+from app.config.core.models import Document, User, log_tracker_corporate
 
 logger = logging.getLogger(__name__)
 
 def fetch_data_from_external_db() -> pd.DataFrame:
-    sql_file_path = Path(__file__).parent / "log_tracker_personal.sql"
+    sql_file_path = Path(__file__).parent / "log_tracker_corporate.sql"
     with sql_file_path.open() as file:
         query = file.read()
 
@@ -42,7 +42,7 @@ def save_data_to_model(
     with transaction.atomic():
         for _index, row, in df.iterrows():
             # Check if a record with the same corporate_pengurus_id already exist
-            existing_record = log_tracker_personal.objects.filter(core_dsb_user_id=row["user_id"]).first()
+            existing_record = log_tracker_corporate.objects.filter(core_dsb_user_id=row["user_id"]).first()
 
             if existing_record:
                 # Check if users_last_modified_date is the same
@@ -51,29 +51,27 @@ def save_data_to_model(
                     existing_record.document = document
                     existing_record.last_updated_date = timezone.now()
                     existing_record.last_update_by = user
-                    existing_record.personal_name = row["personal_name"]
+                    existing_record.corporate_company_name = row["corporate_company_name"]
                     existing_record.initial_registration_date = row["initial_registration_date"]
-                    existing_record.personal_legal_created_date = row["personal_legal_created_date"]
-                    existing_record.personal_finance_created_date = row["personal_finance_created_date"]
-                    existing_record.personal_ksei_id_created_date = row["personal_ksei_id_created_date"]
-                    existing_record.personal_limit_last_modified_date = row["personal_limit_last_modified_date"]
-                    existing_record.personal_data_checking_date = row["personal_data_checking_application_end_date"]
+                    existing_record.corporate_legal_created_date = row["corporate_legal_created_date"]
+                    existing_record.corporate_finance_created_date = row["corporate_finance_created_date"]
+                    existing_record.corporate_ksei_id_created_date = row["corporate_ksei_id_created_date"]
+                    existing_record.corporate_info_check_date = row["corporate_info_check_application_end_date"]
                     existing_record.initial_primary_investment_date = row["initial_primary_investment"]
             else:
-                log_tracker_personal.objects.create(
+                log_tracker_corporate.objects.create(
                     document=document,
-                    log_tracker_personal_id=uuid.uuid4(),
+                    log_tracker_corporate_id=uuid.uuid4(),
                     created_date=timezone.now(),
                     last_updated_date=None,
                     last_update_by=None,
                     core_dsb_user_id=row["user_id"],
-                    personal_name=row["personal_name"],
+                    corporate_company_name=row["corporate_company_name"],
                     initial_registration_date=row["initial_registration_date"],
-                    personal_legal_created_date=row["personal_legal_created_date"],
-                    personal_finance_created_date=row["personal_finance_created_date"],
-                    personal_ksei_id_created_date=row["personal_ksei_id_created_date"],
-                    personal_limit_last_modified_date=row["personal_limit_last_modified_date"],
-                    personal_data_checking_date=row["personal_data_checking_application_end_date"],
+                    corporate_legal_created_date=row["corporate_legal_created_date"],
+                    corporate_finance_created_date=row["corporate_finance_created_date"],
+                    corporate_ksei_id_created_date=row["corporate_ksei_id_created_date"],
+                    corporate_info_check_date=row["corporate_info_check_application_end_date"],
                     initial_primary_investment_date=row["initial_primary_investment"],
                 )
         logger.info("Successfully processed document ID %s", document)
