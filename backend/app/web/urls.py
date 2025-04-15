@@ -3,28 +3,28 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from dj_rest_auth.registration.views import ResendEmailVerificationView, VerifyEmailView
-from dj_rest_auth.views import LoginView, LogoutView, PasswordChangeView
-from django.conf import settings
-from django.conf.urls.static import static
-from django.contrib import admin
-from django.shortcuts import redirect
-from django.urls import include, path
-from drf_spectacular.utils import extend_schema
-from drf_spectacular.views import (
+from django.conf import settings  #type: ignore # noqa: PGH003
+from django.conf.urls.static import static  #type: ignore # noqa: PGH003
+from django.contrib import admin  #type: ignore # noqa: PGH003
+from django.shortcuts import redirect  #type: ignore # noqa: PGH003
+from django.urls import include, path  #type: ignore # noqa: PGH003
+from drf_spectacular.utils import extend_schema  #type: ignore # noqa: PGH003
+from drf_spectacular.views import (  #type: ignore # noqa: PGH003
     SpectacularAPIView,
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from rest_framework_simplejwt.views import (
+from rest_framework_simplejwt.views import (  #type: ignore # noqa: PGH003
     TokenObtainPairView,
     TokenRefreshView,
     TokenVerifyView,
 )
 
-from app.config.silk import USE_SILK
-from app.config.storage import USE_S3_FOR_MEDIA, USE_S3_FOR_STATIC
-from app.config.user.views import CustomPasswordResetView, CustomRegisterView, CustomPasswordResetConfirmView
+from app.config.silk import USE_SILK  #type: ignore # noqa: PGH003
+from app.config.storage import (  #type: ignore # noqa: PGH003
+    USE_S3_FOR_MEDIA,
+    USE_S3_FOR_STATIC,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -57,37 +57,6 @@ urlpatterns = [
     *_swagger_urlpatterns,
     path("", lambda _request: redirect("docs/"), name="home"),
     path("admin/", admin.site.urls),
-    # Auth URLs
-    path("api/user/login/", LoginView.as_view(), name="rest_login"),
-    path("api/user/logout/", LogoutView.as_view(), name="rest_logout"),
-    path(
-        "api/user/password/change/",
-        PasswordChangeView.as_view(),
-        name="rest_password_change",
-    ),
-    path("api/registration/", CustomRegisterView.as_view(), name="rest_register"),
-    path(
-        "api/registration/user/verify-email/",
-        VerifyEmailView.as_view(),
-        name="rest_verify_email",
-    ),
-    path(
-        "api/registration/user/resend-email/",
-        ResendEmailVerificationView.as_view(),
-        name="rest_resend_verify",
-    ),
-    path(
-        "api/user/password/reset/",
-        CustomPasswordResetView.as_view(),
-        name="rest_password_reset",
-    ),
-    path(
-        "api/user/password/reset/confirm/",
-        CustomPasswordResetConfirmView.as_view(),
-        name="rest_password_reset_confirm",
-    ),
-    # User-specific URLs
-    path("api/user/", include("app.config.user.urls")),
     # JWT URLs
     path("api/token/verify/", TokenVerifyView.as_view(), name="token_verify"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
@@ -105,18 +74,16 @@ urlpatterns = [
         name="api-redoc",
     ),
     # Include other app URLs
-    path("", include("app.config.documents.urls")),
-    path("", include("app.config.dttotDoc.urls")),
-    path("", include("app.config.dsb_user_personal.urls")),
-    path("", include("app.config.dsb_user_corporate.urls")),
-    path("", include("app.config.dsb_user_publisher.urls")),
-    path("", include("app.config.dttotDocReport.urls")),
-    path("", include("app.config.dttotDocReportPersonal.urls")),
-    path("", include("app.config.dttotDocReportPublisher.urls")),
-    path("", include("app.config.dttotDocReportCorporate.urls")),
-    path("", include("app.config.log_tracker_publisher.urls")),
-    path("", include("app.config.log_tracker_personal.urls")),
-    path("", include("app.config.log_tracker_corporate.urls")),
+    path("", include("app.user.urls")),
+    path("", include("app.documents.urls")),
+    path("", include("app.dttotDoc.urls")),
+    path("", include("app.dsb_user_personal.urls")),
+    path("", include("app.dsb_user_corporate.urls")),
+    path("", include("app.dsb_user_publisher.urls")),
+    path("", include("app.dttotDocReport.urls")),
+    path("", include("app.dttotDocReportPersonal.urls")),
+    path("", include("app.dttotDocReportPublisher.urls")),
+    path("", include("app.dttotDocReportCorporate.urls")),
     path("accounts/", include("allauth.urls")),
     path("sentry-debug/", trigger_error),
 ]

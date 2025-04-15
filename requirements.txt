@@ -43,4 +43,6 @@ SQLAlchemy>=1.4.30
 sqlalchemy-celery-beat>=0.8.0
 asgiref>=3.5.0
 reportlab>=2.0
-spacy>=2.3.3
+spacy>=2.3.3,<3.1.0
+numpy==1.26.4
+python-dotenv

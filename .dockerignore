@@ -1,10 +1,19 @@
 # Ignore Python cache files
 __pycache__
+*/__pycache__
+*/*/__pycache__
 *.py[cod]
 *$py.class
 
 # Ignore the virtual environment directory
 venv
+.venv
+
+# Ignore cache
+.ruff_cachce
+.mypy_cache
+.github
+*/.coverage
 
 # Ignore environment variables file
 .env
@@ -13,6 +22,12 @@ venv
 build/
 dist/
 *.log
+*/*.log
+*/*/*.log
+htmlcov
+static/rest_framework
+static/admin
+
 
 # Ignore local configuration files
 *.local
@@ -29,6 +44,7 @@ coverage.xml
 .tox/
 .pytest_cache/
 junit-xml/
+pytest.ini
 
 # Ignore database files
 *.sqlite3
@@ -38,11 +54,11 @@ media/
 
 # Ignore static files
 staticfiles/
-static/
 
 # Ignore source control files
 .git/
 .gitignore
+tree.txt
 
 # Ignore editor swap files
 *~
@@ -53,3 +69,5 @@ node_modules/
 # Ignore Docker-related files
 Dockerfile
 docker-compose.yml
+
+

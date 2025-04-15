@@ -7,7 +7,7 @@ from pathlib import Path
 
 from typing_extensions import TypeAlias
 
-from app.config.base import BASE_DIR
+from app.config.base import BASE_DIR  #type: ignore # noqa: PGH003
 
 _APPS_DIR = Path(BASE_DIR) / "app"
 _TEMPLATE_DIR = Path(BASE_DIR) / "app" / "config" / "__app_template__"
@@ -20,7 +20,9 @@ def main() -> None:
     """Run administrative tasks."""
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.config.settings")
     try:
-        from django.core.management import execute_from_command_line
+        from django.core.management import (  #type: ignore # noqa: PGH003
+            execute_from_command_line,
+        )
     except ImportError as exc:
         msg = (
             "Couldn't import Django. Are you sure it's installed and "

@@ -1,5 +1,7 @@
 # Byte-compiled / optimized / DLL files
-__pycache__/
+__pycache__
+*/__pycache__
+*/*/__pycache__
 *.py[cod]
 *$py.class
 
@@ -25,6 +27,23 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+*.log
+*/*.log
+*/*/*.log
+htmlcov
+static/rest_framework
+static/admin
+*/migrations
+*/*/migrations
+*/*/*/migrations
+*.txt
+
+
+# Ignore static files
+staticfiles/
+static/rest_framework
+static/admin
+
 
 # PyInstaller
 *.manifest
@@ -57,7 +76,8 @@ cover/
 *.log
 local_settings.py
 db.sqlite3
-db.sqlite3-journal
+*.local
+*.settings
 
 # Flask stuff
 instance/
@@ -143,3 +163,17 @@ cython_debug/
 
 # Media
 media/
+
+# mkdocs
+docs/
+site/
+mkdocs.yml
+tree.txt
+pytest.ini
+
+# Ruff
+.ruff_cache
+
+# Ignore node modules
+node_modules/
+

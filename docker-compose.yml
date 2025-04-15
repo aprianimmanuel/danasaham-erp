@@ -47,7 +47,6 @@ services:
       - pgbouncer
       - redis
       - rabbitmq
-      - smtp
       - collectstatic
 
   db:
@@ -171,23 +170,6 @@ services:
       - db
     volumes:
       - ./backend:/apps
-
-  smtp:
-    <<: *common
-    build:
-      context: .
-      args:
-        DEV: true
-        DJANGO_USER: ${DJANGO_USER}
-        DJANGO_UID: ${DJANGO_UID}
-        DJANGO_GID: ${DJANGO_GID}
-    command: >
-      sh -c "python -m aiosmtpd -n -l 0.0.0.0:8025"
-    ports:
-      - 8025:8025
-    volumes:
-      - ./backend:/apps
-    restart: unless-stopped
 
 networks:
   main:

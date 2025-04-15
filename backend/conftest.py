@@ -5,12 +5,12 @@ from os import getenv
 from typing import TYPE_CHECKING, Any
 
 import pytest
-from celery.contrib.testing.worker import start_worker
+from celery.contrib.testing.worker import start_worker  #type: ignore # noqa: PGH003
 
 from tasks.app import celery_app
 
 if TYPE_CHECKING:
-    from celery.app.task import Task
+    from celery.app.task import Task  #type: ignore # noqa: PGH003
 
 pytest_plugins = "celery.contrib.pytest"
 

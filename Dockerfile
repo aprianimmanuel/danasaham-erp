@@ -1,4 +1,4 @@
-FROM python:3.8.17-bookworm
+FROM python:3.9.20-slim-bookworm
 LABEL maintainer="aprian.immanuel@danasaham.co.id"
 
 ENV PYTHONUNBUFFERED=1 \
@@ -6,7 +6,7 @@ ENV PYTHONUNBUFFERED=1 \
 
 # Set up working directory and expose port
 WORKDIR /apps
-EXPOSE 8000
+EXPOSE $API_PORT
 
 # Copy requirements files
 COPY ./requirements.txt /tmp/requirements.txt
@@ -30,7 +30,6 @@ RUN apt-get update --fix-missing && \
         libpq-dev \
         cmake \
         curl \
-        ffmpeg \
         g++ \
         gcc \
         git \
@@ -71,21 +70,16 @@ RUN apt-get update --fix-missing && \
 # Copy application files
 COPY ./backend /apps
 
-# Ensure the static folder exists and copy the logo
-RUN mkdir -p /apps/app/config/dttotDocReport/static/ && \
-    cp /apps/static/logo_danasaham_surat.jpg /apps/app/config/dttotDocReport/static/logo_danasaham_surat.jpg
-
 # Set permissions for application files
 RUN mkdir -p /apps/media/test_media /apps/logs && \
     touch /apps/logs/debug.log && \
-    chmod 666 /apps/logs/debug.log && \
-    chown -R $DJANGO_USER:$DJANGO_USER $VENV_PATH /apps /apps/logs /apps/media /apps/media/test_media /apps/app/config/dttotDocReport/static
+    chmod 666 /apps/logs/debug.log
 
 # Download spacy models using the correct Python environment
 RUN $VENV_PATH/bin/python -m spacy download xx_ent_wiki_sm
 
 # Change ownership of migration directories
-RUN chown -R $DJANGO_USER:$DJANGO_USER /apps/app/config/core/migrations
+RUN chown -R $DJANGO_USER:$DJANGO_USER /apps
 
 ENV PATH="$VENV_PATH/bin:$PATH"
 

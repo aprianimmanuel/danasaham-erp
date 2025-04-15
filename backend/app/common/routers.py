@@ -3,9 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Callable, TypeVar, cast
 
-from django.urls import URLResolver, path
-from rest_framework.routers import SimpleRouter
-from rest_framework.viewsets import GenericViewSet, ViewSet
+from django.urls import URLResolver, path  #type: ignore # noqa: PGH003
+from rest_framework.routers import SimpleRouter  #type: ignore # noqa: PGH003
+from rest_framework.viewsets import (  #type: ignore # noqa: PGH003
+    GenericViewSet,
+    ViewSet,
+)
 
 T = TypeVar("T", bound=Any)
 
@@ -19,10 +22,10 @@ class CustomViewRouter:
     _drf_router: SimpleRouter = field(default_factory=SimpleRouter)
     _paths: list[URLResolver] = field(default_factory=list)
 
-    def register(
+    def register(  # noqa: PLR0913
         self,
         route: str,
-        view: T,
+        view: T,  # noqa: ARG002
         name: str | None = None,
         basename: str | None = None,
         as_view_kwargs: dict[str, Any] | None = None,
@@ -46,7 +49,7 @@ class CustomViewRouter:
 
         return decorator
 
-    def register_decorator(
+    def register_decorator(  # noqa: ANN201
         self,
         route: str,
         name: str | None = None,
@@ -69,4 +72,4 @@ class CustomViewRouter:
 
     @property
     def urls(self) -> list[Any]:
-        return cast(list[Any], self._paths + self._drf_router.urls)
+        return self._paths + self._drf_router.urls
