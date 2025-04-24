@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from split_settings.tools import include
+from split_settings.tools import include  # type: ignore  # noqa: PGH003
 
 include(
     "base.py",
@@ -19,5 +19,6 @@ include(
     "axes.py",
     "email.py",
     "jwt.py",
+    "tests.py",
     scope=globals(),
 )

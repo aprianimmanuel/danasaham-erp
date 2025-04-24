@@ -6,14 +6,15 @@ import socket
 import time
 
 import psycopg2  #type: ignore  # noqa: PGH003
-import redis  #type: ignore  # noqa: PGH003
 from django.conf import settings  #type: ignore  # noqa: PGH003
 from django.core.management.base import BaseCommand  #type: ignore  # noqa: PGH003
 from django.core.management.commands.migrate import (  #type: ignore # noqa: PGH003
     Command as MigrateCommand,  #type: ignore # noqa: PGH003
 )
-from django.db import connection, connections  #type: ignore  # noqa: PGH003
+from django.db import connections  #type: ignore  # noqa: PGH003
 from django.db.utils import OperationalError  #type: ignore  # noqa: PGH003
+
+import redis  #type: ignore  # noqa: PGH003
 
 
 class Command(MigrateCommand, BaseCommand):
@@ -48,10 +49,6 @@ class Command(MigrateCommand, BaseCommand):
         )
         self.stdout.write(self.style.SUCCESS("RabbitMQ available!"))
 
-        # Lock the database to prevent racing conditions
-        self.lock_database()
-        self.stdout.write(self.style.SUCCESS("Database locked for migrations!"))
-
         try:
             # Run migrations using MigrateCommand's handle method
             super().handle(*args, **options)
@@ -59,12 +56,8 @@ class Command(MigrateCommand, BaseCommand):
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Error during migrations: {e}"))
             raise
-        finally:
-            # Unlock the database
-            self.unlock_database()
-            self.stdout.write(self.style.SUCCESS("Database unlocked."))
 
-    def wait_for_service(  # noqa: PLR0913
+    def wait_for_service(
         self,
         service_name,  # noqa: ANN001
         check_function,  # noqa: ANN001
@@ -80,7 +73,7 @@ class Command(MigrateCommand, BaseCommand):
                 check_function(**check_kwargs)
                 self.stdout.write(self.style.SUCCESS(f"{service_name} available!"))
                 return  # noqa: TRY300
-            except Exception as e:  # noqa: PERF203, BLE001
+            except Exception as e:  # noqa: BLE001
                 self.stdout.write(
                     f"{service_name} unavailable, waiting {wait_time} second(s)...",
                 )
@@ -127,17 +120,3 @@ class Command(MigrateCommand, BaseCommand):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((settings.RABBITMQ_HOST, int(settings.RABBITMQ_PORT)))
         s.close()
-
-    def lock_database(self) -> None:
-        """Acquire an advisory lock on the database to prevent other processes from running migrations at the same time.
-
-        This is done by acquiring a PostgreSQL advisory lock with key 1.
-        """
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT pg_advisory_lock(1);")
-
-    def unlock_database(self) -> None:
-        """Release the advisory lock on the database, allowing other processes to run migrations."""
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT pg_advisory_unlock(1);")
-

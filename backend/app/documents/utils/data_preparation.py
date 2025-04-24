@@ -738,10 +738,7 @@ class FormattingColumn:
         month = match.group("month") or match.group("month2")
         year = match.group("year") or match.group("year2")
 
-        if month.isdigit():
-            month_number = month.zfill(2)
-        else:
-            month_number = self._month_to_number(month)
+        month_number = month.zfill(2) if month.isdigit() else self._month_to_number(month)
 
         year = self._adjust_year(year)
         return f"{year}/{month_number}/{day.zfill(2)}"

@@ -26,10 +26,7 @@ from rest_framework.permissions import (  #type: ignore # noqa: PGH003
 )
 
 from app.common.routers import CustomViewRouter  #type: ignore # noqa: PGH003
-from app.user.models import (  #type: ignore # noqa: PGH003
-    Profile,
-    User,
-)
+from app.user.models import User
 from app.user.serializers import (  #type: ignore # noqa: PGH003
     CustomPasswordResetConfirmSerializer,
     CustomPasswordResetSerializer,
@@ -39,6 +36,7 @@ from app.user.serializers import (  #type: ignore # noqa: PGH003
     CustomVerifyEmailSerializer,
     MessageSerializer,
 )
+from app.user.user_profile.models import UserProfile
 
 if TYPE_CHECKING:
     from rest_framework.request import Request  #type: ignore # noqa: PGH003
@@ -85,7 +83,7 @@ class CustomUserDetailsView(generics.RetrieveUpdateAPIView):
             user = get_object_or_404(User, id=user_id)
         elif profile_id:
             logger.info("Fetching user by profile_id: %s", profile_id)
-            profile = get_object_or_404(Profile, id=profile_id)
+            profile = get_object_or_404(UserProfile, id=profile_id)
             user = profile.user
         else:
             logger.warning("user_id or profile_id is required but missing")
@@ -400,9 +398,10 @@ class VerifyEmailView(generics.GenericAPIView):
 
         # Get user based on email provided
         user = User.objects.get(email=email)
+        user_profile = UserProfile.objects.get(user_id=user.user_id)
 
         # Check if email has been verified before
-        if user.email_verified:
+        if user.is_email_verified:
             return Response(
                 {
                     "detail": "Email is already verified.",
@@ -411,9 +410,9 @@ class VerifyEmailView(generics.GenericAPIView):
 
         # Update user data
         user.set_password(password1)
-        user.first_name = first_name
-        user.last_name = last_name
-        user.email_verified = False
+        user_profile.first_name = first_name
+        user_profile.last_name = last_name
+        user.is_email_verified = False
         user.save()
 
         return Response(

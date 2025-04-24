@@ -4,15 +4,18 @@ import logging
 from os import getenv
 from typing import Any
 
-from django.core.cache import cache
-from redis.exceptions import RedisError
+from django.core.cache import cache  # type: ignore  # noqa: PGH003
+
+from redis.exceptions import RedisError  # type: ignore  # noqa: PGH003
 
 logger = logging.getLogger(__name__)
 
 USE_REDIS_FOR_CACHE = getenv("USE_REDIS_FOR_CACHE", default="true").lower() == "true"
-REDIS_HOST = getenv("REDIS_HOST", default="localhost")
-REDIS_PORT = getenv("REDIS_PORT", default="6379")
-REDIS_URL = getenv("REDIS_URL", default=f"redis://{REDIS_HOST}:{REDIS_PORT}/0")
+REDIS_HOST = getenv("REDIS_HOST", "redis")
+REDIS_PORT = getenv("REDIS_PORT", "6379")
+REDIS_DB = getenv("REDIS_DB", "0")
+REDIS_URL = getenv("REDIS_URL", default=f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}")
+
 
 CACHES: dict[str, Any] = {}
 
@@ -23,7 +26,7 @@ if USE_REDIS_FOR_CACHE and not IS_TESTING:
     logger.info("Using Redis for cache")
     CACHES["default"] = {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_URL,
+        "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },

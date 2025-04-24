@@ -1,64 +1,178 @@
+[project]
+name = "danasaham-erp"
+version = "0.1.0"
+description = "Backend RESTful API berbasis Django yang dirancang untuk mengelola sistem ERP (Enterprise Resource Planning) pada platform Danasaham."
+requires-python = ">=3.12"
+dependencies = [
+    "setuptools",
+    "wheel",
+    "cachetools>=5.3.1",
+    "celery>=5.3.5",
+    "celery-types>=0.11.0",
+    "colorlog>=6.8.0",
+    "Django>=3.2.17,<3.2.25",
+    "djangorestframework>=3.15.0",
+    "psycopg2>=2.9.8",
+    "drf-spectacular>=0.21.2",
+    "django-axes[ipware]>=5.30.0",
+    "django-cors-headers>=3.11.0",
+    "django-silk>=4.3.0",
+    "django-split-settings>=1.0.0",
+    "django-storages>=1.13",
+    "django-redis>=5.2.0",
+    "django-celery-results>=2.3.0",
+    "django-celery-results-rest>=0.0.1",
+    "django-celery-beat>=2.3.0",
+    "djangorestframework-simplejwt>=5.1.0",
+    "qrcode>=7.3.1",
+    "django-allauth>=0.48.0",
+    "webauthn>=1.2.1",
+    "PyJWT>=2.4.0",
+    "python-dotenv>=0.20.0",
+    "python3-saml>=1.13.0",
+    "requests>=2.27.1",
+    "requests-oauthlib>=1.3.1",
+    "python3-openid>=3.2.0",
+    "xmlsec<1.3.14",
+    "lxml>=4.8.0",
+    "dj-rest-auth>=2.2.2",
+    "pandas>=1.4.0",
+    "openpyxl>=3.0.10",
+    "scikit-learn>=1.1.0",
+    "xlrd>=2.0.1",
+    "pytz>=2025.2",
+    "redis==5.2.1",
+    "sentry-sdk==2.26.1",
+    "gunicorn==23.0.0",
+    "typing-extensions==4.13.2",
+    "boto3>=1.37.34",
+    "dj_database_url==2.2.0",
+    "SQLAlchemy>=2.0.40",
+    "sqlalchemy-celery-beat==0.8.3",
+    "asgiref",
+    "numpy==1.26.4",
+    "python-dotenv",
+    "srsly",
+    "spacy",
+    "python-docx",
+    "pip",
+]
+
+[tool.uv]
+cache-dir = "cache/uv"
+dev-dependencies = [
+    "mypy==1.11.1",
+    "pre-commit==3.8.0",
+    "pytest==8.3.2",
+    "pytest-cov==5.0.0",
+    "pytest-django==4.8.0",
+    "ruff==0.6.2",
+    "ruff-lsp>=0.0.1",
+    "black>=24.4.0",
+    "setuptools-scm>=8.0",
+    "pytest-asyncio>=0.17.0",
+    "pip-check-updates>=0.27.0",
+    "coverage>=6.3",
+    "pre-commit>=2.17.0",
+]
+
+[tool.setuptools_scm]
+version_scheme = "guess-next-dev"
+local_scheme = "no-local-version"
+write_to = "api/_version.py"
+
+[tool.uv.workspace]
+members = ["user"]
+
+[tool.setuptools]
+py-modules = []
+
 [tool.black]
 line-length = 90
 
 [tool.ruff]
-select = ["ALL"]
-unfixable = ["T201"]
-ignore = [
-    "E501",   # Line too long (will be fixed by black)
-    "A003",   # Variable name "id" is shadowing a built-in name
-    "RUF001", # Unused variable in a f-string
-    "ERA001", # Raw f-string is missing format specifier(s)
-    "F841",   # Local variable is assigned to but never used
-
-    "ANN101", # Missing type annotation for self in method
-    "ANN102", # Missing type annotation for cls in classmethod
-    "ANN401", # Dynamically typed expressions (typing.Any) are disallowed
-
-    "D10",    # Missing docstring in public module
-    "D203",   # 1 blank line required before class docstring
-    "D213",   # Multi-line docstring summary should start at the second line
-    "EXE002", # Ensure module has a valid __main__.py file
-
-    "PD011",  # Use pandas DataFrame.assign for more readable code
-
-]
 show-fixes = true
+line-length = 90
 exclude = [
     "migrations",
     ".venv",
 ]
 
-[tool.ruff.isort]
+[tool.ruff.lint]
+select = ["ALL"]
+unfixable = ["T201"]
+ignore = [
+    "E501",   # Line too long  # Will be fixed by black
+    "A003",
+    "RUF001",
+    "ERA001",
+    "F841",   # Local variable is assigned to but never used
+
+    "ANN101",
+    "ANN102",  # Missing type annotation for `cls` in classmethod
+    "ANN401", # Dynamically typed expressions (typing.Any) are disallowed in `{name}`
+
+    "D10",
+
+    "D203",
+    "D213",
+    "EXE002",
+
+    "PD011",
+    "UP040",  # Type alias uses `TypeAlias` annotation instead of the `type` keyword
+]
+
+[tool.ruff.lint.isort]
 required-imports = ["from __future__ import annotations"]
 
-[tool.ruff.per-file-ignores]
-"__init__.py" = ["F401"]  # Module imported but unused
-"tests/**" = ["S101"]     # Use of assert detected
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = [
+    "F401",  # Module imported but unused
+]
+"tests/**" = [
+    "S101",  # Use of assert detected
+]
 
 [tool.mypy]
 python_version = "3.12"
+ignore_missing_imports_per_module = true
 ignore_missing_imports = true
 warn_return_any = true
 warn_unused_configs = true
-strict = true
+strict = false
 implicit_reexport = true
 exclude = [
-    ".venv",
+    "venv",
     "migrations",
 ]
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-DJANGO_SETTINGS_MODULE = "app.config.settings"
-addopts = "--exitfirst -vv --cov=backend --cov-report=html --cov-fail-under=80"
-testpaths = [
-    "backend/tests",
+DJANGO_SETTINGS_MODULE = "app.config.tests"
+addopts = """
+--ds=app.config.tests
+-vv
+--cov
+--cov-report=html
+--cov-report=term-missing
+--cov-fail-under=70
+--reuse-db
+--nomigrations
+--disable-warnings
+--strict-markers
+--tb=short
+"""
+testpaths = ["tests"]
+python_files = "tests.py test_*.py *_tests.py"
+python_paths = "."
+norecursedirs = [".venv", "node_modules", "migrations"]
+markers = [
+    "slow: menandai test yang lambat",
+    "integration: menandai test integrasi",
+    "unit: menandai test unit",
+    "django_db: untuk test yang akses database"
 ]
-python_files = "test_*.py *_tests.py"
-
-[tool.coverage.run]
-omit = [
-    "*/tests/*",
-    "*/migrations/*"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning"
 ]

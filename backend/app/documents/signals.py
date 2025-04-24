@@ -69,9 +69,9 @@ def trigger_document_processing(
             ),
         )
 
-        logger.debug(
+        logger.info(
             f"Document {instance.pk} created by user {user_data} with context {context}",  # noqa: G004
         )
 
     else:
-        logger.debug(f"Document {instance.pk} created with type {instance.document_type}")  # noqa: G004
+        logger.info(f"Document {instance.pk} created with type {instance.document_type}")  # noqa: G004

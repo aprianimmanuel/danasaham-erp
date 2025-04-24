@@ -1,66 +1,67 @@
 # include `.env` file if exists
 ifneq ("$(wildcard .env)","")
-	include ./env/.env
+	include .env
 	export
 endif
-
-.PHONY: migrate collectstatic wait_for_db run.server.prod run.celery.prod
 
 run.server.local:
 	sh ./run-local.sh
 
-run.server.prod: wait_for_services migrate
-	python -m gunicorn app.web.wsgi:application \
+run.server.prod: 
+	uv run gunicorn app.web.wsgi:application \
 		--bind 0.0.0.0:8000 \
 		--workers ${WORKERS} \
 		--threads ${THREADS} \
 		--timeout 480
 
 run.celery.local:
-	OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES celery -A tasks.app worker --loglevel=DEBUG --prefetch-multiplier=1
+	OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES uv run celery -A tasks.app worker --loglevel=DEBUG --prefetch-multiplier=1
 
 run.celery.prod:
-	celery -A tasks.app worker --loglevel=INFO --concurrency=${WORKERS} --prefetch-multiplier=1
+	uv run celery -A tasks.app worker --loglevel=INFO --concurrency=${WORKERS} --prefetch-multiplier=1
 
 wait_for_services:
-	python manage.py wait_for_db
+	uv run manage.py wait_for_db
 
 makemigrations:
-	python manage.py makemigrations
+	uv run manage.py wait_for_db && uv run manage.py makemigrations
 
 migrate:
-	python manage.py migrate
+	uv run manage.py wait_for_db && uv run manage.py migrate
 
 collectstatic:
-	python manage.py collectstatic --no-input
+	uv run collectstatic --no-input
 
 createsuperuser:
-	python manage.py createsuperuser --email "devdanasaham@danasaham.co.id" --username admin
+	uv run manage.py createsuperuser --email "devdanasaham@danasaham.co.id" --username admin
 
 # Tests, linters & formatters
-fmt:
-	make -k ruff-fmt black
+formatblack:
+	make -k ruff-format black
+
+formatruff:
+	make -k ruff-format ruff-fix
 
 lint:
-	make -k ruff black-check mypy
+	make -k ruff-check mypy
 
 black:
-	python -m black .
+	uv run --with black black .
 
 black-check:
-	python -m black --check .
+	uv run --with black black --check .
 
 ruff:
-	python -m ruff check .
+	uv run --with ruff ruff check .
 
 ruff-fmt:
-	python -m ruff check --fix-only --unsafe-fixes .
+	uv run --with ruff ruff check --fix-only --unsafe-fixes .
 
 test:
-	python -m pytest --cov=/apps
+	uv run --with pytest pytest --cov=/apps
 
 mypy:
-	python -m mypy .
+	uv run --with mypy mypy .
 
 # Docker
 logs:

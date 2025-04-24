@@ -34,11 +34,9 @@ from rest_framework import (  #type: ignore # noqa: PGH003
     serializers,
 )
 
-from app.user.models import (  #type: ignore # noqa: PGH003
-    EmailVerificationCode,
-    Profile,
-    User,
-)
+from app.user.models import User
+from app.user.user_otp.models import UserOTP
+from app.user.user_profile.models import UserProfile
 
 logger = logging.getLogger(__name__)
 
@@ -59,8 +57,8 @@ class CustomUserDetailsSerializer(UserDetailsSerializer):
         required=False,
         allow_null=True,
     )
-    email_verified = serializers.BooleanField(
-        source="email_verified",
+    is_email_verified = serializers.BooleanField(
+        source="user.is_email_verified",
         read_only=True,
     )
 
@@ -70,7 +68,7 @@ class CustomUserDetailsSerializer(UserDetailsSerializer):
             "email",
             "first_name",
             "last_name",
-            "email_verified",
+            "is_email_verified",
             "bio",
             "phone_number",
             "birth_date",
@@ -100,7 +98,7 @@ class CustomUserDetailsSerializer(UserDetailsSerializer):
         bio = profile_data.get("bio")
 
         # Update UserProfile instance
-        Profile.objects.filter(user=instance).update(
+        UserProfile.objects.filter(user=instance).update(
             first_name=first_name,
             last_name=last_name,
             bio=bio,
@@ -145,6 +143,7 @@ class CustomUserUpdateSensitiveDataSerializer(serializers.ModelSerializer):
 
         """
         user = self.instance
+        user_profile = user.profile
         requires_verification = False
 
         # Check if username is changed
@@ -158,19 +157,21 @@ class CustomUserUpdateSensitiveDataSerializer(serializers.ModelSerializer):
         # Check if phone_number is changed
         if (
             "new_phone_number" in attrs
-            and attrs["new_phone_number"] != user.profile.phone_number
+            and attrs["new_phone_number"] != user_profile.phone_number
         ):
             requires_verification = True
 
         if requires_verification:
             # Generate and send verification code
-            verification_code = "".join(random.choices(string.digits, k=8))  # noqa: S311
-            EmailVerificationCode.objects.update_or_create(
+            verification_code = "".join(random.choices(string.digits, k=10))  # noqa: S311
+            UserOTP.objects.update_or_create(
                 user=user,
-                type_used="Sensitive Data Update",
+                otp_type="Email Verification",
                 status_used=False,
                 created_date=timezone.now(),
-                verification_code=verification_code,
+                updated_date=None,
+                otp_code=verification_code,
+                expires_at=timezone.now() + timezone.timedelta(minutes=5),
             )
 
         return attrs
@@ -233,8 +234,8 @@ class CustomRegisterSerializer(DefaultRegisterSerializer):
             )
 
         try:
-            stored_code = EmailVerificationCode.objects.get(user=user, verification_code=verification_code)
-        except EmailVerificationCode.DoesNotExist:
+            stored_code = UserOTP.objects.get(user=user, verification_code=verification_code)
+        except UserOTP.DoesNotExist:
             raise serializers.ValidationError(  # noqa: B904
                 {
                     "verification_code": "Invalid verification code.",
@@ -249,7 +250,7 @@ class CustomRegisterSerializer(DefaultRegisterSerializer):
                 },
             )
 
-        user.email_verified = True
+        user.is_email_verified = True
         stored_code.status_used = True
         stored_code.updated_date = timezone.now()
 
@@ -468,13 +469,13 @@ class CustomVerifyEmailSerializer(DefaultVerifyEmailSerializer):
             password=make_password(password1),
             username=username,
             is_active=False,
-            email_verified=False,
+            is_email_verified=False,
             is_staff=False,
             updated_date=timezone.now(),
             )
 
         # Check if a verification code was sent in the last minute
-        recent_code = EmailVerificationCode.objects.filter(
+        recent_code = UserOTP.objects.filter(
             user=user,
             status_used=False,
             type_used="User Initial Registration",
@@ -488,7 +489,7 @@ class CustomVerifyEmailSerializer(DefaultVerifyEmailSerializer):
             recent_code.save(update_fields=["verification_code", "updated_date"])
         else:
             # Create a new verification code entry
-            EmailVerificationCode.objects.create(
+            UserOTP.objects.create(
                 user=user,
                 verification_code=verification_code,
                 status_used=False,

@@ -1,0 +1,140 @@
+x-common: &common
+  env_file:
+    - .env
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+  networks:
+    - main
+
+services:
+  app:
+    <<: *common
+    build:
+      context: .
+    environment:
+      WORKERS: ${WORKERS:-2}
+      THREADS: ${THREADS:-2}
+      DATABASE_URL: ${DATABASE_URL}
+    ports:
+      - "${API_PORT}:8000"
+    volumes:
+      - .:/apps
+      - ./logs/app:/apps/logs/app
+    command: ["make", "run.server.prod"]
+    restart: unless-stopped
+    depends_on:
+      - pgbouncer
+      - redis
+      - rabbitmq
+      - collectstatic
+
+  db:
+    <<: *common
+    image: postgres:13-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_INITDB_ARGS: --auth=md5
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - dev-db-data:/var/lib/postgresql/data
+      - ./logs/postgres/postgres.log:/var/log/postgresql/postgresql.log
+
+  pgbouncer:
+    <<: *common
+    image: bitnami/pgbouncer:1-debian-12
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:${DB_PORT}/${DB_NAME}
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 20
+      MIN_POOL_SIZE: 5
+      RESERVE_POOL_SIZE: 5
+      RESERVE_POOL_TIMEOUT: 5
+      SERVER_RESET_QUERY: DISCARD ALL
+      SERVER_CHECK_QUERY: select 1
+      LOG_CONNECTIONS: "1"
+      LOG_DISCONNECTIONS: "1"
+      LOG_POOLER_ERRORS: "1"
+      STATS_PERIOD: "60"
+      AUTH_TYPE: md5
+    ports:
+      - "${PGBOUNCER_PORT}:6432"
+    volumes:
+      - pgbouncer-data:/var/lib/pgbouncer
+
+  redis:
+    <<: *common
+    image: redis:7.2.5-bookworm
+    restart: unless-stopped
+    command: ["redis-server", "/etc/redis/redis.conf"]
+    volumes:
+      - redis-data:/data
+      - ./redis/redis.conf:/etc/redis/redis.conf
+
+  rabbitmq:
+    <<: *common
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    ports:
+      - "${RABBITMQ_DASHBOARD_PORT}:15672"
+
+  celery:
+    <<: *common
+    build:
+      context: .
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      EXTERNAL_DB_HOST: ${EXTERNAL_DB_HOST}
+      EXTERNAL_DB_USERNAME: ${EXTERNAL_DB_USERNAME}
+      EXTERNAL_DB_DATABASE: ${EXTERNAL_DB_DATABASE}
+      EXTERNAL_DB_PORT: ${EXTERNAL_DB_PORT}
+      EXTERNAL_DB_PASSWORD: ${EXTERNAL_DB_PASSWORD}
+    command: make run.celery.prod
+    restart: unless-stopped
+    depends_on:
+      - app
+      - redis
+      - rabbitmq
+    volumes:
+      - ./backend:/apps
+
+  collectstatic:
+    <<: *common
+    build:
+      context: .
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      EXTERNAL_DB_HOST: ${EXTERNAL_DB_HOST}
+      EXTERNAL_DB_USERNAME: ${EXTERNAL_DB_USERNAME}
+      EXTERNAL_DB_DATABASE: ${EXTERNAL_DB_DATABASE}
+      EXTERNAL_DB_PORT: ${EXTERNAL_DB_PORT}
+      EXTERNAL_DB_PASSWORD: ${EXTERNAL_DB_PASSWORD}
+    command: make collectstatic
+    depends_on:
+      - db
+    volumes:
+      - .:/apps
+
+networks:
+  main:
+    ipam:
+      driver: default
+
+volumes:
+  dev-db-data:
+  pgbouncer-data:
+  redis-data:
+  rabbitmq-data:
+  logs:

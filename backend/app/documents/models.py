@@ -122,15 +122,18 @@ class Document(models.Model):
         null=True,
         related_name="updated_documents",
     )
-    letter_number = models.CharField(max_length=200, blank=True, required=False)
-    dttot_letter_number_reference = models.CharField(max_length=200, blank=True, required=False)
-    police_letter_date = models.CharField(max_length=200, blank=True, required=False)
-    police_letter_about = models.CharField(max_length=200, blank=True, required=False)
-    police_letter_number = models.CharField(max_length=200, blank=True, required=False)
+    letter_number = models.CharField(max_length=200, blank=True)
+    dttot_letter_number_reference = models.CharField(max_length=200, blank=True)
+    dttot_letter_inquiry_date = models.DateField(blank=True, null=True)
+    police_letter_date = models.DateField(blank=True, null=True)
+    police_letter_about = models.CharField(max_length=200, blank=True)
+    police_letter_number = models.CharField(max_length=200, blank=True)
 
     class Meta:
+        db_table = "document"
         verbose_name = _("Document")
         verbose_name_plural = _("Documents")
+
 
     def __str__(self) -> str:
         return self.document_name

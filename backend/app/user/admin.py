@@ -12,11 +12,12 @@ from django.contrib.auth.admin import (  #type: ignore # noqa: PGH003
 from django.utils import timezone  #type: ignore  # noqa: PGH003
 from django.utils.translation import gettext as _  #type: ignore  # noqa: PGH003
 
-from app.user.models import Profile, User  #type: ignore  # noqa: PGH003
+from app.user.models import User  #type: ignore  # noqa: PGH003
+from app.user.user_profile.models import UserProfile
 
 
 class UserProfileInline(admin.StackedInline):
-    model = Profile
+    model = UserProfile
     can_delete = False
     verbose_name_plural = "User Profile"
     fk_name = "user"

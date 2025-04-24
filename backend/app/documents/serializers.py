@@ -36,6 +36,7 @@ class DocumentSerializer(serializers.ModelSerializer):
     )
     letter_number = serializers.CharField(required=False)
     dttot_letter_number_reference = serializers.CharField(required=False)
+    dttot_letter_inquiry_date = serializers.DateField(required=False)
     police_letter_date = serializers.CharField(required=False)
     police_letter_about = serializers.CharField(required=False)
     police_letter_number = serializers.CharField(required=False)
@@ -89,6 +90,16 @@ class DocumentSerializer(serializers.ModelSerializer):
     def validate_document_type(self, data: dict[str, Any]) -> dict[str, Any]:
         if data.get("document_type") == "DTTOT Report" and not data.get("document_file_type"):
             raise serializers.ValidationError({"document_file_type": "This field is required for DTTOT Report documents."})
+        return data
+
+    def validate_document_file_type(self, data: dict[str, Any]) -> dict[str, Any]:
+        if data.get("document_type") == "DTTOT Report" and not data.get("document_file_type"):
+            raise serializers.ValidationError({"document_file_type": "This field is required for DTTOT Report documents."})
+        return data
+
+    def validate_dttot_letter_inquiry_date(self, data: dict[str, Any]) -> dict[str, Any]:
+        if data.get("document_type") == "DTTOT Report" and not data.get("dttot_letter_inquiry_date"):
+            raise serializers.ValidationError({"dttot_letter_inquiry_date": "This field is required for DTTOT Report documents."})
         return data
 
     def create(self, validated_data: dict[str, Any]) -> Document:

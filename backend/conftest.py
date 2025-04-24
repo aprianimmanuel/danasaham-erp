@@ -31,7 +31,16 @@ def celery_config() -> dict[str, Any]:
 
 @pytest.fixture(scope="session")
 def celery_includes() -> list[str]:
-    return ["app.config.dttotDoc.tasks", "app.config.dsb_user_personal.tasks"]
+    return [
+        "app.documents.dttotDoc.tasks",
+        "app.dsb_user.dsb_user_personal.tasks",
+        "app.documents.dttotDoc.dttotDocReportPublisher.tasks",
+        "app.documents.dttotDoc.dttotDocReportPersonal.tasks",
+        "app.documents.dttotDoc.dttotDocReportCorporate.tasks",
+        "app.documents.dttotDoc.dttotDocReport.tasks",
+        "app.dsb_user.dsb_user_corporate.tasks",
+        "app.dsb_user.dsb_user_publisher.tasks",
+    ]
 
 
 @pytest.fixture(scope="session")
@@ -90,7 +99,7 @@ def event_loop() -> Any:
 
 
 # Celery app fixture
-@pytest.fixture()
+@pytest.fixture
 def celery_function_app_fixture() -> Task:
     with celery_app() as app:
         yield app

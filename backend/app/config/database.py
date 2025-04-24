@@ -3,8 +3,8 @@ from __future__ import annotations
 import logging
 from os import getenv
 
-import dj_database_url
-from django.core.exceptions import ImproperlyConfigured
+import dj_database_url  # type: ignore  # noqa: PGH003
+from django.core.exceptions import ImproperlyConfigured  # type: ignore
 
 logger = logging.getLogger(__name__)
 

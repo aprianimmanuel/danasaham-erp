@@ -4,8 +4,7 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
-
-from typing_extensions import TypeAlias
+from typing import TypeAlias
 
 from app.config.base import BASE_DIR  #type: ignore # noqa: PGH003
 

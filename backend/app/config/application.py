@@ -11,6 +11,7 @@ ENVIRONMENT = getenv("ENVIRONMENT", "local").strip("'\"")
 HOST = getenv("HOST", "localhost").strip("'\"")
 
 INSTALLED_APPS = [
+    # Django
     "django.contrib.admin",
     "django.contrib.admindocs",
     "django.contrib.auth",
@@ -23,6 +24,9 @@ INSTALLED_APPS = [
     "django_celery_beat",
     "axes",
     "silk",
+    "django_celery_results",
+
+    # 3rd-party
     "rest_framework",
     "rest_framework.authtoken",
     "dj_rest_auth",
@@ -31,18 +35,27 @@ INSTALLED_APPS = [
     "dj_rest_auth.registration",
     "allauth.socialaccount",
     "drf_spectacular",
-    "app.core",
-    "app.user",
-    "app.documents",
-    "app.dttotDoc",
-    "app.dsb_user_personal",
-    "app.dsb_user_corporate",
-    "app.dsb_user_publisher",
-    "app.dttotDocReport",
-    "app.dttotDocReportPersonal",
-    "app.dttotDocReportPublisher",
-    "app.dttotDocReportCorporate",
-    "django_celery_results",
+
+    # Local
+    "app.user.apps.UserConfig",
+    "app.core.apps.CoreConfig",
+    "app.documents.apps.DocumentsConfig",
+    "app.documents.dttotDoc.apps.DttotDocConfig",
+    "app.dsb_user.apps.DsbUserConfig",
+    "app.dsb_user.dsb_user_personal.apps.DsbUserPersonalConfig",
+    "app.dsb_user.dsb_user_corporate.apps.DsbUserCorporateConfig",
+    "app.dsb_user.dsb_user_publisher.apps.DsbUserPublisherConfig",
+    "app.documents.dttotDoc.dttotDocReport.apps.DttotDocReportConfig",
+    "app.documents.dttotDoc.dttotDocReportPersonal.apps.DttotDocReportPersonalConfig",
+    "app.documents.dttotDoc.dttotDocReportPublisher.apps.DttotDocReportPublisherConfig",
+    "app.documents.dttotDoc.dttotDocReportCorporate.apps.DttotDocReportCorporateConfig",
+    "app.user.user_profile.apps.UserProfileConfig",
+    "app.user.user_otp.apps.UserOTPConfig",
+    "app.user.user_digital_sign.apps.UserDigitalSignConfig",
+    "app.user.user_key_management.apps.UserKeyManagementConfig",
+    "app.user.user_role.apps.UserRoleConfig",
+    "app.user.user_signed_document.apps.UserSignedDocumentConfig",
+
 ]
 
 SITE_ID = 1
@@ -86,7 +99,7 @@ ASGI_APPLICATION = "app.web.asgi.application"
 WSGI_APPLICATION = "app.web.wsgi.application"
 ROOT_URLCONF = "app.web.urls"
 
-LANGUAGE_CODE = getenv("LANGUAGE_CODE", "en-us")
+LANGUAGE_CODE = getenv("LANGUAGE_CODE", "en-gb")
 
 USE_TZ = True
 
