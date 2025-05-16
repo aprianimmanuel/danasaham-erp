@@ -25,6 +25,11 @@ services:
       - ./logs/app:/apps/logs/app
     command: ["make", "run.server.prod"]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1g
     depends_on:
       - pgbouncer
       - db
@@ -41,6 +46,11 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1g
     ports:
       - "${DB_PORT}:5432"
     volumes:
@@ -69,6 +79,11 @@ services:
       AUTH_TYPE: md5
     ports:
       - "${PGBOUNCER_PORT}:6432"
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512m
     volumes:
       - pgbouncer-data:/var/lib/pgbouncer
 
@@ -80,6 +95,11 @@ services:
       - celery
       - rabbitmq
     command: ["redis-server", "/etc/redis/redis.conf"]
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512m
     volumes:
       - redis-data:/data
       - ./redis/redis.conf:/etc/redis/redis.conf
@@ -92,6 +112,11 @@ services:
       - db
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512m
     ports:
       - "${RABBITMQ_DASHBOARD_PORT}:15672"
       - "${RABBITMQ_PORT}:5672"
@@ -113,6 +138,11 @@ services:
       "uv run celery -A tasks.app worker --loglevel=DEBUG --prefetch-multiplier=1",
     ]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 512m
     depends_on:
       - rabbitmq
     volumes:
@@ -136,6 +166,11 @@ services:
     ]
     depends_on:
       - db
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512m
     volumes:
       - .:/apps
       - ./static:/apps/static

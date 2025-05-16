@@ -11,6 +11,7 @@ include(
     "security.py",
     "storage.py",
     "rest.py",
+    "redis.py",
     "sentry.py",
     "silk.py",
     "spectacular.py",

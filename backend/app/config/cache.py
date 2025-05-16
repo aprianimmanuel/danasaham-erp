@@ -14,7 +14,7 @@ USE_REDIS_FOR_CACHE = getenv("USE_REDIS_FOR_CACHE", default="true").lower() == "
 REDIS_HOST = getenv("REDIS_HOST", "redis")
 REDIS_PORT = getenv("REDIS_PORT", "6379")
 REDIS_DB = getenv("REDIS_DB", "0")
-REDIS_URL = getenv("REDIS_URL", default=f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}")
+REDIS_URL = getenv("REDIS_URL")
 
 
 CACHES: dict[str, Any] = {}
@@ -26,7 +26,7 @@ if USE_REDIS_FOR_CACHE and not IS_TESTING:
     logger.info("Using Redis for cache")
     CACHES["default"] = {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}",
+        "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
