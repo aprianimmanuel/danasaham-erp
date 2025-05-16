@@ -27,9 +27,10 @@ services:
     restart: unless-stopped
     depends_on:
       - pgbouncer
+      - db
       - redis
       - rabbitmq
-      - collectstatic
+      - celery
 
   db:
     <<: *common
@@ -44,7 +45,6 @@ services:
       - "${DB_PORT}:5432"
     volumes:
       - dev-db-data:/var/lib/postgresql/data
-      - ./logs/postgres/postgres.log:/var/log/postgresql/postgresql.log
 
   pgbouncer:
     <<: *common
@@ -53,7 +53,7 @@ services:
     depends_on:
       - db
     environment:
-      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:${DB_PORT}/${DB_NAME}
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       POOL_MODE: transaction
       MAX_CLIENT_CONN: 1000
       DEFAULT_POOL_SIZE: 20
@@ -76,6 +76,9 @@ services:
     <<: *common
     image: redis:7.2.5-bookworm
     restart: unless-stopped
+    depends_on:
+      - celery
+      - rabbitmq
     command: ["redis-server", "/etc/redis/redis.conf"]
     volumes:
       - redis-data:/data
@@ -85,10 +88,13 @@ services:
     <<: *common
     image: rabbitmq:3-management
     restart: unless-stopped
+    depends_on:
+      - db
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     ports:
       - "${RABBITMQ_DASHBOARD_PORT}:15672"
+      - "${RABBITMQ_PORT}:5672"
 
   celery:
     <<: *common
@@ -101,14 +107,16 @@ services:
       EXTERNAL_DB_DATABASE: ${EXTERNAL_DB_DATABASE}
       EXTERNAL_DB_PORT: ${EXTERNAL_DB_PORT}
       EXTERNAL_DB_PASSWORD: ${EXTERNAL_DB_PASSWORD}
-    command: make run.celery.prod
+    command: [
+      "bash",
+      "-c",
+      "uv run celery -A tasks.app worker --loglevel=DEBUG --prefetch-multiplier=1",
+    ]
     restart: unless-stopped
     depends_on:
-      - app
-      - redis
       - rabbitmq
     volumes:
-      - ./backend:/apps
+      - .:/apps
 
   collectstatic:
     <<: *common
@@ -121,11 +129,17 @@ services:
       EXTERNAL_DB_DATABASE: ${EXTERNAL_DB_DATABASE}
       EXTERNAL_DB_PORT: ${EXTERNAL_DB_PORT}
       EXTERNAL_DB_PASSWORD: ${EXTERNAL_DB_PASSWORD}
-    command: make collectstatic
+    command: [
+      "bash",
+      "-c",
+      "python manage.py collectstatic --noinput",
+    ]
     depends_on:
       - db
     volumes:
       - .:/apps
+      - ./static:/apps/static
+      - ./staticfiles:/apps/staticfiles
 
 networks:
   main:
@@ -137,4 +151,3 @@ volumes:
   pgbouncer-data:
   redis-data:
   rabbitmq-data:
-  logs:

@@ -63,6 +63,12 @@ try:
                 "filename": LOG_FILE,
                 "formatter": "standard",
             },
+            "otp_file": {
+                "level": LOG_LEVEL,
+                "class": "logging.FileHandler",
+                "filename": os.path.join(LOG_DIR, "otp.log"),  # noqa: PTH118
+                "formatter": "standard",
+            },
         },
         "loggers": {
             "django": {
@@ -77,6 +83,11 @@ try:
             },
             "app": {
                 "handlers": ["console", "file"],
+                "level": LOG_LEVEL,
+                "propagate": True,
+            },
+            "otp_logger": {
+                "handlers": ["otp_file"],
                 "level": LOG_LEVEL,
                 "propagate": True,
             },

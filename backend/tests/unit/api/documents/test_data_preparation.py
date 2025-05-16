@@ -35,12 +35,6 @@ Jane Smith,Guru Honorer,Orang"""
         with open(self.csv_file_path, "w") as f:  # noqa: PTH123
             f.write(self.csv_content)
 
-    @classmethod
-    def tearDownClass(cls) -> None:
-        """Remove the temporary directory and all its contents after the tests."""
-        # Ignore errors and warnings during deletion
-        shutil.rmtree(cls.temp_dir, ignore_errors=True)
-
     def test_import_document_csv(self) -> None:
         """Test processing a DTTOT document uploaded as a CSV file."""
         df = self.processing.import_document(self.csv_file_path, "CSV")  # noqa: PD901
@@ -64,7 +58,7 @@ def test_extract_aliases_from_names(self) -> None:  # noqa: ANN001, ARG001
         )
 
         # Process the DataFrame to extract aliases
-        processed_df: pd.DataFrame = processing.extract_and_split_names(df, "Nama")
+        processed_df: pd.DataFrame = processing.extract_and_split_names(self, df, "Nama", False)
 
         # Define the expected DataFrame after alias extraction
         expected_df: pd.DataFrame = pd.DataFrame(
@@ -175,7 +169,7 @@ class DTTOTDocumentProcessingXLSTests(TestCase):
         )
 
         # Processing input DataFrame to separate names and aliases
-        processed_df = self.processing.extract_and_split_names(input_df, "Nama")
+        processed_df = self.processing.extract_and_split_names(input_df, "Nama", False)
 
         # Constructing the expected DataFrame
         expected_data = {

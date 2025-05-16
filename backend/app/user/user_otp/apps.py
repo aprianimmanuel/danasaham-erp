@@ -10,4 +10,4 @@ class UserOTPConfig(AppConfig):
     verbose_name_plural = "User OTP"
 
     def ready(self) -> None:
-        pass
+        import app.user.user_otp.signals

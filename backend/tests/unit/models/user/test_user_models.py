@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 from django.contrib.auth import get_user_model  # type: ignore  # noqa: PGH003
-from django.core.exceptions import IntegrityError  # type: ignore  # noqa: PGH003
+from django.core.exceptions import ValidationError  # type: ignore  # noqa: PGH003
 
 User = get_user_model()
 
@@ -138,7 +138,7 @@ def test_unique_username_constraint() -> None:
         username="hellouser",
         password="Testp@ss!23",  # noqa: S106
     )
-    with pytest.raises(IntegrityError):
+    with pytest.raises(ValidationError):
         User.objects.create_user(
             email="test@example",
             username="hellouser",

@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model  #type: ignore # noqa: PGH003
 from django.test import Client, TestCase  #type: ignore # noqa: PGH003
 from django.urls import reverse  #type: ignore # noqa: PGH003
 
-from app.user.models import UserProfile  #type: ignore # noqa: PGH003
+from app.user.user_profile.models import UserProfile  #type: ignore # noqa: PGH003
 
 
 class AdminSiteTests(TestCase):

@@ -40,6 +40,7 @@ class UserOTP(models.Model):
         default=OTPType.LOGIN_OTP,
         blank=True,
     )
+    pending_changes = models.JSONField(default=dict, null=True, blank=True)
     status_used = models.CharField(max_length=20, blank=True)
     created_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_date = models.DateTimeField(auto_now=True, null=True, blank=True)

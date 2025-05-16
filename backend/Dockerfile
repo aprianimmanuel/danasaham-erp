@@ -1,4 +1,4 @@
-FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim as uv-installer
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS uv-installer
 
 FROM python:3.12.10-slim-bookworm
 
@@ -51,7 +51,7 @@ RUN uv run --with spacy spacy download xx_ent_wiki_sm && uv run --with spacy spa
 COPY . .
 
 # Permission settings
-RUN adduser --disabled-password --gecos "" aprianimmanuel
+RUN adduser --disabled-password --gecos "" starpoin_aprianimmanuel
 
 # Add Django user
-USER aprianimmanuel
+USER starpoin_aprianimmanuel

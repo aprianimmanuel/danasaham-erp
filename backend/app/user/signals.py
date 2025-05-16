@@ -4,26 +4,14 @@ from typing import Any
 
 from django.conf import settings  #type: ignore # noqa: PGH003
 from django.db.models.signals import post_save  #type: ignore # noqa: PGH003
-from django.dispatch import receiver  #type: ignore # noqa: PGH003
+from django.dispatch import Signal, receiver  #type: ignore # noqa: PGH003
 
-from app.user.models import UserProfile  #type: ignore # noqa: PGH003
+from app.user.models import User
 
+email_verification_signal = Signal(providing_args=["user_data"])
 
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def create_user_profile(
-    _sender,  # noqa: ANN001
-    instance,  # noqa: ANN001
-    created,  # noqa: ANN001
-    **_kwargs: Any,
-) -> None:
-    if created:
-        UserProfile.objects.create(user=instance)
+@receiver(post_save, sender=User)
+def emailverify(sender, instance, created, **kwargs):
+    if created and instance.email:
+        email_verification_signal.send_robust(sender=sender, user_data={"user_id": instance.user_id})
 
-
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def save_user_profile(
-    _sender,  # noqa: ANN001
-    instance,  # noqa: ANN001
-    **_kwargs: Any,
-) -> None:
-    instance.profile.save()

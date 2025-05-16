@@ -7,7 +7,7 @@ endif
 run.server.local:
 	sh ./run-local.sh
 
-run.server.prod: 
+run.server.prod:
 	uv run gunicorn app.web.wsgi:application \
 		--bind 0.0.0.0:8000 \
 		--workers ${WORKERS} \
@@ -15,10 +15,7 @@ run.server.prod:
 		--timeout 480
 
 run.celery.local:
-	OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES uv run celery -A tasks.app worker --loglevel=DEBUG --prefetch-multiplier=1
-
-run.celery.prod:
-	uv run celery -A tasks.app worker --loglevel=INFO --concurrency=${WORKERS} --prefetch-multiplier=1
+	OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES uv sync --frozen && uv run celery -A tasks.app worker --loglevel=DEBUG --prefetch-multiplier=1
 
 wait_for_services:
 	uv run manage.py wait_for_db
@@ -28,9 +25,6 @@ makemigrations:
 
 migrate:
 	uv run manage.py wait_for_db && uv run manage.py migrate
-
-collectstatic:
-	uv run collectstatic --no-input
 
 createsuperuser:
 	uv run manage.py createsuperuser --email "devdanasaham@danasaham.co.id" --username admin
@@ -58,7 +52,7 @@ ruff-fmt:
 	uv run --with ruff ruff check --fix-only --unsafe-fixes .
 
 test:
-	uv run --with pytest pytest --cov=/apps
+	uv run manage.py wait_for_db && uv run --with pytest pytest --cov=/apps
 
 mypy:
 	uv run --with mypy mypy .

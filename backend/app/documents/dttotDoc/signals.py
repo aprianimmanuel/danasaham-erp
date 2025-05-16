@@ -23,14 +23,26 @@ def process_document_signal(
 ) -> None:
     """Trigger the Celery task to process the document."""
     if created:
-        logger.debug(f"Received document_created signal for {instance.pk}")  # noqa: G004
+        try:
+            logger.info(f"[Signal] Received document_created for document {instance.pk}")
 
-        # Extract user_data and document_data from kwargs
-        user_data_serializable = kwargs.get("user_data")
-        document_data_serializable = kwargs.get("document_data")
+            user_data_serializable = kwargs.get("user_data")
+            document_data_serializable = kwargs.get("document_data")
 
-        # Initiate document processing with the required IDs
-        initiate_document_processing.delay(
-            user_data_serializable=user_data_serializable,
-            document_data_serializable=document_data_serializable,
-        )
+            logger.info(
+                f"[Signal] Triggering initiate_document_processing with user_data={user_data_serializable} "
+                f"and document_data={document_data_serializable}"
+            )
+
+            initiate_document_processing.delay(
+                user_data_serializable=user_data_serializable,
+                document_data_serializable=document_data_serializable,
+            )
+
+        except Exception as e:
+            logger.error(
+                f"[Signal] Failed to process document_created signal for document {instance.pk}: {e}",
+                exc_info=True
+            )
+    else:
+        logger.debug(f"[Signal] Document {instance.pk} created but not 'created=True', skipping.")

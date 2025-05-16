@@ -11,12 +11,12 @@ app_name = "dttotdocreportcorporate"
 
 urlpatterns = [
     path(
-        "api/documents/dttotdocreport/dttotdocreportcorporate/list/",
+        "dttotdocreport/dttotdocreportcorporate/list/",
         dttotDocReportCorporateView.as_view(),
         name="dttotdocreportcorporate-list",
     ),
     re_path(
-        r"^api/documents/dttotdocreport/dttotdocreportcorporate/details/$",
+        r"^dttotdocreport/dttotdocreportcorporate/details/$",
         dttotDocReportCorporateDetailView.as_view(),
         name="dttotdocreportcorporate-detail",
     ),

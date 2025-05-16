@@ -11,12 +11,12 @@ app_name = "dsb_user_publisher"
 
 urlpatterns = [
     path(
-        "api/dsb-user-publisher/list/",
+        "dsb-user-publisher/list/",
         DsbUserPublisherListView.as_view(),
         name="dsb-user-publisher-list",
     ),
     re_path(
-        r"^api/dsb-user-publisher/details/$",
+        r"^dsb-user-publisher/details/$",
         DsbUserPublisherDetailView.as_view(),
         name="dsb-user-publisher-details",
     ),

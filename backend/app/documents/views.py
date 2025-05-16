@@ -25,12 +25,21 @@ logger = logging.getLogger(__name__)
 router = CustomViewRouter()
 
 
-@router.register_decorator(r"api/documents/list/", name="document-list")
+@router.register_decorator("api/documents/list/", name="document-list")
 class DocumentListView(GenericAPIView):
     serializer_class = DocumentSerializer
     parser_classes = [JSONParser, MultiPartParser]  # noqa: RUF012
     permission_classes = [permissions.IsAuthenticated]  # noqa: RUF012
 
+
+    @extend_schema(
+        methods=["GET"],
+        responses={200: DocumentSerializer(many=True)},
+    )
+    def get(self, request: Request) -> Response:
+        documents = Document.objects.all()
+        serializer = self.get_serializer(documents, many=True)
+        return Response(serializer.data)
 
     @extend_schema(
         methods=["POST"],
@@ -61,13 +70,15 @@ class DocumentListView(GenericAPIView):
 
         # Return a custom response message
         return Response(
-            {"detail": "We have received the documents. Please sit back and sip some coffee."},
+            {
+                "document_id": document.document_id,
+                "detail": "We have received the documents. Please sit back and sip some coffee."},
             status=status.HTTP_201_CREATED,
         )
 
 
 @router.register_decorator(
-    r"api/documents/details/$",
+    r"api/documents/details/",
     name="document-details",
 )
 class DocumentDetailView(GenericAPIView):

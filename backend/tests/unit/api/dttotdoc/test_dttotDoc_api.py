@@ -14,12 +14,14 @@ from django.contrib.auth import get_user_model  #type: ignore # noqa: PGH003
 from django.core.files.uploadedfile import (  #type: ignore # noqa: PGH003
     SimpleUploadedFile,
 )
-from django.test import override_settings  #type: ignore # noqa: PGH003
+from django.test import override_settings, TransactionTestCase  #type: ignore # noqa: PGH003
 from django.urls import reverse  #type: ignore # noqa: PGH003
 from openpyxl import Workbook  #type: ignore # noqa: PGH003
 from rest_framework import status  #type: ignore # noqa: PGH003
 from rest_framework.authtoken.models import Token  #type: ignore # noqa: PGH003
 from rest_framework.test import APIClient, APITestCase  #type: ignore # noqa: PGH003
+from unittest.mock import patch
+from django.db import connection
 
 User = get_user_model()
 
@@ -28,21 +30,8 @@ EXPECTED_RESPONSE_LENGTH_2 = 2
 EXPECTED_RESPONSE_LENGTH_3 = 3
 
 
-@pytest.mark.django_db()
-@pytest.mark.usefixtures(
-    "celery_session_app",
-    "celery_session_worker",
-    "celery_config",
-    "celery_parameters",
-    "celery_enable_logging",
-    "use_celery_app_trap",
-)
-@override_settings(CELERY_ALWAYS_EAGER=True)
+@pytest.mark.django_db(transaction=True)
 class DttotDocAPITestCase(APITestCase):
-    @pytest.fixture(autouse=True, scope="class")
-    def _setup_celery_worker(self, celery_session_worker: Any) -> None:
-        self.celery_worker = celery_session_worker
-
     def setUp(self) -> None:
         self.client = APIClient()
         self.user = User.objects.create_user(
@@ -58,17 +47,14 @@ class DttotDocAPITestCase(APITestCase):
         self.old_media_root = settings.MEDIA_ROOT
         settings.MEDIA_ROOT = str(self.test_media_path)
 
-    def tearDown(self) -> None:
-        for item in self.test_media_path.iterdir():
-            if item.is_file() or item.is_symlink():
-                item.unlink()
-            elif item.is_dir():
-                shutil.rmtree(item)
+    def tearDown(self):
+        # Clean up test media
+        shutil.rmtree(self.test_media_path, ignore_errors=True)
         settings.MEDIA_ROOT = self.old_media_root
         super().tearDown()
 
     @staticmethod
-    def create_test_document_file() -> SimpleUploadedFile:
+    def create_test_document_file():
         output = io.BytesIO()
         data = {
             "Nama": ["John Doe Alias Don John Alias John Krew"],
@@ -84,9 +70,9 @@ class DttotDocAPITestCase(APITestCase):
                 "Jalan Getis Gg.III/95A, RT/RW. 013/003, Kel. Lemah Putro, Kec. Sidoarjo, Kab/Kota. Sidoarjo, Prov. Jawa Timur",
             ],
         }
-        data_frame = pd.DataFrame(data)
+        df = pd.DataFrame(data)
         with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            data_frame.to_excel(writer, index=False, sheet_name="Sheet1")
+            df.to_excel(writer, index=False)
         output.seek(0)
         return SimpleUploadedFile(
             "test.xlsx",
@@ -94,79 +80,74 @@ class DttotDocAPITestCase(APITestCase):
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
 
-    @patch("app.config.core.models.save_file_to_instance")
-    def test_create_and_update_dttotdoc(self, mock_save_file_to_instance: Any) -> None:
+    def test_create_and_update_dttotdoc(self):
+        """Test full lifecycle: upload, retrieve, update DTTOT docs."""
+        # Upload
         document_file = self.create_test_document_file()
-        with self.settings(MEDIA_ROOT=self.test_media_path):
-            upload_response = self.client.post(
-                reverse("documents:document-list"),
-                {
-                    "document_file": document_file,
-                    "document_name": "Test Document",
-                    "document_type": "DTTOT Document",
-                    "document_file_type": "XLSX",
-                },
-                format="multipart",
-            )
-            assert (  #noqa: S101
-                upload_response.status_code == status.HTTP_201_CREATED
-            ), "Document upload failed"
+        upload_response = self.client.post(
+            reverse("documents:document-list"),
+            {
+                "document_file": document_file,
+                "document_name": "Test Document",
+                "document_type": "DTTOT Report",
+                "document_file_type": "XLSX",
+            },
+            format="multipart",
+        )
+        # Assert upload success
+        assert (  #noqa: S101
+            upload_response.status_code == status.HTTP_201_CREATED
+        ), "Document upload failed"
 
-            mock_save_file_to_instance.assert_called()
+        # Extract document_id
+        response_data = upload_response.json()
+        assert response_data, "Empty upload response"
+        document_id = response_data.get("document_id")
+        assert document_id, "No document_id in upload response"
 
-            document_id = upload_response.data["document_id"]
-            dttot_docs = None
-            for _ in range(180):
-                response = self.client.get(
-                    reverse(
-                        "dttotdocs:dttot-doc-list",
-                        kwargs={"document_id": document_id},
-                    ),
-                )
-                if response.data:
-                    dttot_docs = response.data
-                    break
-                sleep(1)
+        # Poll for DTTOT docs
+        dttot_docs = None
+        list_url = f"{reverse('DttotDoc:dttot-doc-list')}?identifier={document_id}"
+        for _ in range(30):
+            resp = self.client.get(list_url)
+            assert resp.status_code == status.HTTP_200_OK
+            data = resp.json()
+            if data:
+                dttot_docs = data
+                break
+            sleep(1)
+        assert dttot_docs, "dttotDoc was not found in the response"
 
-            assert dttot_docs, "dttotDoc was not found in the response"  # noqa: S101
+        # Validate first DTTOT doc fields
+        doc_item = dttot_docs[0]
+        assert doc_item["document"] == document_id
+        for key in ("dttot_id", "document_data", "updated_at", "user"):
+            assert key in doc_item, f"{key} missing in doc_item"
 
-            dttot_doc = dttot_docs[0]
-            assert dttot_doc["document"] == document_id, "Document ID does not match"  # noqa: S101
-            assert "dttot_id" in dttot_doc, "dttot_id not found in the response"  # noqa: S101
-            assert (  #noqa: S101
-                "document_data" in dttot_doc
-            ), "document_data not found in the response"
-            assert "updated_at" in dttot_doc, "updated_at not found in the response"  # noqa: S101
-            assert "user" in dttot_doc, "user not found in the response"  # noqa: S101
+        # Update the DTTOT doc
+        detail_url = reverse(
+            "dttotdocs:dttot-doc-detail",
+            kwargs={"dttot_id": doc_item["dttot_id"]}
+        )
+        update_payload = {
+            "dttot_type": "Updated Type",
+            "dttot_first_name": "FirstUp",
+            "dttot_last_name": "LastUp",
+            "dttot_domicile_address": "Updated Address",
+            "dttot_description_1": "Updated Description",
+        }
+        update_resp = self.client.patch(detail_url, update_payload, format="json")
+        assert update_resp.status_code == status.HTTP_200_OK
 
-            update_url = reverse(
-                "dttotdocs:dttot-doc-detail",
-                kwargs={"dttot_id": dttot_doc["dttot_id"]},
-            )
-            update_data = {
-                "dttot_type": "Updated Type",
-                "dttot_first_name": "UpdatedFirst",
-                "dttot_last_name": "UpdatedSecond",
-                "dttot_domicile_address": "Updated Address",
-                "dttot_description_1": "Updated Description",
-            }
-            update_response = self.client.patch(update_url, update_data, format="json")
-            assert (  #noqa: S101
-                update_response.status_code == status.HTTP_200_OK
-            ), "Should return HTTP 200 OK"
-
-            dttot_doc = self.client.get(update_url).data
-            assert (  #noqa: S101
-                dttot_doc["dttot_type"] == "Updated Type"
-            ), "Check the type of the updated document"
-            assert (  #noqa: S101
-                dttot_doc["dttot_first_name"] == "UpdatedFirst"
-            ), "Check the updated first name"
-
-        self.tearDown()
+        # Confirm update persisted
+        final_data = self.client.get(detail_url).json()
+        assert final_data.get("dttot_type") == "Updated Type"
+        assert final_data.get("dttot_first_name") == "FirstUp"
+        assert final_data.get("dttot_last_name") == "LastUp"
 
 
 class DttotDocReportTestCase(APITestCase):
+
     @classmethod
     def setUpTestData(cls) -> None:
         cls.user = User.objects.create_user(

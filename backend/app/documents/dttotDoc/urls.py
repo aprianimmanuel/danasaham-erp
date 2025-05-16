@@ -11,12 +11,12 @@ app_name = "DttotDoc"
 
 urlpatterns = [
     path(
-        "api/documents/dttotdocs/list/<uuid:identifier>/",
+        "dttotdocs/list/",
         DttotDocListView.as_view(),
         name="dttot-doc-list",
     ),
     path(
-        r"^api/documents/dttotdocs/details/$",
+        "dttotdocs/details/",
         DttotDocDetailView.as_view(),
         name="dttot-doc-detail",
     ),

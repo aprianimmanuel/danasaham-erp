@@ -11,12 +11,12 @@ app_name = "dsb_user_corporate"
 
 urlpatterns = [
     path(
-        "api/dsb-user-corporate/list/",
+        "dsb-user-corporate/list/",
         DsbUserCorporateListView.as_view(),
         name="dsb-user-corporate-list",
     ),
     re_path(
-        r"^api/dsb-user-corporate/details/$",
+        r"^dsb-user-corporate/details/$",
         DsbUserCorporateDetailView.as_view(),
         name="dsb-user-corporate-details",
     ),

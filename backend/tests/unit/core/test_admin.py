@@ -22,7 +22,7 @@ from app.documents.models import (  #type: ignore  # noqa: PGH003
     Document,  #type: ignore  # noqa: PGH003
     save_file_to_instance,
 )
-from app.dttotDoc.models import dttotDoc  #type: ignore  # noqa: PGH003
+from app.documents.dttotDoc.models import DttotDoc  #type: ignore  # noqa: PGH003
 
 
 class DttotDocAdminTest(TestCase):
@@ -64,7 +64,7 @@ class DttotDocAdminTest(TestCase):
             updated_by=self.normal_user,
         )
 
-        self.dttot_doc = dttotDoc.objects.create(
+        self.dttot_doc = DttotDoc.objects.create(
             user=self.normal_user,
             document=self.document,
             dttot_type="Test Type",

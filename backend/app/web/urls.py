@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+from django.conf import settings
 import logging
 from typing import Any
 
@@ -26,7 +28,17 @@ from app.config.storage import (  #type: ignore # noqa: PGH003
     USE_S3_FOR_STATIC,
 )
 
+BASE_DIR = settings.BASE_DIR
+
 logger = logging.getLogger(__name__)
+
+class CustomSpectacularSwaggerAPIView(SpectacularSwaggerView):
+    template_name = "drf_spectacular/swagger_ui.html"
+
+
+class CustomSpectacularRedocView(SpectacularRedocView):
+    template_name = "drf_spectacular/redoc.html"
+
 
 # Swagger and Redoc URL patterns
 _swagger_urlpatterns = [
@@ -36,13 +48,13 @@ _swagger_urlpatterns = [
         name="schema",
     ),
     path(
-        "docs/",
-        extend_schema(exclude=True)(SpectacularSwaggerView).as_view(url_name="schema"),
+        "api/v1/docs/",
+        extend_schema(exclude=True)(CustomSpectacularSwaggerAPIView).as_view(url_name="schema"),
         name="swagger-ui",
     ),
     path(
-        "redoc/",
-        extend_schema(exclude=True)(SpectacularRedocView).as_view(url_name="schema"),
+        "api/v1/redoc/",
+        extend_schema(exclude=True)(CustomSpectacularRedocView).as_view(url_name="schema"),
         name="redoc",
     ),
 ]
@@ -55,37 +67,25 @@ def trigger_error(_request: Any) -> None:
 # Main URL patterns
 urlpatterns = [
     *_swagger_urlpatterns,
-    path("", lambda _request: redirect("docs/"), name="home"),
-    path("admin/", admin.site.urls),
+    path("api/v1/", lambda _request: redirect("docs/"), name="home"),
+    path("api/v1/admin/", admin.site.urls),
     # JWT URLs
-    path("api/token/verify/", TokenVerifyView.as_view(), name="token_verify"),
-    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
-    # DRF Spectacular for API schema and documentation
-    path("api/schema/", SpectacularAPIView.as_view(), name="api-schema"),
-    path(
-        "api/docs/",
-        SpectacularSwaggerView.as_view(url_name="api-schema"),
-        name="api-docs",
-    ),
-    path(
-        "api/redoc/",
-        SpectacularRedocView.as_view(url_name="api-schema"),
-        name="api-redoc",
-    ),
+    path("api/v1/token/verify/", TokenVerifyView.as_view(), name="token_verify"),
+    path("api/v1/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("api/v1/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     # Include other app URLs
-    path("", include("app.user.urls")),
-    path("", include("app.documents.urls")),
-    path("", include("app.documents.dttotDoc.urls")),
-    path("", include("app.dsb_user.dsb_user_personal.urls")),
-    path("", include("app.dsb_user.dsb_user_corporate.urls")),
-    path("", include("app.dsb_user.dsb_user_publisher.urls")),
-    path("", include("app.documents.dttotDoc.dttotDocReport.urls")),
-    path("", include("app.documents.dttotDoc.dttotDocReportPersonal.urls")),
-    path("", include("app.documents.dttotDoc.dttotDocReportPublisher.urls")),
-    path("", include("app.documents.dttotDoc.dttotDocReportCorporate.urls")),
-    path("accounts/", include("allauth.urls")),
-    path("sentry-debug/", trigger_error),
+    path("api/v1/user/", include("app.user.urls")),
+    path("api/v1/documents/", include("app.documents.urls")),
+    path("api/v1/documents/dttotdoc/", include("app.documents.dttotDoc.urls")),
+    path("api/v1/dsbuser/personal/", include("app.dsb_user.dsb_user_personal.urls")),
+    path("api/v1/dsbuser/corporate/", include("app.dsb_user.dsb_user_corporate.urls")),
+    path("api/v1/dsbuser/publisher/", include("app.dsb_user.dsb_user_publisher.urls")),
+    path("api/v1/documents/dttotdoc/dttotdocreport/", include("app.documents.dttotDoc.dttotDocReport.urls")),
+    path("api/v1/documents/dttotdoc/dttotdocreport/personal/", include("app.documents.dttotDoc.dttotDocReportPersonal.urls")),
+    path("api/v1/documents/dttotdoc/dttotdocreport/publisher/", include("app.documents.dttotDoc.dttotDocReportPublisher.urls")),
+    path("api/v1/documents/dttotdoc/dttotdocreport/corporate/", include("app.documents.dttotDoc.dttotDocReportCorporate.urls")),
+    path("api/v1/auth/", include("allauth.urls")),
+    path("api/v1/sentry-debug/", trigger_error),
 ]
 
 

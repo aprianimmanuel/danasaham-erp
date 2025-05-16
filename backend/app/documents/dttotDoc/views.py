@@ -14,6 +14,7 @@ from app.documents.dttotDoc.serializers import (  #type: ignore # noqa: PGH003
     DttotDocListSerializer,
     DttotDocSerializer,
 )
+from django.db.models import Q
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +22,42 @@ router = CustomViewRouter(url_prefix="api/")
 
 
 @router.register_decorator(
-    r"documents/dttotdocs/list/",
+    r"^documents/dttotdocs/list/?$",
     name="dttot-doc-list",
 )
 class DttotDocListView(GenericAPIView):
     serializer_class = DttotDocListSerializer
     permission_classes: ClassVar[list[type[permissions.BasePermission]]] = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        query = self.request.query_params.get("query")
+
+        if query:
+            # Search in name field, alias, description, nik, passport and phone_number
+            search_filter = (
+                Q(dttot_first_name__icontains=query) |
+                Q(dttot_middle_name__icontains=query) |
+                Q(dttot_last_name__icontains=query))
+
+            # Alias fields (name and description)
+            for i in range(1, 29): # Alias name fields
+                search_filter |= Q(**{f"dttot_alias_name_{i}__icontains": query})
+                search_filter |= Q(**{f"dttot_alias_first_name_{i}__icontains": query})
+                search_filter |= Q(**{f"dttot_alias_middle_name_{i}__icontains": query})
+                search_filter |= Q(**{f"dttot_alias_last_name_{i}__icontains": query})
+
+            for j in range(1,10): # description fields
+                search_filter |= Q(**{"dttot_description_{j}__icontains": query})
+
+            # Nik and passport
+            search_filter |= Q(dttot_nik_ktp__icontains=query)
+            search_filter |= Q(dttot_passport_number__icontains=query)
+
+            queryset = queryset.filter(search_filter).distinct()
+
+        return queryset
+
 
     @extend_schema(responses={200: DttotDocListSerializer})
     def get(self, request: Any) -> Response:
@@ -59,7 +90,7 @@ class DttotDocListView(GenericAPIView):
 
 
 @router.register_decorator(
-    r"documents/dttotdocs/details/$",
+    r"^documents/dttotdocs/details/?$",
     name="dttot-doc-detail",
 )
 class DttotDocDetailView(GenericAPIView):

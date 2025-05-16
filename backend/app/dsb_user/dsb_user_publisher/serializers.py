@@ -15,8 +15,23 @@ from app.user.models import User  #type: ignore # noqa: PGH003
 class DsbUserPublisherListSerializer(serializers.ModelSerializer):
     class Meta:
         model = DsbUserPublisher
-        fields: ClassVar = "__all__"
-        read_only_fields: ClassVar = "__all__"
+        fields: ClassVar = [
+            "dsb_user_publisher_id",
+            "document",
+            "coredsb_user_id",
+            "user_upgrade_to_publisher_date",
+            "last_update_by",
+            "last_updated_date",
+        ]
+        read_only_fields: ClassVar = [
+            "dsb_user_publisher_id",
+            "document",
+            "coredsb_user_id",
+            "user_upgrade_to_publisher_date",
+            "last_update_by",
+            "last_updated_date",
+        ]
+
 
 class DsbUserPublisherSerializer(serializers.ModelSerializer):
     document = serializers.PrimaryKeyRelatedField(
@@ -33,7 +48,37 @@ class DsbUserPublisherSerializer(serializers.ModelSerializer):
     class Meta:
         model = DsbUserPublisher
         fields = "__all__"
-        read_only_fields = "__all__"
+        read_only_fields = [  # noqa: RUF012
+            "dsb_user_publisher_id",
+            "created_date",
+            "updated_date",
+            "last_update_by",
+            "initial_registration_date",
+            "coredsb_user_id",
+            "user_name",
+            "registered_user_email",
+            "users_phone_number",
+            "users_last_modified_date",
+            "user_upgrade_to_publisher_date",
+            "publisher_registered_name",
+            "publisher_corporate_type",
+            "publisher_phone_number",
+            "publisher_business_field",
+            "publisher_main_business",
+            "domicile_address_publisher_1",
+            "domicile_address_publisher_2",
+            "domicile_address_publisher_3_city",
+            "publisher_last_modified_date",
+            "publisher_pengurus_id",
+            "publisher_pengurus_name",
+            "publisher_pengurus_id_number",
+            "publisher_pengurus_role_as",
+            "publisher_jabatan_pengurus",
+            "publisher_address_pengurus",
+            "publisher_tgl_lahir_pengurus",
+            "publisher_tempat_lahir_pengurus",
+            "pengurus_publisher_last_modified_date",
+        ]
 
     def create(
         self,

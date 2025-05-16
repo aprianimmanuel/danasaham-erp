@@ -16,9 +16,22 @@ from app.user.models import User  #type: ignore # noqa: PGH003
 class DsbUserPersonalListSerializer(serializers.ModelSerializer):
     class Meta:
         model = DsbUserPersonal
-        fields: ClassVar = "__all__"
-        read_only_fields: ClassVar = "__all__"
-
+        fields: ClassVar = [
+            "dsb_user_personal_id",
+            "document",
+            "coredsb_user_id",
+            "user_upgrade_to_personal_date",
+            "users_last_modified_date",
+            "personal_legal_last_modified_date",
+        ]
+        read_only_fields: ClassVar = [
+            "dsb_user_personal_id",
+            "document",
+            "coredsb_user_id",
+            "user_upgrade_to_personal_date",
+            "users_last_modified_date",
+            "personal_legal_last_modified_date",
+        ]
 
 class DsbUserPersonalSerializer(serializers.ModelSerializer):
     """Serializer for DSB user personal data.
@@ -42,7 +55,17 @@ class DsbUserPersonalSerializer(serializers.ModelSerializer):
     class Meta:
         model = DsbUserPersonal
         fields = "__all__"
-        read_only_fields = "__all__"
+        read_only_fields = [  # noqa: RUF012
+            "dsb_user_personal_id",
+            "created_date",
+            "updated_date",
+            "last_update_by",
+            "initial_registration_date",
+            "coredsb_user_id",
+            "user_upgrade_to_personal_date",
+            "users_last_modified_date",
+            "personal_legal_last_modified_date",
+        ]
 
     def create(
         self, validated_data: dict[str, Any],

@@ -25,6 +25,8 @@ from rest_framework.permissions import (  #type: ignore # noqa: PGH003
     IsAuthenticated,
 )
 
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+
 from app.common.routers import CustomViewRouter  #type: ignore # noqa: PGH003
 from app.user.models import User
 from app.user.serializers import (  #type: ignore # noqa: PGH003
@@ -33,8 +35,10 @@ from app.user.serializers import (  #type: ignore # noqa: PGH003
     CustomRegisterSerializer,
     CustomUserDetailsSerializer,
     CustomUserUpdateSensitiveDataSerializer,
-    CustomVerifyEmailSerializer,
     MessageSerializer,
+    ConfirmEmailVerificationOTPSerializer,
+    UserSensitiveDataOTPVerificationSerializer,
+    ResendEmailVerificationSerializer,
 )
 from app.user.user_profile.models import UserProfile
 
@@ -221,7 +225,7 @@ class CustomRegisterView(RegisterView):
             user = serializer.save(request)
             return Response(
                 {
-                    "response": "User registered successfully.",
+                    "response": "User registered successfully. Please check your email for verification.",
                 },
                 status=status.HTTP_200_OK,
             )
@@ -378,56 +382,104 @@ class CustomPasswordResetConfirmwithTokenView(PasswordResetConfirmView):
 
         return response
 
-class VerifyEmailView(generics.GenericAPIView):
-    """View untuk verifikasi email berdasarkan kode verifikasi."""
 
-    serializer_class = CustomVerifyEmailSerializer
-    permission_classes: ClassVar = [AllowAny]
+class ConfirmEmailVerificationOTPView(generics.GenericAPIView):
+    permission_classes = [AllowAny,]
+    serializer_class = ConfirmEmailVerificationOTPSerializer
 
-    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:  # noqa: ARG002
-        """To post request for email verification."""
+    def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Get validated data
-        validated_data = serializer.validated_data
-        email = validated_data.get("email")
-        password1 = validated_data.get("password1")
-        first_name = validated_data.get("first_name")
-        last_name = validated_data.get("last_name")
+        user = serializer.validated_data["user"]
 
-        # Get user based on email provided
-        user = User.objects.get(email=email)
-        user_profile = UserProfile.objects.get(user_id=user.user_id)
+        # Update email status
+        user.is_email_verified = True
+        user.is_active = True
+        user.save(update_fields=[
+            "is_email_verified",
+            "is_active",
+            "updated_date",
+        ])
 
-        # Check if email has been verified before
-        if user.is_email_verified:
-            return Response(
-                {
-                    "detail": "Email is already verified.",
-                }, status=status.HTTP_400_BAD_REQUEST,
-            )
+        # Update OTP status
+        otp_entry = serializer.validated_data["otp_entry"]
+        otp_entry.status_used = True
+        otp_entry.save(update_fields=[
+            "status_used",
+            "updated_date",
+        ]
+    )
 
-        # Update user data
-        user.set_password(password1)
-        user_profile.first_name = first_name
-        user_profile.last_name = last_name
-        user.is_email_verified = False
-        user.save()
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        access = AccessToken.for_user(user)
 
         return Response(
             {
-                "detail": "Account has been created. Please verify your email.",
-            },
-            status=status.HTTP_200_OK,
+                "detail": "Email verified successfully.",
+            }, status=status.HTTP_200_OK,
         )
 
-# Register the views with the router if not already registered elsewhere
-router.register_decorator(r"user/register/", name="user-register", view=CustomRegisterView)
-router.register_decorator(r"user/password/reset/", name="password-reset", view=CustomPasswordResetView)
-router.register_decorator(r"user/password/reset/confirm/", name="password-reset-confirm", view=CustomPasswordResetConfirmView)
-router.register_decorator(r"user/password/reset/confirm/<uuid:user_id>/<str:token>/", name="password-reset-confirm-with-token", view=CustomPasswordResetConfirmwithTokenView)
-router.register_decorator(r"user/verify/", name="email-verify", view=VerifyEmailView)
-router.register_decorator(r"user/profile/update/verify", name="user-verify-update", view=UserUpdateSensitiveDataView)
-router.register_decorator(r"user/profile/", name="user-profile", view=CustomUserDetailsView)
 
+class UserUpdateSensitiveDataOTPVerificationView(generics.GenericAPIView):
+    """View for updating user sensitive data with OTP verification."""
+
+    permission_classes: ClassVar = [IsAuthenticated]
+    serializer_class = UserSensitiveDataOTPVerificationSerializer
+
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Take modified field from OTP and apply to user
+        changes = serializer.validated_data["changes"]
+        user = request.user
+
+        if "new_username" in changes:
+            user.username = changes["new_username"]
+        if "new_email" in changes:
+            user.email = changes["new_email"]
+        if "new_phone_number" in changes:
+            user.profile.phone_number = changes["new_phone_number"]
+            user.profile.save()
+
+        user.save()
+        return Response(
+            {
+                "detail": "Sensitive data updated successfully.",
+            }, status=status.HTTP_200_OK,
+        )
+
+class ResendEmailVerificationOTPView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = ResendEmailVerificationSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = serializer.validated_data["user"]
+        serializer.create_or_update_otp(user)
+
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        access = refresh.access_token
+
+        return Response(
+            {
+                "detail": "Verification code resent successfully.",
+                "access": str(access),
+                "refresh": str(refresh),
+        }, status=status.HTTP_200_OK,
+    )
+
+
+# Register the views with the router if not already registered elsewhere
+router.register_decorator(r"register/", name="user-register", view=CustomRegisterView)
+router.register_decorator(r"password/reset/", name="password-reset", view=CustomPasswordResetView)
+router.register_decorator(r"password/reset/confirm/", name="password-reset-confirm", view=CustomPasswordResetConfirmView)
+router.register_decorator(r"password/reset/confirm/<uuid:user_id>/<str:token>/", name="password-reset-confirm-with-token", view=CustomPasswordResetConfirmwithTokenView)
+router.register_decorator(r"profile/update/verify", name="user-verify-update", view=UserUpdateSensitiveDataView)
+router.register_decorator(r"profile/", name="user-profile", view=CustomUserDetailsView)
+router.register_decorator(r"verify/confirm/", name="email-verify-confirm", view=ConfirmEmailVerificationOTPView)

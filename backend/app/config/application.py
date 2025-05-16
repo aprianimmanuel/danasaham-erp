@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from .base import BASE_DIR
+import os
 from os import getenv
 
 from app.config.silk import SILKY_MIDDLEWARE_CLASS, USE_SILK
@@ -35,6 +37,8 @@ INSTALLED_APPS = [
     "dj_rest_auth.registration",
     "allauth.socialaccount",
     "drf_spectacular",
+    "drf_spectacular_sidecar",
+    "drf_yasg"
 
     # Local
     "app.user.apps.UserConfig",
@@ -82,7 +86,7 @@ if not USE_SILK:
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -93,6 +97,11 @@ TEMPLATES = [
             ],
         },
     },
+]
+
+TEMPLATE_LOADERS = [
+    "django.template.loaders.filesystem.Loader",
+    "django.template.loaders.app_directories.Loader",
 ]
 
 ASGI_APPLICATION = "app.web.asgi.application"

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import logging
 import random
 import string
@@ -17,7 +18,7 @@ from dj_rest_auth.serializers import (  #type: ignore # noqa: PGH003
     PasswordResetSerializer,
     UserDetailsSerializer,
 )
-from django.contrib.auth.hashers import make_password  #type: ignore # noqa: PGH003
+from django.contrib.auth.hashers import make_password, check_password  #type: ignore # noqa: PGH003
 from django.contrib.auth.tokens import (  #type: ignore # noqa: PGH003
     default_token_generator,
 )
@@ -29,6 +30,7 @@ from django.utils.http import (  #type: ignore # noqa: PGH003
     urlsafe_base64_decode,
     urlsafe_base64_encode,
 )
+from app.user.user_otp.models import UserOTP, OTPType
 from django.utils.translation import gettext_lazy as _  #type: ignore # noqa: PGH003
 from rest_framework import (  #type: ignore # noqa: PGH003
     serializers,
@@ -166,12 +168,21 @@ class CustomUserUpdateSensitiveDataSerializer(serializers.ModelSerializer):
             verification_code = "".join(random.choices(string.digits, k=10))  # noqa: S311
             UserOTP.objects.update_or_create(
                 user=user,
-                otp_type="Email Verification",
+                otp_type=OTPType.EMAIL_VERIFICATION,
                 status_used=False,
                 created_date=timezone.now(),
                 updated_date=None,
                 otp_code=verification_code,
                 expires_at=timezone.now() + timezone.timedelta(minutes=5),
+                default={
+                    "otp_code": verification_code,
+                    "expires_at": timezone.now + timezone.timedelta(minutes=5),
+                    "pending_changes": {
+                        "new_username": attrs.get("new_username"),
+                        "new_email": attrs.get("new_email"),
+                        "new_phone_number": attrs.get("new_phone_number"),
+                    },
+                },
             )
 
         return attrs
@@ -207,64 +218,68 @@ class CustomUserUpdateSensitiveDataSerializer(serializers.ModelSerializer):
         return instance
 
 
-class CustomRegisterSerializer(DefaultRegisterSerializer):
+class CustomRegisterSerializer(serializers.Serializer):
+    username = serializers.CharField()
     email = serializers.EmailField()
-    password = serializers.CharField(write_only=True)
-    verification_code = serializers.CharField(write_only=True, max_length=8)
+    password1 = serializers.CharField(write_only=True)
+    password2 = serializers.CharField(write_only=True)
 
-    def validate(self, data:dict) -> dict:
+    def validate_username(self, username):
+        if User.objects.filter(username=username).exists():
+            raise serializers.ValidationError("Username is already taken.")
+        return username
+
+    def validate_email(self, email):
+        allowed_domains = [".com", ".co.id", ".id", ".co"]
+        if not any(email.endswith(d) for d in allowed_domains):
+            raise serializers.ValidationError("Email domain must be .com, .co.id, .id, or .co")
+
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            raise serializers.ValidationError("Invalid email format")
+
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError("This email is already registered")
+
+        return email
+
+    def validate(self, data):
+        password1 = data.get("password1")
+        password2 = data.get("password2")
         email = data.get("email")
-        password = data.get("password1")
-        verification_code = data.get("verification_code")
 
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            raise serializers.ValidationError(  # noqa: B904
-                {
-                    "email": "User with this email does not exist.",
-                },
-            )
+        if password1 != password2:
+            raise serializers.ValidationError({"password2": "Passwords do not match"})
 
-        if not user.check_password(password, user.password):
-            raise serializers.ValidationError(
-                {
-                    "password": "Invalid password.",
-                },
-            )
+        # Cek apakah password pernah dipakai dalam 3 bulan terakhir oleh user yang sama
+        three_months_ago = timezone.now() - timedelta(days=90)
+        recent_users = User.objects.filter(email=email, updated_date__gte=three_months_ago)
+        for user in recent_users:
+            if check_password(password1, user.password):
+                raise serializers.ValidationError({"password1": "Password was used in the last 3 months"})
 
-        try:
-            stored_code = UserOTP.objects.get(user=user, verification_code=verification_code)
-        except UserOTP.DoesNotExist:
-            raise serializers.ValidationError(  # noqa: B904
-                {
-                    "verification_code": "Invalid verification code.",
-                },
-            )
+        # Validasi kekuatan password
+        if len(password1) < 10:
+            raise serializers.ValidationError({"password1": "Password must be at least 10 characters long"})
+        if not re.search(r"[A-Z]", password1):
+            raise serializers.ValidationError({"password1": "Password must contain at least one uppercase letter"})
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password1):
+            raise serializers.ValidationError({"password1": "Password must contain at least one special character"})
 
-        # Check if verification code is expired (valid for 5 minutes)
-        if timezone.now() - stored_code.created_date > timedelta(minutes=5):
-            raise serializers.ValidationError(
-                {
-                    "verification_code": "Verification code has expired.",
-                },
-            )
-
-        user.is_email_verified = True
-        stored_code.status_used = True
-        stored_code.updated_date = timezone.now()
-
-        try:
-            user.save()
-            stored_code.save()
-        except Exception as e:
-            logger.exception("Failed to update user and verification code. Error: %s", e)  # noqa: TRY401
-            raise serializers.ValidationError(  # noqa: B904
-                {
-                    "error": "Failed to update user and verification code.",
-                },
-            )
         return data
+
+
+    def create(self, validated_data):
+        user = User.objects.create(
+            email=validated_data["email"],
+            username=validated_data["username"],
+            password=validated_data["password1"],
+            is_email_verified=False,
+            is_active=False,
+            is_admin=False,
+        )
+        user.updated_date = None  # opsional tergantung model-mu
+        user.save()
+        return user
 
 
 class CustomPasswordResetSerializer(PasswordResetSerializer):
@@ -408,73 +423,103 @@ class CustomPasswordResetConfirmSerializer(PasswordResetConfirmSerializer):
 class MessageSerializer(serializers.Serializer):
     detail = serializers.CharField()
 
-class CustomVerifyEmailSerializer(DefaultVerifyEmailSerializer):
+
+class ConfirmEmailVerificationOTPSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    password1 = serializers.CharField(write_only=True)
-    password2 = serializers.CharField(write_only=True)
-    verification_code = serializers.CharField(write_only=True, max_length=8)
+    verification_code = serializers.CharField(max_length=10)
 
-    def validate(
-        self,
-        data: dict[str, str],
-    ) -> dict[str, str]:
-        """Validate the input data and return the validated data.
-
-        The validation includes the following:
-        - The passwords must match.
-        - The user with the given email address must exist.
-        - The verification code associated with the user must match the given verification code.
-
-        Args:
-        ----
-            data (Dict[str, str]): The input data to be validated.
-
-        Returns:
-        -------
-            Dict[str, str]: The validated data.
-
-        """
+    def validate(self, data):
         email = data.get("email")
-        password1: Any = data.get("password1")
-        password2: Any = data.get("password2")
-        username = data.get("username")
+        code = data.get("verification_code")
 
-        if password1 != password2:
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
             raise serializers.ValidationError(
                 {
-                    "password2": _("Passwords do not match"),
+                    "email": "User with this email does not exist.",
                 },
             )
 
-        if len(password1) < 10 or not any (char.isupper() for char in password1):  # noqa: PLR2004
-            msg = "Password must be at least 10 characters long and contain at least one uppercase letter."
-            raise serializers.ValidationError(msg)
-
-        # Check if user already exists
-        if User.objects.filter(email=email).exists():
-            msg = "User with this email already exists."
-            raise serializers.ValidationError(msg)
-
-        # Check if user with given username already exists
-        if User.objects.filter(email=email, username=username).exists():
-            msg = "User with this username already exists."
-            raise serializers.ValidationError(msg)
-
-        # Generate verification code
-        verification_code = get_random_string(8, allowed_chars=string.ascii_uppercase + string.digits)
-
-        # Create user
-        user = User.objects.create(
-            email=email,
-            password=make_password(password1),
-            username=username,
-            is_active=False,
-            is_email_verified=False,
-            is_staff=False,
-            updated_date=timezone.now(),
+        try:
+            otp_entry = UserOTP.objects.get(
+                user=user,
+                otp_code=code,
+                otp_type=OTPType.EMAIL_VERIFICATION,
+                status_used=False,
+                expires_at__gte=timezone.now()
+            )
+        except UserOTP.DoesNotExist:
+            raise serializers.ValidationError(
+                {
+                    "verification_code": "Invalid or expired verification code",
+                },
             )
 
-        # Check if a verification code was sent in the last minute
+        data["user"] = user
+        data["otp_entry"] = otp_entry
+        return data
+
+
+class UserSensitiveDataOTPVerificationSerializer(serializers.Serializer):
+    otp_code = serializers.CharField(max_length=10)
+
+    def validate(self, attrs):
+        user = self.context["request"].user
+        otp_code = attrs["otp_code"]
+
+        try:
+            otp = UserOTP.objects.get(
+                user=user,
+                otp_code=otp_code,
+                otp_type=OTPType.EMAIL_VERIFICATION,
+                status_used=False,
+                expires_at__gte=timezone.now()
+            )
+        except UserOTP.DoesNotExist:
+            raise serializers.ValidationError(
+                {
+                    "otp_code": "Invalid or expired verification code",
+                },
+            )
+
+        # Mark the OTP as used
+        attrs["pending_changes"] = otp.pending_changes
+        otp.status_used = True
+        otp.updated_date = timezone.now()
+        otp.save(update_fields=["status_used", "updated_date"])
+
+        return attrs
+
+class ResendEmailVerificationSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate(self, data):
+        email = data.get("email")
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                {
+                    "email": "User with this email does not exists.",
+                },
+            )
+
+        if user.is_email_verified:
+            raise serializers.ValidationError(
+                {
+                    "email": "Email is already verified.",
+                },
+            )
+
+        data["user"] = user
+        return data
+
+    def create_or_update_otp(self, user):
+        verification_code = get_random_string(8, allowed_chars=string.ascii_uppercase + string.digits)
+
+        # Check if an active code exists within the last minute
         recent_code = UserOTP.objects.filter(
             user=user,
             status_used=False,
@@ -483,12 +528,10 @@ class CustomVerifyEmailSerializer(DefaultVerifyEmailSerializer):
         ).first()
 
         if recent_code:
-            # Update existing code
             recent_code.verification_code = verification_code
             recent_code.updated_date = timezone.now()
             recent_code.save(update_fields=["verification_code", "updated_date"])
         else:
-            # Create a new verification code entry
             UserOTP.objects.create(
                 user=user,
                 verification_code=verification_code,
@@ -498,22 +541,16 @@ class CustomVerifyEmailSerializer(DefaultVerifyEmailSerializer):
                 updated_date=None,
             )
 
-        # Send verification email
+        # Send the email
         try:
             send_mail(
-                subject="Verify your email",
-                message=f"Your verification code is: {verification_code}",
+                subject="Resend: Verify your email",
+                message=f"Your new verification code is: {verification_code}",
                 from_email="no_reply@danasaham.co.id",
                 recipient_list=[user.email],
                 fail_silently=False,
             )
         except Exception as e:
-            logger.exception(f"Error sending verification email to {email}: {e}")  # noqa: G004, TRY401
-            raise serializers.ValidationError(  # noqa: B904
-                {"email": _("Failed to send verification email. Please try again later.")},
-            )
+            raise serializers.ValidationError({"email": "Failed to send verification email. Please try again later."})
 
-        return data
-
-
-
+        return verification_code

@@ -25,7 +25,6 @@ REST_AUTH = {
     "PASSWORD_RESET_SERIALIZER": "dj_rest_auth.serializers.PasswordResetSerializer",
     "PASSWORD_RESET_CONFIRM_SERIALIZER": "dj_rest_auth.serializers.PasswordResetConfirmSerializer",
     "PASSWORD_CHANGE_SERIALIZER": "dj_rest_auth.serializers.PasswordChangeSerializer",
-    "REGISTER_SERIALIZER": "app.user.serializers.CustomRegisterSerializer",
     "REGISTER_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
     "TOKEN_MODEL": "rest_framework.authtoken.models.Token",
     "TOKEN_CREATOR": "dj_rest_auth.utils.default_create_token",
@@ -43,4 +42,14 @@ REST_AUTH = {
     "JWT_AUTH_RETURN_EXPIRATION": False,
     "JWT_AUTH_COOKIE_USE_CSRF": False,
     "JWT_AUTH_COOKIE_ENFORCE_CSRF_ON_UNAUTHENTICATED": False,
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "DANASAHAM-ERP",
+    "DESCIRPTION": "ERP for Danasaham",
+    "VERSION": "0.0.1",
+    "SERVER_INCLUDE_SCHEMA": False,
+    "SWAGGER_UI_DIST": "SIDECAR",
+    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
+    "REDOC_DIST": "SIDECAR"
 }

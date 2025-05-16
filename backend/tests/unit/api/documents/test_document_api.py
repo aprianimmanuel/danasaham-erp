@@ -19,6 +19,7 @@ from app.documents.models import (  #type: ignore # noqa: PGH003
     save_file_to_instance,
 )
 from app.user.models import User  #type: ignore # noqa: PGH003
+import pytest
 
 
 def document_list_url() -> Any:
@@ -44,9 +45,11 @@ def document_detail_url(document_id: str) -> str:
         str: The URL for the document's detail view.
 
     """
-    return reverse("documents:document-details", args=[document_id])
+    base_url = reverse("documents:document-details")
+    return f"{base_url}?document_id={document_id}"
 
-
+@pytest.mark.django_db
+@pytest.mark.usefixtures("disable_mock_atomic")
 class DocumentAPITests(APITestCase):
 
     def setUp(self) -> None:
@@ -69,16 +72,12 @@ class DocumentAPITests(APITestCase):
         settings.MEDIA_ROOT = self.old_media_root
         super().tearDown()
 
-        # Restore the original MEDIA_ROOT
-        settings.MEDIA_ROOT = self.old_media_root
-        super().tearDown()
-
     def test_create_document(self) -> None:
         """Test creating a document."""
         self.client.force_authenticate(user=self.user)
         payload = {
             "document_name": "Test Name",
-            "document_type": "PDF",
+            "document_type": "Document Signation",
             "description": "Test Description",
             "document_file": SimpleUploadedFile(
                 "document.pdf",
@@ -94,10 +93,6 @@ class DocumentAPITests(APITestCase):
                 assert payload[key] == getattr(document, key)  # noqa: S101
         assert document.document_file  # noqa: S101
 
-        # Call save_file_to_instance and document.save
-        save_file_to_instance(document, payload["document_file"])
-        document.save()
-
         # Verify that the file has been saved correctly
         file_path = document.document_file.path
         assert os.path.exists(file_path)  # noqa: S101, PTH110
@@ -112,13 +107,13 @@ class DocumentAPITests(APITestCase):
             document_name="Test1",
             document_type="PDF",
             created_by=self.user,
-            updated_by=self.user,
+            last_update_by=self.user,
         )
         Document.objects.create(
             document_name="Test2",
             document_type="DOCX",
             created_by=self.user,
-            updated_by=self.user,
+            last_update_by=self.user,
         )
 
         res = self.client.get(document_list_url())
@@ -132,7 +127,7 @@ class DocumentAPITests(APITestCase):
             document_name="Test",
             document_type="PDF",
             created_by=self.user,
-            updated_by=self.user,
+            last_update_by=self.user,
         )
 
         url = document_detail_url(document.document_id)
@@ -146,7 +141,7 @@ class DocumentAPITests(APITestCase):
             document_name="Initial Name",
             document_type="PDF",
             created_by=self.user,
-            updated_by=self.user,
+            last_update_by=self.user,
         )
 
         payload = {"document_name": "Updated Name", "document_type": "DOCX"}
@@ -165,7 +160,7 @@ class DocumentAPITests(APITestCase):
             document_name="Test",
             document_type="PDF",
             created_by=self.user,
-            updated_by=self.user,
+            last_update_by=self.user,
         )
 
         url = document_detail_url(document.document_id)

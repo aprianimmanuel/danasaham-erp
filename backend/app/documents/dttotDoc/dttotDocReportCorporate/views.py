@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 router = CustomViewRouter(url_prefix="api/")
 
 @router.register_decorator(
-    r"documents/dttotdocreport/dttotReportCorporate/list/",
+    "dttotdocreport/dttotReportCorporate/list/",
     name="dttot-report-corporate-list",
 )
 class dttotDocReportCorporateView(generics.ListAPIView):  # noqa: N801
@@ -30,7 +30,7 @@ class dttotDocReportCorporateView(generics.ListAPIView):  # noqa: N801
     queryset = DttotDocReportCorporate.objects.all()
 
 @router.register_decorator(
-    r"documents/dttotdocreport/dttotReportCorporate/details/$",
+    r"^dttotdocreport/dttotReportCorporate/details/$",
     name="dttot-report-corporate-detail",
 )
 class dttotDocReportCorporateDetailView(GenericAPIView):  # noqa: N801

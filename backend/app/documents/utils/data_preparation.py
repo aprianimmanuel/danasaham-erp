@@ -137,7 +137,7 @@ class DTTOTDocumentProcessing:
 
         # Initialize the full name column
         df["full_name"] = df[name_column].apply(
-            lambda x: re.split(" (?i)alias ", x, 1)[0] if isinstance(x, str) else "",  # noqa: B034
+           lambda x: re.split(r"(?i)\s*alias\s*", x, 1)[0] if isinstance(x, str) else "",  # noqa: B034
         )
 
         # Extract first, middle, and last names from the full_name
@@ -887,7 +887,7 @@ def process_data(
     df = processor.extract_and_split_names(  # noqa: PD901
         df,
         "Nama",
-        case_insensitive=False,
+        False,
     )
 
     extractor = ExtractNIKandPassportNumber()

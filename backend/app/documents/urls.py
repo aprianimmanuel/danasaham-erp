@@ -10,9 +10,9 @@ from app.documents.views import (  #type: ignore  # noqa: PGH003
 app_name = "documents"
 
 urlpatterns = [
-    path("api/documents/list/", DocumentListView.as_view(), name="document-list"),
-    re_path(
-        r"^api/documents/details/$",
+    path("list/", DocumentListView.as_view(), name="document-list"),
+    path(
+        "api/documents/details/",
         DocumentDetailView.as_view(),
         name="document-details",
     ),
