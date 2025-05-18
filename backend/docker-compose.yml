@@ -24,12 +24,15 @@ services:
       - .:/apps
       - ./logs/app:/apps/logs/app
     command: ["make", "run.server.prod"]
-    restart: unless-stopped
     deploy:
       resources:
         limits:
-          cpus: "2"
-          memory: 1g
+          cpus: "1"
+          memory: "1.5G"
+        reservations:
+          cpus: "0.5"
+          memory: "512M"
+    restart: unless-stopped
     depends_on:
       - pgbouncer
       - db
@@ -46,13 +49,16 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT}:5432"
     deploy:
       resources:
         limits:
-          cpus: "1"
-          memory: 1g
-    ports:
-      - "${DB_PORT}:5432"
+          cpus: "0.5"
+          memory: "1G"
+        reservations:
+          cpus: "0.3"
+          memory: "512M"
     volumes:
       - dev-db-data:/var/lib/postgresql/data
 
@@ -82,8 +88,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1"
-          memory: 512m
+          cpus: "0.1"
+          memory: "64M"
+        reservations:
+          cpus: "0.05"
+          memory: "32M"
     volumes:
       - pgbouncer-data:/var/lib/pgbouncer
 
@@ -98,8 +107,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1"
-          memory: 512m
+          cpus: "0.2"
+          memory: "256M"
+        reservations:
+          cpus: "0.1"
+          memory: "128M"
     volumes:
       - redis-data:/data
       - ./redis/redis.conf:/etc/redis/redis.conf
@@ -115,8 +127,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1"
-          memory: 512m
+          cpus: "0.2"
+          memory: "256M"
+        reservations:
+          cpus: "0.1"
+          memory: "128M"
     ports:
       - "${RABBITMQ_DASHBOARD_PORT}:15672"
       - "${RABBITMQ_PORT}:5672"
@@ -141,8 +156,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "2"
-          memory: 512m
+          cpus: "0.5"
+          memory: "512M"
+        reservations:
+          cpus: "0.2"
+          memory: "256M"
     depends_on:
       - rabbitmq
     volumes:
@@ -164,13 +182,17 @@ services:
       "-c",
       "python manage.py collectstatic --noinput",
     ]
-    depends_on:
-      - db
+    restart: unless-stopped
     deploy:
       resources:
         limits:
-          cpus: "1"
-          memory: 512m
+          cpus: "0.2"
+          memory: "256M"
+        reservations:
+          cpus: "0.1"
+          memory: "128M"
+    depends_on:
+      - db
     volumes:
       - .:/apps
       - ./static:/apps/static
