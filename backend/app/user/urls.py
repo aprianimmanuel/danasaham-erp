@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from dj_rest_auth.views import PasswordChangeView
+from dj_rest_auth.views import (
+    PasswordChangeView,
+    LogoutView,
+    LoginView
+)
 from django.urls import path, re_path  #type: ignore  # noqa: PGH003
 
 from app.user.views import (  #type: ignore  # noqa: PGH003

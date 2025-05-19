@@ -39,8 +39,14 @@ from rest_framework import (  #type: ignore # noqa: PGH003
 from app.user.models import User
 from app.user.user_otp.models import UserOTP
 from app.user.user_profile.models import UserProfile
+from django.contrib.auth import authenticate
+from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
+
+
 
 logger = logging.getLogger(__name__)
+
 
 class CustomUserDetailsSerializer(UserDetailsSerializer):
     first_name = serializers.CharField(source="profile.first_name")
@@ -267,8 +273,21 @@ class CustomRegisterSerializer(serializers.Serializer):
 
         return data
 
+    def create(
+        self,
+        validated_data: dict[str, Any],
+    ) -> User:
+        """
+        Create a new user instance using the validated data.
 
-    def create(self, validated_data):
+        Args:
+        ----
+            validated_data (dict[str, Any]): The validated data for creating a new user.
+
+        Returns:
+        -------
+            User: The newly created user instance.
+        """
         user = User.objects.create(
             email=validated_data["email"],
             username=validated_data["username"],
@@ -276,10 +295,42 @@ class CustomRegisterSerializer(serializers.Serializer):
             is_email_verified=False,
             is_active=False,
             is_admin=False,
+            updated_date=None,
         )
-        user.updated_date = None  # opsional tergantung model-mu
-        user.save()
+
         return user
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
+
+    def validate(self, attrs):
+        email = attrs.get("email")
+        password = attrs.get("password")
+
+        if not email or not password:
+            raise serializers.ValidationError("Email and password are required.")
+
+        user = authenticate(request=self.context.get("request"), email=email, password=password)
+
+        if not user:
+            raise AuthenticationFailed("Invalid email or password.")
+
+        if not user.is_email_verified:
+            raise AuthenticationFailed("Email is not verified.")
+
+        if not user.is_active:
+            raise AuthenticationFailed("User is inactive.")
+
+        access = AccessToken.for_user(user)
+        refresh = RefreshToken.for_user(user)
+
+        return {
+            "login": "Login success!",
+            "access": str(access),
+            "refresh": str(refresh),
+            "user_id": user.user_id,
+        }
 
 
 class CustomPasswordResetSerializer(PasswordResetSerializer):
@@ -447,7 +498,7 @@ class ConfirmEmailVerificationOTPSerializer(serializers.Serializer):
                 otp_code=code,
                 otp_type=OTPType.EMAIL_VERIFICATION,
                 status_used=False,
-                expires_at__gte=timezone.now()
+                expires_at__gte=timezone.now() - timedelta(minutes=5)
             )
         except UserOTP.DoesNotExist:
             raise serializers.ValidationError(
@@ -459,7 +510,6 @@ class ConfirmEmailVerificationOTPSerializer(serializers.Serializer):
         data["user"] = user
         data["otp_entry"] = otp_entry
         return data
-
 
 class UserSensitiveDataOTPVerificationSerializer(serializers.Serializer):
     otp_code = serializers.CharField(max_length=10)
@@ -474,7 +524,7 @@ class UserSensitiveDataOTPVerificationSerializer(serializers.Serializer):
                 otp_code=otp_code,
                 otp_type=OTPType.EMAIL_VERIFICATION,
                 status_used=False,
-                expires_at__gte=timezone.now()
+                expires_at__gte=timezone.now() - timedelta(minutes=3)
             )
         except UserOTP.DoesNotExist:
             raise serializers.ValidationError(
@@ -523,20 +573,20 @@ class ResendEmailVerificationSerializer(serializers.Serializer):
         recent_code = UserOTP.objects.filter(
             user=user,
             status_used=False,
-            type_used="User Initial Registration",
-            created_date__gte=timezone.now() - timedelta(minutes=1),
+            otp_type=OTPType.EMAIL_VERIFICATION,
+            created_date__gte=timezone.now() - timedelta(minutes=3),
         ).first()
 
         if recent_code:
-            recent_code.verification_code = verification_code
+            recent_code.otp_code = verification_code
             recent_code.updated_date = timezone.now()
             recent_code.save(update_fields=["verification_code", "updated_date"])
         else:
             UserOTP.objects.create(
                 user=user,
-                verification_code=verification_code,
+                otp_code=verification_code,
                 status_used=False,
-                type_used="User Initial Registration",
+                otp_type=OTPType.EMAIL_VERIFICATION,
                 created_date=timezone.now(),
                 updated_date=None,
             )
@@ -546,7 +596,7 @@ class ResendEmailVerificationSerializer(serializers.Serializer):
             send_mail(
                 subject="Resend: Verify your email",
                 message=f"Your new verification code is: {verification_code}",
-                from_email="no_reply@danasaham.co.id",
+                from_email="testlab@danasaham.co.id",
                 recipient_list=[user.email],
                 fail_silently=False,
             )

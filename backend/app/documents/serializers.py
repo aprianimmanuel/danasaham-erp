@@ -37,7 +37,7 @@ class DocumentSerializer(serializers.ModelSerializer):
     letter_number = serializers.CharField(required=False)
     dttot_letter_number_reference = serializers.CharField(required=False)
     dttot_letter_inquiry_date = serializers.DateField(required=False)
-    police_letter_date = serializers.CharField(required=False)
+    police_letter_date = serializers.DateField(required=False)
     police_letter_about = serializers.CharField(required=False)
     police_letter_number = serializers.CharField(required=False)
 

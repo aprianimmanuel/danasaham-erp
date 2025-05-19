@@ -24,6 +24,7 @@ from rest_framework.permissions import (  #type: ignore # noqa: PGH003
     AllowAny,
     IsAuthenticated,
 )
+from rest_framework.response import Response  #type: ignore # noqa: PGH003
 
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 
@@ -39,6 +40,7 @@ from app.user.serializers import (  #type: ignore # noqa: PGH003
     ConfirmEmailVerificationOTPSerializer,
     UserSensitiveDataOTPVerificationSerializer,
     ResendEmailVerificationSerializer,
+    LoginSerializer,
 )
 from app.user.user_profile.models import UserProfile
 
@@ -220,9 +222,9 @@ class CustomRegisterView(RegisterView):
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:  # noqa: ARG002
         logger.info("Incoming registation for email: %s", request.data.get("email"))
 
-        serializer = CustomRegisterSerializer(data=request.data)
+        serializer = CustomRegisterSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
-            user = serializer.save(request)
+            user = serializer.save()
             return Response(
                 {
                     "response": "User registered successfully. Please check your email for verification.",
@@ -418,8 +420,17 @@ class ConfirmEmailVerificationOTPView(generics.GenericAPIView):
         return Response(
             {
                 "detail": "Email verified successfully.",
+                "access": str(access),
+                "refresh": str(refresh),
             }, status=status.HTTP_200_OK,
         )
+
+
+class LoginView(APIView):
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data, context={"request": request})
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class UserUpdateSensitiveDataOTPVerificationView(generics.GenericAPIView):
