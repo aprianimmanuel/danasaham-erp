@@ -28,6 +28,8 @@ from rest_framework.response import Response  #type: ignore # noqa: PGH003
 
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 
+from rest_framework_simplejwt.views import TokenObtainPairView
+
 from app.common.routers import CustomViewRouter  #type: ignore # noqa: PGH003
 from app.user.models import User
 from app.user.serializers import (  #type: ignore # noqa: PGH003
@@ -426,12 +428,29 @@ class ConfirmEmailVerificationOTPView(generics.GenericAPIView):
         )
 
 
-class LoginView(APIView):
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data, context={"request": request})
-        serializer.is_valid(raise_exception=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+class LoginView(TokenObtainPairView):
+    serializer_class = LoginSerializer
 
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        response = Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+        # Get session_id from response
+        user_session_id = serializer.validated_data.get("user_session_id")
+
+        # Save user_session_id to cookie
+        response.set_cookie(
+            key="user_session_id",
+            value=user_session_id,
+            max_age=60 * 60 * 24 * 7,
+            secure=True,
+            httponly=True,
+            samesite="Lax",
+        )
+
+        return Response
 
 class UserUpdateSensitiveDataOTPVerificationView(generics.GenericAPIView):
     """View for updating user sensitive data with OTP verification."""

@@ -42,7 +42,8 @@ from app.user.user_profile.models import UserProfile
 from django.contrib.auth import authenticate
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
-
+from app.user.user_session.models import UserSession, UserSessionType, UserSessionStatus
+from app.core.redisclient import RedisClient
 
 
 logger = logging.getLogger(__name__)
@@ -304,32 +305,75 @@ class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
 
-    def validate(self, attrs):
-        email = attrs.get("email")
-        password = attrs.get("password")
+    def _create_user_session(self, user, status: str):
+        """Helper to create a user session."""
+        UserSession.objects.create(
+            user=user,
+            session_name=UserSessionType.LOGIN,
+            session_status=status,
+            last_activity=timezone.now(),
+        )
+
+    def validate(self, data):
+        email = data.get("email")
+        password = data.get("password")
 
         if not email or not password:
             raise serializers.ValidationError("Email and password are required.")
 
-        user = authenticate(request=self.context.get("request"), email=email, password=password)
+        # Ambil user dari DB untuk catat sesi meskipun auth gagal
+        user = User.objects.filter(email=email).first()
 
-        if not user:
+        # Cek autentikasi
+        authenticated_user = authenticate(
+            request=self.context.get("request"), email=email, password=password
+        )
+
+        if not authenticated_user:
+            if user:
+                self._create_user_session(user, UserSessionStatus.FAILED)
             raise AuthenticationFailed("Invalid email or password.")
 
-        if not user.is_email_verified:
+        if not authenticated_user.is_email_verified:
+            self._create_user_session(authenticated_user, UserSessionStatus.FAILED)
             raise AuthenticationFailed("Email is not verified.")
 
-        if not user.is_active:
+        if not authenticated_user.is_active:
+            self._create_user_session(authenticated_user, UserSessionStatus.FAILED)
             raise AuthenticationFailed("User is inactive.")
 
-        access = AccessToken.for_user(user)
-        refresh = RefreshToken.for_user(user)
+        # Catat login berhasil
+        self._create_user_session(authenticated_user, UserSessionStatus.SUCCESS)
+
+        # Get latest session_id
+        latest_session = UserSession.objects.filter(
+            user=authenticated_user,
+            session_name=UserSessionType.LOGIN,
+            session_status=UserSessionStatus.SUCCESS,
+        ).latest("last_activity")
+
+        session_id = str(latest_session.session_id)
+
+        # Update last_activity
+        latest_session.last_activity = timezone.now()
+        latest_session.save(update_fields=["last_activity"])
+
+        # Save to Redis
+        RedisClient.setex(
+            name=f"user_session:{session_id}",
+            time=60 * 60 * 24 * 3,
+            value=str(authenticated_user.user_id)
+        )
+
+        refresh = RefreshToken.for_user(authenticated_user)
+        access = AccessToken.for_user(authenticated_user)
 
         return {
-            "login": "Login success!",
-            "access": str(access),
             "refresh": str(refresh),
-            "user_id": user.user_id,
+            "access": str(access),
+            "user_id": authenticated_user.id,
+            "email": authenticated_user.email,
+            "user_session_id": session_id,
         }
 
 
