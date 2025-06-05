@@ -69,4 +69,8 @@ SELECT
 FROM
     dsb_user_personal
 WHERE
-    row_num = 1;
+    row_num = 1
+WHERE
+    row_num = 1
+    AND TEXTREGEXEQ(personal_phone_number, '^[0-9]+$')
+    AND TEXTREGEXEQ(personal_nik, '^[0-9]+$');
