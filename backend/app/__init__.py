@@ -15,5 +15,5 @@ except Exception:  # noqa: BLE001
 
 __version__ = _version
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.config.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()

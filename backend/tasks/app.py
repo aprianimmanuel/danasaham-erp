@@ -14,7 +14,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.config.settings")
 celery_app = Celery("app")
 
 # Include the Celery settings from Django settings
-celery_app.config_from_object("django.conf:settings", namespace="CELERY")
+celery_app.config_from_object("celery")
 
 # Explicitly set the broker and backend
 celery_app.conf.broker_url = settings.CELERY_BROKER_URL

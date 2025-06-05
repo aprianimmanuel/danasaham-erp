@@ -2,4 +2,4 @@ from __future__ import annotations
 
 import logging
 
-otp_logger = logging.getLogger("otp_logger")
+user_logger = logging.getLogger("user_logger")

@@ -47,7 +47,7 @@ def save_data_to_model(df: pd.DataFrame, document: DsbUserPublisher, user: User)
             existing_record = DsbUserPublisher.objects.filter(publisher_pengurus_id=row["publisher_pengurus_id"]).first()
 
             if existing_record:
-                # Check if users_last_modified_date is the same
+                # Check if users_last_modified_date is not the same
                 if existing_record.users_last_modified_date != row["users_last_modified_date"]:
                     # Update all fields if users_last_modified_date is different
                     existing_record.document = document
@@ -59,7 +59,7 @@ def save_data_to_model(df: pd.DataFrame, document: DsbUserPublisher, user: User)
                     existing_record.users_last_modified_date = row["users_last_modified_date"]
                     existing_record.save()
 
-            # Check if pengurus_publisher_last_modified_date is the same
+                # Check if pengurus_publisher_last_modified_date is not the same
                 elif existing_record.pengurus_publisher_last_modified_date != row["pengurus_publisher_last_modified_date"]:
                     # Update all fields if pengurus_publisher_last_modified_date is different
                     existing_record.document = document
@@ -73,6 +73,21 @@ def save_data_to_model(df: pd.DataFrame, document: DsbUserPublisher, user: User)
                     existing_record.publisher_tempat_lahir_pengurus = row["publisher_tempat_lahir_pengurus"]
                     existing_record.pengurus_publisher_last_modified_date = row["pengurus_publisher_last_modified_date"]
                     existing_record.save()
+
+                # Check if publisher_last_modified_date is the same
+                elif existing_record.users_last_modified_date == row["users_last_modified_date"]:
+                    # Update all fields if publisher_last_modified_date is different
+                    existing_record.document = document
+                    existing_record.last_update_by = user
+                    existing_record.save()
+
+                # Check if pengurus_publisher_last_modified_date is the same
+                elif existing_record.pengurus_publisher_last_modified_date == row["pengurus_publisher_last_modified_date"]:
+                    # Update all fields if pengurus_publisher_last_modified_date is different
+                    existing_record.document = document
+                    existing_record.last_update_by = user
+                    existing_record.save()
+
             else:
                 DsbUserPublisher.objects.update_or_create(
                     publisher_pengurus_id=row["publisher_pengurus_id"],

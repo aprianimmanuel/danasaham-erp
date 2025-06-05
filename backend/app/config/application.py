@@ -4,6 +4,8 @@ from .base import BASE_DIR
 import os
 from os import getenv
 
+from pathlib import Path
+
 from app.config.silk import SILKY_MIDDLEWARE_CLASS, USE_SILK
 
 PROJECT_NAME = getenv("PROJECT_NAME", "danasaham_erp").strip("'\"")
@@ -38,7 +40,7 @@ INSTALLED_APPS = [
     "allauth.socialaccount",
     "drf_spectacular",
     "drf_spectacular_sidecar",
-    "drf_yasg"
+    "drf_yasg",
 
     # Local
     "app.user.apps.UserConfig",
@@ -54,10 +56,8 @@ INSTALLED_APPS = [
     "app.documents.dttotDoc.dttotDocReportPublisher.apps.DttotDocReportPublisherConfig",
     "app.documents.dttotDoc.dttotDocReportCorporate.apps.DttotDocReportCorporateConfig",
     "app.user.user_profile.apps.UserProfileConfig",
-    "app.user.user_otp.apps.UserOTPConfig",
     "app.user.user_digital_sign.apps.UserDigitalSignConfig",
     "app.user.user_key_management.apps.UserKeyManagementConfig",
-    "app.user.user_role.apps.UserRoleConfig",
     "app.user.user_signed_document.apps.UserSignedDocumentConfig",
 
 ]
@@ -86,7 +86,7 @@ if not USE_SILK:
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, "templates")],
+        "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -99,9 +99,12 @@ TEMPLATES = [
     },
 ]
 
+TEMPLATE_DIRS = [os.path.join(BASE_DIR, "templates")]
+
 TEMPLATE_LOADERS = [
     "django.template.loaders.filesystem.Loader",
     "django.template.loaders.app_directories.Loader",
+    "django.template.loaders.eggs.Loader",
 ]
 
 ASGI_APPLICATION = "app.web.asgi.application"

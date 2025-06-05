@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 from typing import TypeAlias
 
-from app.config.base import BASE_DIR  #type: ignore # noqa: PGH003
+BASE_DIR = Path(__file__).resolve().parent
 
 _APPS_DIR = Path(BASE_DIR) / "app"
 _TEMPLATE_DIR = Path(BASE_DIR) / "app" / "config" / "__app_template__"

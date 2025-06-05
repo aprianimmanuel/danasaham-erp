@@ -39,10 +39,10 @@ WORKDIR /apps
 COPY ./pyproject.toml ./uv.lock /apps/
 
 # Create and activate virtualenv + sync dependencies
-RUN uv venv -v && uv sync --frozen
+RUN uv venv -v && uv pip install --upgrade pip && uv sync --frozen
 
 # Activate venv
-ENV PATH="/apps/.venv/bin:/apps/.venv/lib:/usr/bin:$PATH"
+ENV PATH="/apps/.venv/bin:/apps/.venv/lib:$PATH"
 
 # Download spacy models
 RUN uv run --with spacy spacy download xx_ent_wiki_sm && uv run --with spacy spacy validate

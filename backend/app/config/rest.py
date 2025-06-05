@@ -7,8 +7,9 @@ REST_FRAMEWORK = {
         "rest_framework.renderers.BrowsableAPIRenderer",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+
         "dj_rest_auth.jwt_auth.JWTCookieAuthentication",
+
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
@@ -25,14 +26,17 @@ REST_AUTH = {
     "PASSWORD_RESET_SERIALIZER": "dj_rest_auth.serializers.PasswordResetSerializer",
     "PASSWORD_RESET_CONFIRM_SERIALIZER": "dj_rest_auth.serializers.PasswordResetConfirmSerializer",
     "PASSWORD_CHANGE_SERIALIZER": "dj_rest_auth.serializers.PasswordChangeSerializer",
+    "REGISTER_SERIALIZER": "dj_rest_auth.registration.serializers.RegisterSerializer",
+
     "REGISTER_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
     "TOKEN_MODEL": "rest_framework.authtoken.models.Token",
     "TOKEN_CREATOR": "dj_rest_auth.utils.default_create_token",
-    "PASSWORD_RESET_USE_SITES_DOMAIN": True,
+    "PASSWORD_RESET_USE_SITES_DOMAIN": False,
     "OLD_PASSWORD_FIELD_ENABLED": True,
     "LOGOUT_ON_PASSWORD_CHANGE": True,
     "SESSION_LOGIN": False,
     "USE_JWT": True,
+
     "JWT_AUTH_COOKIE": "danasaham-erp-jwt-cookie",
     "JWT_AUTH_REFRESH_COOKIE": "danasaham-erp-jwtrefresh-cookie",
     "JWT_AUTH_REFRESH_COOKIE_PATH": "/",

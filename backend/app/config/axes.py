@@ -20,6 +20,7 @@ AXES_CLIENT_IP_CALLABLE = getenv("AXES_CLIENT_IP_CALLABLE", default=None)
 AXES_CLIENT_STR_CALLABLE = getenv("AXES_CLIENT_STR_CALLABLE", default=None)
 AXES_LOCKOUT_CALLABLE = getenv("AXES_LOCKOUT_CALLABLE", default=None)
 AXES_USERNAME_CALLABLE = getenv("AXES_USERNAME_CALLABLE", default=None)
+AXES_USERNAME_FORM_FIELD = getenv("AXES_USERNAME_FORM_FIELD", default="login")
 AXES_WHITELIST_CALLABLE = getenv("AXES_WHITELIST_CALLABLE", default=None)
 
 AXES_LOCKOUT_URL = getenv("AXES_LOCKOUT_URL", default=None)
@@ -51,7 +52,7 @@ AXES_VERBOSE = getenv("AXES_VERBOSE", default="true").lower() == "true"
 
 AXES_HANDLER = getenv(
     "AXES_HANDLER",
-    default="axes.handlers.database.AxesDatabaseHandler",
+    default="axes.handlers.cache.AxesCacheHandler",
 )
 
 AXES_LOGGER = getenv("AXES_LOGGER", default="axes.watch_login")

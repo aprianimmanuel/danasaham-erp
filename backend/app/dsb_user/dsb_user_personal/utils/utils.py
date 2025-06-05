@@ -41,14 +41,18 @@ def fetch_data_from_external_db() -> pd.DataFrame:
         return pd.read_sql_query(query, connection)
 
 
-def save_data_to_model(df: pd.DataFrame, document: DsbUserPersonal, user: User) -> None:
+def save_data_to_model(
+        df: pd.DataFrame,
+        document: DsbUserPersonal,
+        user: User,
+    ) -> None:
     with transaction.atomic():
         for _index, row in df.iterrows():
             # Check if a record with the same coredsb_user_id already exists
             existing_record = DsbUserPersonal.objects.filter(coredsb_user_id=row["user_id"]).first()
 
             if existing_record:
-                # Check if users_last_modified_date is the same
+                # Check if users_last_modified_date is not the same
                 if existing_record.users_last_modified_date != row["users_last_modified_date"]:
                     # Update all fields if users_last_modified_date is different
                     existing_record.document = document
@@ -58,7 +62,7 @@ def save_data_to_model(df: pd.DataFrame, document: DsbUserPersonal, user: User) 
                     existing_record.users_last_modified_date = row["users_last_modified_date"]
                     existing_record.save()
 
-                # Check if personal_legal_last_modified_date is the same
+                # Check if personal_legal_last_modified_date is not the same
                 elif existing_record.personal_legal_last_modified_date != row["personal_last_modified_date"]:
                     # Update all fields if personal_legal_last_modified_date is different
                     existing_record.document = document
@@ -81,6 +85,20 @@ def save_data_to_model(df: pd.DataFrame, document: DsbUserPersonal, user: User) 
                     existing_record.personal_nationality = row["personal_nationality"]
                     existing_record.personal_source_of_fund = row["personal_source_of_fund"]
                     existing_record.personal_legal_last_modified_date = row["personal_last_modified_date"]
+                    existing_record.save()
+
+                # Check if users_last_modified_date is the same
+                elif existing_record.users_last_modified_date == row["users_last_modified_date"]:
+                    # Update all fields if users_last_modified_date is different
+                    existing_record.document = document
+                    existing_record.last_update_by = user
+                    existing_record.save()
+
+                # Check if personal_legal_last_modified_date is the same
+                elif existing_record.personal_legal_last_modified_date == row["personal_last_modified_date"]:
+                    # Update all fields if personal_legal_last_modified_date is different
+                    existing_record.document = document
+                    existing_record.last_update_by = user
                     existing_record.save()
 
             else:

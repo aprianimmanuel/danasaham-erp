@@ -25,6 +25,13 @@ IS_TESTING = getenv("DJANGO_TESTING", default="false").lower() == "true"
 if USE_REDIS_FOR_CACHE and not IS_TESTING:
     logger.info("Using Redis for cache")
     CACHES["default"] = {
+        "axes": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+        },
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": REDIS_URL,
         "OPTIONS": {

@@ -1,6 +1,6 @@
 # Start the Django development server
 while true; do
-    python manage.py runserver 0.0.0.0:8000
+    uv run manage.py runserver 0.0.0.0:8000
 
     # Check the exit status of the command
     if [ $? -eq 0 ]; then

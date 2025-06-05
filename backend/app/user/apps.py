@@ -8,7 +8,3 @@ class UserConfig(AppConfig):
     name = "app.user"
     verbose_name = "user"
 
-    def ready(self) -> None:
-        import app.user.signals
-        import app.user.user_otp.signals
-

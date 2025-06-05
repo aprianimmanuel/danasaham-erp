@@ -78,6 +78,8 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name=_("User ID"),
         unique=True,
     )
+    first_name = models.CharField(_("First Name"), max_length=50, blank=True)
+    last_name = models.CharField(_("Last Name"), max_length=50, blank=True)
     created_date = models.DateTimeField(_("created_date"), auto_now_add=True)
     updated_date = models.DateTimeField(_("updated_date"), auto_now=True)
     email = models.EmailField(_("email_address"), unique=True)
@@ -86,7 +88,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(_("active"), default=True)
     is_staff = models.BooleanField(_("staff status"), default=False)
     is_admin = models.BooleanField(_("admin status"), default=False)
-    is_email_verified = models.BooleanField(default=False)
+    is_verified = models.BooleanField(_("verified"), default=False)
 
     objects = UserManager()
 
@@ -115,8 +117,6 @@ class User(AbstractBaseUser, PermissionsMixin):
             None
 
         """
-        if self.password and not self.password.startswith("pbkdf2_sha256"):
-            self.password = make_password(self.password)
         super().save(*args, **kwargs)
 
 

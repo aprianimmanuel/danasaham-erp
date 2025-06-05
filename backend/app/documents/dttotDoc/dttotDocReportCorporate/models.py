@@ -52,7 +52,7 @@ class DttotDocReportCorporate(models.Model):
     )
 
     class Meta:
-        db_table = "dttotdoc_corporate"
+        db_table = "dttotdocreport_corporate"
         verbose_name = "DTTOT Data from User Corporate"
         verbose_name_plural = "Multi DTTOT Data from User Corporate"
 

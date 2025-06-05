@@ -51,7 +51,7 @@ def save_data_to_model(
             existing_record = DsbUserCorporate.objects.filter(corporate_pengurus_id=row["corporate_pengurus_id"]).first()
 
             if existing_record:
-                # Check if users_last_modified_date is the same
+                # Check if users_last_modified_date is not the same
                 if existing_record.users_last_modified_date != row["users_last_modified_date"]:
                     # Update all fields if users_last_modified_date is different
                     existing_record.document = document
@@ -63,7 +63,7 @@ def save_data_to_model(
                     existing_record.users_last_modified_date = row["users_last_modified_date"]
                     existing_record.save()
 
-                # Check if pengurus_last_corporate_last_update_date is the same
+                # Check if pengurus_last_corporate_last_update_date is not the same
                 elif existing_record.pengurus_corporate_last_update_date != row["pengurus_corporate_last_update_date"]:
                     # Update all fields if pengurus_last_corporate_date is different
                     existing_record.document = document
@@ -80,7 +80,7 @@ def save_data_to_model(
                     existing_record.pengurus_corporate_last_update_date = row["pengurus_corporate_last_update_date"]
                     existing_record.save()
 
-                # Check if corporate_legal_last_modified_date is the same
+                # Check if corporate_legal_last_modified_date is not the same
                 elif existing_record.corporate_legal_last_modified_date != row["corporate_legal_last_modified_date"]:
                     # Update all fields that being connected to corporate_legal and corporate table if corporate_legal_last_modified date is different
                     existing_record.document = document
@@ -99,6 +99,28 @@ def save_data_to_model(
                     existing_record.corporate_type_of_annual_income = row["corporate_type_of_annual_income"]
                     existing_record.corporate_annual_income = row["corporate_annual_income"]
                     existing_record.corporate_investment_goals = row["corporate_investment_goals"]
+
+                # Check if users_last_modified_date is the same
+                elif existing_record.users_last_modified_date == row["users_last_modified_date"]:
+                    # Update all fields if users_last_modified_date is different
+                    existing_record.document = document
+                    existing_record.last_update_by = user
+                    existing_record.save()
+
+                # Check if pengurus_last_corporate_last_update_date is the same
+                elif existing_record.pengurus_corporate_last_update_date == row["pengurus_corporate_last_update_date"]:
+                    # Update all fields if pengurus_last_corporate_date is different
+                    existing_record.document = document
+                    existing_record.last_update_by = user
+                    existing_record.save()
+
+                # Check if corporate_legal_last_modified_date is the same
+                elif existing_record.corporate_legal_last_modified_date == row["corporate_legal_last_modified_date"]:
+                    # Update all fields if corporate_legal_last_modified_date is different
+                    existing_record.document = document
+                    existing_record.last_update_by = user
+                    existing_record.save()
+
             else:
                 DsbUserCorporate.objects.update_or_create(
                     corporate_pengurus_id=row["corporate_pengurus_id"],

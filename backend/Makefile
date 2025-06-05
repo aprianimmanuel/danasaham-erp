@@ -21,10 +21,10 @@ wait_for_services:
 	uv run manage.py wait_for_db
 
 makemigrations:
-	uv run manage.py wait_for_db && uv run manage.py makemigrations
+	uv run manage.py makemigrations
 
 migrate:
-	uv run manage.py wait_for_db && uv run manage.py migrate
+	uv run manage.py migrate
 
 createsuperuser:
 	uv run manage.py createsuperuser --email "devdanasaham@danasaham.co.id" --username admin
@@ -46,10 +46,10 @@ black-check:
 	uv run --with black black --check .
 
 ruff:
-	uv run --with ruff ruff check .
+	uv run ruff check .
 
 ruff-fmt:
-	uv run --with ruff ruff check --fix-only --unsafe-fixes .
+	uv run ruff check --fix-only --unsafe-fixes .
 
 test:
 	uv run manage.py wait_for_db && uv run --with pytest pytest --cov=/apps

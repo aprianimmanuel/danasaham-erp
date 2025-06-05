@@ -107,9 +107,9 @@ def update_dttotdoc_report_score(document_id: str) -> None:
         dttot_doc_report_id = dttot_report.dttotdoc_report_id
 
         # Retrieve associated records
-        dttot_report_personals = DttotDocReportPersonal.objects.filter(dttotdoc_report=dttot_doc_report_id)
-        dttot_report_publishers = DttotDocReportPublisher.objects.filter(dttodoc_report=dttot_doc_report_id)
-        dttot_report_corporates = DttotDocReportCorporate.objects.filter(dttotdoc_report=dttot_doc_report_id)
+        dttot_report_personals = DttotDocReportPersonal.objects.filter(dttotdoc_report__in=dttot_doc_report_id)
+        dttot_report_publishers = DttotDocReportPublisher.objects.filter(dttodoc_report__in=dttot_doc_report_id)
+        dttot_report_corporates = DttotDocReportCorporate.objects.filter(dttotdoc_report__in=dttot_doc_report_id)
 
         # Check for valid similarity scores
         valid_scores_exist = (

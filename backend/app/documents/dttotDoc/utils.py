@@ -4,6 +4,10 @@ import difflib
 import logging
 from typing import Any
 
+from django.core.exceptions import (  #type: ignore # noqa: PGH003
+    MultipleObjectsReturned,
+    ObjectDoesNotExist,
+)
 from rest_framework.exceptions import ValidationError  #type: ignore # noqa: PGH003
 
 from app.documents.dttotDoc.models import DttotDoc  #type: ignore # noqa: PGH003
@@ -13,7 +17,7 @@ from app.documents.dttotDoc.serializers import (
 
 logger = logging.getLogger(__name__)
 
-MAGIC_COMPARISON_RATIO: float = 0.90
+MAGIC_COMPARISON_RATIO: float = 0.95
 
 def handle_dttot_document(document: Any, row_data: dict[str, Any], user_data: str) -> str:
     try:
@@ -26,17 +30,36 @@ def handle_dttot_document(document: Any, row_data: dict[str, Any], user_data: st
         # Check if an existing record with a similar kode_densus exists
         for existing in existing_kode_densus:
             if difflib.SequenceMatcher(None, kode_densus, existing).ratio() > MAGIC_COMPARISON_RATIO:
-                existing_dttot_doc = DttotDoc.objects.get(dttot_kode_densus=existing)
+                try:
+                    # attempt strict get
+                    existing_dttot_doc = DttotDoc.objects.get(dttot_kode_densus=existing)
+                except MultipleObjectsReturned:
+                    # log detail and pick the first one
+                    matching_docs = DttotDoc.objects.filter(dttot_kode_densus=existing)
+                    if matching_docs.exists():
+                        existing_dttot_doc = matching_docs.first()
+                        # Optional: log warning with document IDs
+                        logger.warning(
+                            f"Multiple DttotDoc entries found for kode_densus '{existing}', using the first one. IDs: {[str(doc.id) for doc in matching_docs]}",  # noqa: G004
+                        )
+                    else:
+                        msg = f"Unexpected error: MultipleObjectsReturned for '{existing}' but queryset returned nothing."
+                        raise ValidationError(  # noqa: B904
+                            msg,
+                        )
+                except ObjectDoesNotExist:
+                    existing_dttot_doc = None
                 break
 
         # If a similar record exists, update it
         if existing_dttot_doc:
+            row_data["document"] = document.document_id
             row_data["last_update_by"] = user_data
-            serializer = DttotDocSerializer(existing_dttot_doc, data=row_data, partial=True)
+            serializer = DttotDocSerializer(existing_dttot_doc,data=row_data)
         else:
             # Else, create a new record
             row_data.update({
-                "last_update_by": None,
+                "last_update_by": user_data,
                 "document": document.document_id,
                 "dttot_first_name": row_data.get("first_name"),
                 "dttot_middle_name": row_data.get("middle_name"),

@@ -40,9 +40,9 @@ class DttotDocSerializer(serializers.ModelSerializer):
 
     def update(self, instance: DttotDoc, validated_data: dict[str, Any]) -> DttotDoc:
         # Handle update logic
-        user = self.context.get("request").user if self.context.get("request") else None
+        user = instance.document.last_update_by
         instance.last_update_by = user
-        instance.updated_at = timezone.now
+        instance.updated_at = timezone.now()
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
