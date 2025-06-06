@@ -10,6 +10,7 @@ from django.utils.translation import gettext_lazy as _  # type: ignore   # noqa:
 from app.documents.models import (
     Document,  #type: ignore  # noqa: PGH003
 )
+from .signals import dttot_doc_report_status_failed, dttot_doc_report_status_done
 
 
 class DttotDocReport(models.Model):
@@ -62,3 +63,22 @@ class DttotDocReport(models.Model):
     def __str__(self) -> str:
         return f"{self.dttotdoc_report_id} - {self.document} - {self.created_date}"
 
+    def save(self, *args, **kwargs):
+        original_status_doc = None
+        if self.pk:
+            try:
+                original_status_doc = DttotDocReport.objects.get(pk=self.pk).status_doc
+            except DttotDocReport.DoesNotExist:
+                # This case should ideally not happen if self.pk exists,
+                # but as a fallback, treat as a new instance.
+                pass
+
+        super().save(*args, **kwargs)
+
+        new_status_doc = self.status_doc
+
+        if new_status_doc == "FAILED" and original_status_doc != "FAILED":
+            dttot_doc_report_status_failed.send(sender=self.__class__, instance=self)
+
+        if new_status_doc == "DONE" and original_status_doc != "DONE":
+            dttot_doc_report_status_done.send(sender=self.__class__, instance=self)
