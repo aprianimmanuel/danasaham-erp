@@ -150,7 +150,7 @@ def get_aggregated_similarity_score(
         "domicile_address_publisher_3_city_scores": 0.06,
         "publisher_description_scores": 0.06,
         "publisher_pengurus_names_scores": 0.06,
-        "publisher_pengurus_id_number_scores": 0.4,
+        "publisher_pengurus_id_number_scores": 0.25,
         "publisher_pengurus_phone_number_scores": 0.06,
         "publisher_address_pengurus_scores": 0.055,
         "publisher_tgl_lahir_pengurus_scores": 0.06,

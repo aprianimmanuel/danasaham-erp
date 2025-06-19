@@ -41,7 +41,7 @@ def fetch_data_from_external_db() -> pd.DataFrame:
 
 
 
-def save_data_to_model(
+def save_data_to_model(  # noqa: PLR0915
         df: pd.DataFrame,
         document: DsbUserCorporate,
         user: User) -> None:

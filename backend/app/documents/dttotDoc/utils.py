@@ -40,7 +40,7 @@ def handle_dttot_document(document: Any, row_data: dict[str, Any], user_data: st
                         existing_dttot_doc = matching_docs.first()
                         # Optional: log warning with document IDs
                         logger.warning(
-                            f"Multiple DttotDoc entries found for kode_densus '{existing}', using the first one. IDs: {[str(doc.id) for doc in matching_docs]}",  # noqa: G004
+                            f"Multiple DttotDoc entries found for kode_densus '{existing}', using the first one. IDs: {[str(doc.dttot_kode_densus) for doc in matching_docs]}",  # noqa: G004
                         )
                     else:
                         msg = f"Unexpected error: MultipleObjectsReturned for '{existing}' but queryset returned nothing."

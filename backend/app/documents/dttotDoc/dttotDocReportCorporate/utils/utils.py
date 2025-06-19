@@ -195,14 +195,14 @@ def get_aggregated_similarity_score(
         "corporate_domicile_address_scores": 0.02308,
         "corporate_user_name_scores": 0.02308,
         "corporate_user_phone_number_scores": 0.02308,
-        "corporate_description_scores": 0.15,
+        "corporate_description_scores": 0.149922933,
         "pengurus_corporate_name_scores": 0.02308,
         "pengurus_corporate_phone_number_scores": 0.02308,
-        "pengurus_corporate_id_number_scores": 0.4,
+        "pengurus_corporate_id_number_scores": 0.399922933,
         "pengurus_corporate_place_of_birth_scores": 0.02308,
         "pengurus_corporate_date_of_birth_scores": 0.02308,
         "pengurus_corporate_domicile_address_scores": 0.02308,
-        "pengurus_corporate_description_scores": 0.15,
+        "pengurus_corporate_description_scores": 0.127033413,
     }
 
     return sum(max_scores[field] * weight for field, weight, in weights.items())
